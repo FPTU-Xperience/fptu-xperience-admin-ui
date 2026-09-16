@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Mở [bản xem thử](http://127.0.0.1:5173). Bộ chọn **Chế độ xem thử** ở thanh bên chuyển giữa CTSV và Admin. Trên điện thoại, mở menu góc trên bên trái để đổi actor.
+Mở [bản xem thử](http://127.0.0.1:5174). Bộ chọn **Chế độ xem thử** ở thanh bên chuyển giữa CTSV và Admin. Trên điện thoại, mở menu góc trên bên trái để đổi actor.
 
 ```bash
 npm run build
