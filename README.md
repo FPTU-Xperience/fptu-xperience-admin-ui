@@ -78,20 +78,50 @@ Xem [đối chiếu tài liệu và kế hoạch nối API](docs/INTEGRATION.md)
 
 ```text
 src/
-  App.jsx                 Bố cục, điều hướng và giới hạn theo actor xem thử
-  components/ui.jsx       Nút, bảng, modal, bộ lọc, phân trang
-  pages/Accounts.jsx      Quản lý tài khoản và quy trình nhập Excel
-  pages/Dashboard.jsx     Tổng quan CTSV
-  pages/Affairs.jsx        CLB, gắn kết sinh viên, nhiệm vụ
-  pages/Governance.jsx     Thang XP, học kỳ, đối soát bất thường
-  pages/System.jsx         Ma trận quyền, cấu hình, tình trạng và nhật ký
-  lib/accounts.js         Kiểm tra tài khoản và các ràng buộc Admin
-  lib/excel.js            Đọc/ghi Excel
-  lib/governance.js       Kiểm tra thang điểm và ghi bút toán đảo
-  lib/data.js             Dữ liệu minh họa
-  lib/store.jsx           Lưu trạng thái và audit
+  main.jsx                 Điểm vào: HashRouter + WorkspaceProvider
+  App.jsx                  Ghép AppLayout và AppRoutes
+  assets/
+    styles/global.css      Kiểu toàn cục (giao diện, bảng, modal…)
+    fonts/                 Font được đóng gói cùng ứng dụng
+  components/
+    ui/                    Nút, modal, bảng, bộ lọc, phân trang (một file mỗi component)
+    modals/                Tìm nhanh, hướng dẫn, trung tâm thông báo
+  context/
+    WorkspaceContext.jsx   Trạng thái, audit và lưu localStorage (provider + useWorkspace)
+  hooks/
+    useAction.js           Bọc thao tác đồng bộ với toast thành công/lỗi
+  layouts/
+    AppLayout.jsx          Khung: sidebar, topbar, context bar, toast, modal toàn cục
+    Sidebar.jsx            Điều hướng và bộ chọn actor xem thử
+    Topbar.jsx             Breadcrumb, tìm nhanh, thông báo
+    ContextBar.jsx         Học kỳ đang xem / ghi chú dữ liệu mẫu
+  pages/                   Một file cho một trang
+    Accounts.jsx           Quản lý tài khoản và quy trình nhập Excel
+    Dashboard.jsx          Tổng quan CTSV
+    Clubs.jsx              Danh mục CLB và duyệt hồ sơ
+    Engagement.jsx         Gắn kết sinh viên, xuất Excel
+    Quests.jsx             Nhiệm vụ & chiến dịch
+    Rubrics.jsx            Thang điểm XP
+    Seasons.jsx            Học kỳ & mùa giải
+    Anomalies.jsx          Đối soát bất thường XP
+    Audit.jsx              Nhật ký hoạt động
+    RoleMatrix.jsx         Vai trò & phân quyền
+    SystemSettings.jsx     Cấu hình, tích hợp, tình trạng hệ thống
+  routes/
+    index.jsx              Định tuyến và giới hạn theo actor xem thử
+    navigation.js          Danh sách điều hướng theo không gian làm việc
+  services/
+    api.js                 Lớp API dự phòng cho phần nối backend
+  utils/
+    format.js              ROLES, MAJORS, SEASONS, định dạng số/ngày, normalize
+    seed.js                Dữ liệu minh họa (createSeed) và studentXP
+    accounts.js            Kiểm tra tài khoản và các ràng buộc Admin
+    excel.js               Đọc/ghi Excel
+    governance.js          Kiểm tra thang điểm và ghi bút toán đảo
 tests/                    Kiểm thử dữ liệu tài khoản, Excel và sổ cái
 ```
+
+Logic thuần (không phụ thuộc React) nằm ở `utils/` để tách được cho kiểm thử với Node. Dữ liệu mẫu sinh từ `createSeed` trong `utils/seed.js`, không còn nằm cùng component.
 
 ## Kiểm tra
 

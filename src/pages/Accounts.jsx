@@ -17,15 +17,16 @@ import {
   UserCheck,
   X,
 } from 'lucide-react';
-import { ROLES, date, normalize, number } from '../lib/data.js';
-import { useWorkspace } from '../lib/store.jsx';
-import { guardAccountChanges, validateAccount, validateImportRows } from '../lib/accounts.js';
+import { ROLES, date, normalize, number } from '../utils/format.js';
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import { guardAccountChanges, validateAccount, validateImportRows } from '../utils/accounts.js';
 import {
   createWorkbookBuffer,
   downloadAccountTemplate,
   downloadBuffer,
   readAccountWorkbook,
-} from '../lib/excel.js';
+} from '../utils/excel.js';
+import { useAction } from '../hooks/useAction.js';
 import {
   Avatar,
   Badge,
@@ -40,8 +41,7 @@ import {
   SearchBox,
   StatCard,
   Tabs,
-  useAction,
-} from '../components/ui.jsx';
+} from '../components/ui/index.js';
 
 export default function Accounts() {
   const { state, commit } = useWorkspace();

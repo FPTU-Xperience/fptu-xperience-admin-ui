@@ -6,8 +6,8 @@ import '@fontsource/be-vietnam-pro/600.css';
 import '@fontsource/be-vietnam-pro/700.css';
 import { HashRouter } from 'react-router-dom';
 import App from './App.jsx';
-import { WorkspaceProvider } from './lib/store.jsx';
-import './styles.css';
+import { WorkspaceProvider } from './context/WorkspaceContext.jsx';
+import './assets/styles/global.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
