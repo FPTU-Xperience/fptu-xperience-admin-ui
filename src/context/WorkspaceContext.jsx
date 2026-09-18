@@ -1,5 +1,5 @@
 import { createContext, useContext, useRef, useState } from 'react';
-import { createSeed } from './data.js';
+import { createSeed } from '../utils/seed.js';
 
 const KEY = 'fptu-xperience-demo-v1';
 const WorkspaceContext = createContext(null);

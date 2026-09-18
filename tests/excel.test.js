@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
-import { createWorkbookBuffer, readAccountWorkbook } from '../src/lib/excel.js';
+import { createWorkbookBuffer, readAccountWorkbook } from '../src/utils/excel.js';
 
 const headers = ['username', 'fullName', 'email', 'role', 'status'];
 const record = ['SE999999', 'Sinh Viên Kiểm Thử', 'test@example.edu.vn', 'CLUB_MEMBER', 'active'];

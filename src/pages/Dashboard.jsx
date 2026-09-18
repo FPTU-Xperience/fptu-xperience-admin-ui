@@ -15,10 +15,12 @@ import {
   Users,
   UsersRound,
 } from 'lucide-react';
-import { useWorkspace } from '../lib/store.jsx';
-import { number, seasonLabel, studentXP } from '../lib/data.js';
-import { Badge, Button, PageHeader, Panel, StatCard, useAction } from '../components/ui.jsx';
-import { createWorkbookBuffer, downloadBuffer } from '../lib/excel.js';
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import { number, seasonLabel } from '../utils/format.js';
+import { studentXP } from '../utils/seed.js';
+import { useAction } from '../hooks/useAction.js';
+import { Badge, Button, PageHeader, Panel, StatCard } from '../components/ui/index.js';
+import { createWorkbookBuffer, downloadBuffer } from '../utils/excel.js';
 
 export default function Dashboard() {
   const { state, season } = useWorkspace();

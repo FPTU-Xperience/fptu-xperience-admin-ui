@@ -1,4 +1,4 @@
-import { ROLES } from './data.js';
+import { ROLES } from './format.js';
 
 export function validateAccount(input, accounts, excludingId) {
   const errors = [];

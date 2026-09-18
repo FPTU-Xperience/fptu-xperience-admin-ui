@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSeed } from '../src/lib/data.js';
-import { guardAccountChanges, validateAccount, validateImportRows } from '../src/lib/accounts.js';
+import { createSeed } from '../src/utils/seed.js';
+import { guardAccountChanges, validateAccount, validateImportRows } from '../src/utils/accounts.js';
 
 const valid = {
   username: 'SE999999',

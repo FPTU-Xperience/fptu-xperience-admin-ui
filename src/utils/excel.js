@@ -1,4 +1,4 @@
-import { normalize } from './data.js';
+import { normalize } from './format.js';
 import { validateImportRows } from './accounts.js';
 
 async function workbook() {
