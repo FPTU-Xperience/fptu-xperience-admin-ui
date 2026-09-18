@@ -1,8 +1,31 @@
-import { createContext, useContext, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import api from '../services/api.js';
 import { createSeed } from '../utils/seed.js';
 
 const KEY = 'fptu-xperience-demo-v1';
 const WorkspaceContext = createContext(null);
+
+function extractUsers(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload.items)) return payload.items;
+  if (payload && Array.isArray(payload.data)) return payload.data;
+  return [];
+}
+
+function mapRemoteUser(user) {
+  const roles = Array.isArray(user.roles) ? user.roles : user.role ? [user.role] : ['CLUB_MEMBER'];
+  return {
+    id: String(user.id ?? user.userId ?? crypto.randomUUID()),
+    username: user.username ?? user.studentCode ?? '',
+    fullName: user.fullName ?? user.name ?? '',
+    email: user.email ?? '',
+    role: roles[0] ?? 'CLUB_MEMBER',
+    status: user.isLocked || user.locked ? 'locked' : 'active',
+    joinedAt: user.createdAt ?? new Date().toISOString(),
+    clubIds: Array.isArray(user.clubIds) ? user.clubIds : [],
+  };
+}
+
 function readState() {
   try {
     const value = JSON.parse(localStorage.getItem(KEY));
@@ -31,6 +54,50 @@ function readState() {
 export function WorkspaceProvider({ children }) {
   const [state, setState] = useState(readState);
   const stateRef = useRef(state);
+  useEffect(() => {
+    let ignore = false;
+
+    async function hydrateRemoteUsers() {
+      try {
+        const [usersResponse, rolesResponse] = await Promise.all([
+          api.users.list({ page: 1, pageSize: 200 }),
+          api.users.roles(),
+        ]);
+
+        const remoteUsers = extractUsers(usersResponse)
+          .map(mapRemoteUser)
+          .filter((user) => user.username || user.email || user.fullName);
+
+        if (ignore || remoteUsers.length === 0) return;
+
+        const next = structuredClone(stateRef.current);
+        next.accounts = remoteUsers;
+        if (Array.isArray(rolesResponse) && rolesResponse.length) {
+          next.settings = {
+            ...next.settings,
+            roles: rolesResponse,
+          };
+        }
+
+        stateRef.current = next;
+        setState(next);
+
+        try {
+          localStorage.setItem(KEY, JSON.stringify(next));
+        } catch {
+          // Ignore localStorage write failures in restricted environments.
+        }
+      } catch {
+        // Keep the demo seed if the gateway is unavailable or the user is offline.
+      }
+    }
+
+    hydrateRemoteUsers();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   const [role, updateRole] = useState(() => {
     try {
       return sessionStorage.getItem('fptu-preview-role') === 'ADMIN'

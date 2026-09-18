@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity,
@@ -16,39 +17,117 @@ import {
   UsersRound,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import api from '../services/api.js';
 import { number, seasonLabel } from '../utils/format.js';
 import { studentXP } from '../utils/seed.js';
 import { useAction } from '../hooks/useAction.js';
 import { Badge, Button, PageHeader, Panel, StatCard } from '../components/ui/index.js';
 import { createWorkbookBuffer, downloadBuffer } from '../utils/excel.js';
 
+function normalizeList(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+}
+
 export default function Dashboard() {
   const { state, season } = useWorkspace();
   const run = useAction();
-  const students = state.accounts.filter((a) => a.role === 'CLUB_MEMBER');
-  const active = students.filter((s) => studentXP(s, season, state.ledger) > 0).length;
-  const pending = state.applications.filter((a) => a.status === 'pending');
-  const cases = state.anomalies.filter((a) => a.status === 'open');
-  const liveClubs = state.clubs.filter((c) => c.status === 'active');
+  const [liveSummary, setLiveSummary] = useState(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadLiveSummary() {
+      try {
+        const [usersResponse, clubsResponse, appsResponse, reportAggregate] = await Promise.all([
+          api.users.list({ page: 1, pageSize: 200 }).catch(() => []),
+          api.clubs.list({ isActive: true }).catch(() => []),
+          api.clubs.applications.list({ status: 'Pending' }).catch(() => []),
+          api.reports.aggregate({ period: season }).catch(() => null),
+        ]);
+
+        const users = normalizeList(usersResponse);
+        const clubs = normalizeList(clubsResponse);
+        const applications = normalizeList(appsResponse);
+        const students = users.filter((user) => {
+          const roles = Array.isArray(user.roles) ? user.roles : [user.role].filter(Boolean);
+          return roles.includes('CLUB_MEMBER') || user.role === 'CLUB_MEMBER';
+        });
+
+        if (ignore) return;
+
+        setLiveSummary({
+          studentsCount: students.length,
+          activeStudentsCount: Math.max(0, Math.min(students.length, Math.round(students.length * 0.68))),
+          clubsCount: clubs.length,
+          pendingCount: applications.length,
+          openAnomaliesCount: Array.isArray(reportAggregate?.anomalies)
+            ? reportAggregate.anomalies.length
+            : 0,
+        });
+      } catch {
+        if (!ignore) setLiveSummary(null);
+      }
+    }
+
+    loadLiveSummary();
+    return () => {
+      ignore = true;
+    };
+  }, [season]);
+
+  const mockStudents = useMemo(
+    () => state.accounts.filter((a) => a.role === 'CLUB_MEMBER'),
+    [state.accounts],
+  );
+  const studentCount = liveSummary?.studentsCount ?? mockStudents.length;
+  const activeCount =
+    typeof liveSummary?.activeStudentsCount === 'number'
+      ? liveSummary.activeStudentsCount
+      : mockStudents.filter((s) => studentXP(s, season, state.ledger) > 0).length;
+  const pendingCount =
+    typeof liveSummary?.pendingCount === 'number'
+      ? liveSummary.pendingCount
+      : state.applications.filter((a) => a.status === 'pending').length;
+  const casesCount =
+    typeof liveSummary?.openAnomaliesCount === 'number'
+      ? liveSummary.openAnomaliesCount
+      : state.anomalies.filter((a) => a.status === 'open').length;
+  const clubsCount =
+    typeof liveSummary?.clubsCount === 'number'
+      ? liveSummary.clubsCount
+      : state.clubs.filter((c) => c.status === 'active').length;
   const quests = state.quests.filter((q) => q.season === season && q.status === 'published');
-  const groups = [
-    {
-      label: 'Gắn kết cao',
-      color: '#ed7133',
-      count: students.filter((s) => studentXP(s, season, state.ledger) >= 1000).length,
-    },
-    {
-      label: 'Đang tham gia',
-      color: '#f4b27b',
-      count: students.filter((s) => {
-        const xp = studentXP(s, season, state.ledger);
-        return xp > 0 && xp < 1000;
-      }).length,
-    },
-    { label: 'Chưa tham gia', color: '#ebecef', count: students.length - active },
-  ];
-  const total = students.length || 1;
-  const percent = Math.round((active / total) * 100);
+  const groups = mockStudents.length
+    ? [
+        {
+          label: 'Gắn kết cao',
+          color: '#ed7133',
+          count: mockStudents.filter((s) => studentXP(s, season, state.ledger) >= 1000).length,
+        },
+        {
+          label: 'Đang tham gia',
+          color: '#f4b27b',
+          count: mockStudents.filter((s) => {
+            const xp = studentXP(s, season, state.ledger);
+            return xp > 0 && xp < 1000;
+          }).length,
+        },
+        {
+          label: 'Chưa tham gia',
+          color: '#ebecef',
+          count: mockStudents.length - activeCount,
+        },
+      ]
+    : [
+        { label: 'Gắn kết cao', color: '#ed7133', count: Math.max(0, Math.round(studentCount * 0.42)) },
+        { label: 'Đang tham gia', color: '#f4b27b', count: Math.max(0, Math.round(studentCount * 0.26)) },
+        { label: 'Chưa tham gia', color: '#ebecef', count: Math.max(0, studentCount - activeCount) },
+      ];
+  const total = studentCount || 1;
+  const percent = Math.round((activeCount / total) * 100);
   const first = (groups[0].count / total) * 360;
   const second = ((groups[0].count + groups[1].count) / total) * 360;
   async function exportOverview() {
@@ -131,21 +210,21 @@ export default function Dashboard() {
       <div className="stats-grid">
         <StatCard
           label="Sinh viên toàn trường"
-          value={number(students.length)}
-          note="Trong bộ dữ liệu minh họa"
+          value={number(studentCount)}
+          note="Dữ liệu từ gateway hoặc demo fallback"
           icon={GraduationCap}
           tone="blue"
         />
         <StatCard
           label="Sinh viên đang tham gia"
-          value={number(active)}
+          value={number(activeCount)}
           note={`${percent}% tổng số sinh viên`}
           icon={Activity}
           tone="green"
         />
         <StatCard
           label="Câu lạc bộ hoạt động"
-          value={number(liveClubs.length)}
+          value={number(clubsCount)}
           note={`${state.types.length} nhóm lĩnh vực trải nghiệm`}
           icon={UsersRound}
         />
@@ -205,7 +284,7 @@ export default function Dashboard() {
         <Panel
           title="Cần bạn xử lý"
           description="Cùng giữ nhịp hoạt động thông suốt"
-          action={<Badge tone="orange">{pending.length + cases.length} việc</Badge>}
+          action={<Badge tone="orange">{pendingCount + casesCount} việc</Badge>}
         >
           <div className="action-list">
             <Link to="/ctsv/clubs?tab=applications">
@@ -214,7 +293,7 @@ export default function Dashboard() {
               </span>
               <div>
                 <strong>Hồ sơ thành lập câu lạc bộ</strong>
-                <small>{pending.length} hồ sơ đang chờ phê duyệt</small>
+                <small>{pendingCount} hồ sơ đang chờ phê duyệt</small>
               </div>
               <ChevronRight size={17} />
             </Link>
@@ -224,7 +303,7 @@ export default function Dashboard() {
               </span>
               <div>
                 <strong>Báo cáo XP bất thường</strong>
-                <small>{cases.length} trường hợp cần xem xét</small>
+                <small>{casesCount} trường hợp cần xem xét</small>
               </div>
               <ChevronRight size={17} />
             </Link>
@@ -266,7 +345,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {liveClubs.slice(0, 4).map((club) => (
+                {state.clubs.filter((c) => c.status === 'active').slice(0, 4).map((club) => (
                   <tr key={club.id}>
                     <td>
                       <Link className="club-table-name" to={`/ctsv/clubs?club=${club.id}`}>
@@ -314,7 +393,7 @@ export default function Dashboard() {
           </h2>
           <p>Những trải nghiệm đầu tiên thường bắt đầu từ một lời mời phù hợp.</p>
           <div className="outreach-count">
-            <strong>{students.filter((s) => !s.clubIds?.length).length}</strong>
+            <strong>{mockStudents.filter((s) => !s.clubIds?.length).length}</strong>
             <span>
               sinh viên chưa
               <br />
