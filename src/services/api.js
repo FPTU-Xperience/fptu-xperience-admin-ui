@@ -278,6 +278,7 @@ export const api = {
     // Google OAuth login
     google: (credential) => api.post('/api/auth/google', { credential }),
     // Dev login bypass
+    // devLogin: (email) => api.post('/api/auth/dev-login', { email }),
     devLogin: (email) => api.post('/api/auth/dev-login', { email }),
     logout: (refreshToken) => api.post('/api/auth/logout', { refreshToken }),
     refresh: (refreshToken) => api.post('/api/auth/refresh', { refreshToken }),

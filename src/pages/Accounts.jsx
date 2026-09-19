@@ -123,7 +123,8 @@ export default function Accounts() {
           Thêm tài khoản
         </Button>
       </PageHeader>
-      <div className="stats-grid">
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <StatCard
           label="Tổng tài khoản"
           value={number(accounts.length)}
@@ -152,31 +153,43 @@ export default function Accounts() {
           note="Phân quyền theo trách nhiệm"
         />
       </div>
-      <div className="import-banner">
-        <span className="excel-icon">
+
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 bg-[#f1f7f3] border border-[#e2ece4] rounded-lg p-4 sm:px-6 sm:py-5 mb-6">
+        <span className="w-11 h-11 sm:w-[35px] sm:h-[35px] grid place-items-center rounded-xl bg-[#e6f0e9] text-[#66a07b] shrink-0">
           <FileSpreadsheet size={27} />
         </span>
         <div>
-          <h3>Thêm hàng loạt, bắt đầu nhanh hơn</h3>
-          <p>Tải danh sách Excel để tự động tạo nhiều tài khoản trong một lần.</p>
+          <h3 className="text-[12.5px] sm:text-[11px] font-semibold text-[#5b7c63]">
+            Thêm hàng loạt, bắt đầu nhanh hơn
+          </h3>
+          <p className="text-[11px] sm:text-[10px] sm:max-w-[235px] text-[#96aa9a] sm:text-[#75917d] mt-[5px]">
+            Tải danh sách Excel để tự động tạo nhiều tài khoản trong một lần.
+          </p>
         </div>
         <button
-          className="text-link"
+          className="ml-auto inline-flex items-center gap-1.5 sm:gap-[9px] text-[11px] sm:text-[10px] sm:ml-[46px] text-[#72987c] hover:text-accent bg-transparent border-0 p-0"
           onClick={() => run(downloadAccountTemplate, 'Đã tải file Excel mẫu.')}
         >
           Tải file mẫu <Download size={15} />
         </button>
-        <Button onClick={() => setImporting(true)}>
+        {/* Ẩn trên mobile giống rule cũ `.import-banner > .btn { display:none }` */}
+        <Button className="hidden sm:inline-flex" onClick={() => setImporting(true)}>
           Nhập danh sách
           <ChevronRight size={15} />
         </Button>
       </div>
-      <Panel className="accounts-panel">
-        <div className="panel-title-row">
-          <h2>
-            Danh sách tài khoản <span className="count-pill">{accounts.length}</span>
+
+      <Panel>
+        <div className="flex items-center justify-between gap-3 px-[22px] sm:px-[17px] pt-[21px] pb-[10px]">
+          <h2 className="text-[13px]">
+            Danh sách tài khoản{' '}
+            <span className="text-[11px] bg-[#f0f2f5] px-[7px] py-[3px] rounded-sm ml-[7px] text-[#929baa] font-medium">
+              {accounts.length}
+            </span>
           </h2>
-          <Badge tone="neutral">Dữ liệu trên trình duyệt</Badge>
+          <Badge tone="neutral" className="hidden sm:inline-flex">
+            Dữ liệu trên trình duyệt
+          </Badge>
         </div>
         <Tabs
           active={tab}
@@ -190,14 +203,16 @@ export default function Accounts() {
             })),
           ]}
         />
-        <div className="table-toolbar">
+        <div className="flex flex-wrap items-center gap-2.5 px-[17px] py-[15px]">
           <SearchBox
+            className="mr-auto sm:min-w-full sm:max-w-none"
             value={query}
             onChange={setQuery}
             placeholder="Tìm họ tên, mã tài khoản hoặc email…"
             label="Tìm tài khoản"
           />
           <select
+            className="text-[11px] sm:text-[10px] sm:flex-1 sm:max-w-full"
             aria-label="Lọc trạng thái tài khoản"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -208,22 +223,32 @@ export default function Accounts() {
           </select>
         </div>
         {selected.length > 0 && (
-          <div className="selection-bar">
+          <div className="px-[23px] py-[9px] bg-[#fff5ed] flex items-center gap-[15px] text-[11px] text-[#bd825b]">
             <span>
               Đã chọn <b>{selected.length}</b> tài khoản
             </span>
-            <button onClick={() => setSelected([])}>Bỏ chọn</button>
-            <Button variant="danger-soft" icon={Trash2} onClick={() => setDeleting(selected)}>
+            <button
+              className="bg-transparent border-0 text-[#bc8c6c] text-[11px]"
+              onClick={() => setSelected([])}
+            >
+              Bỏ chọn
+            </button>
+            <Button
+              className="ml-auto min-h-[28px] px-[9px] py-[6px] text-[10px]"
+              variant="danger-soft"
+              icon={Trash2}
+              onClick={() => setDeleting(selected)}
+            >
               Xóa đã chọn
             </Button>
           </div>
         )}
         {filtered.length ? (
-          <div className="table-scroll">
-            <table className="accounts-table">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left whitespace-nowrap">
               <thead>
                 <tr>
-                  <th className="check-cell">
+                  <th className="w-[30px] bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
                     <input
                       aria-label="Chọn toàn bộ trang hiện tại"
                       type="checkbox"
@@ -237,17 +262,31 @@ export default function Accounts() {
                       }
                     />
                   </th>
-                  <th>NGƯỜI DÙNG</th>
-                  <th>VAI TRÒ</th>
-                  <th>TRẠNG THÁI</th>
-                  <th>NGÀY THÊM</th>
-                  <th className="right">THAO TÁC</th>
+                  <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                    NGƯỜI DÙNG
+                  </th>
+                  <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                    VAI TRÒ
+                  </th>
+                  <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                    TRẠNG THÁI
+                  </th>
+                  <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                    NGÀY THÊM
+                  </th>
+                  <th className="text-right bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                    THAO TÁC
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {visible.map((a) => (
-                  <tr key={a.id} className={selected.includes(a.id) ? 'selected-row' : ''}>
-                    <td>
+                  <tr key={a.id}>
+                    <td
+                      className={`px-5 py-[15px] border-b border-[#f0f2f5] text-[11px] text-[#727b89] last:border-b-0 ${
+                        selected.includes(a.id) ? 'bg-[#fffbf8]' : ''
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         aria-label={`Chọn ${a.username}`}
@@ -255,8 +294,12 @@ export default function Accounts() {
                         onChange={() => toggle(a.id)}
                       />
                     </td>
-                    <td>
-                      <div className="person-cell">
+                    <td
+                      className={`px-5 py-[15px] border-b border-[#f0f2f5] text-[11px] text-[#727b89] last:border-b-0 ${
+                        selected.includes(a.id) ? 'bg-[#fffbf8]' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-[11px]">
                         <Avatar
                           name={a.fullName}
                           color={
@@ -268,16 +311,26 @@ export default function Accounts() {
                           }
                         />
                         <div>
-                          <strong>
+                          <strong className="block text-[12px]">
                             {a.fullName}
-                            {a.id === 'admin-self' && <span className="you-label">Bạn</span>}
+                            {a.id === 'admin-self' && (
+                              <span className="text-[9px] px-[5px] py-[2px] bg-[#f0edf8] text-[#a194b6] rounded ml-2">
+                                Bạn
+                              </span>
+                            )}
                           </strong>
-                          <span>{a.email}</span>
-                          <small>{a.username}</small>
+                          <span className="block text-[#717d8d] text-[10.5px] mt-1">{a.email}</span>
+                          <small className="block text-[#b4b9c1] text-[9.5px] mt-[3px]">
+                            {a.username}
+                          </small>
                         </div>
                       </div>
                     </td>
-                    <td>
+                    <td
+                      className={`px-5 py-[15px] border-b border-[#f0f2f5] text-[11px] text-[#727b89] last:border-b-0 ${
+                        selected.includes(a.id) ? 'bg-[#fffbf8]' : ''
+                      }`}
+                    >
                       <Badge
                         tone={
                           a.role === 'ADMIN'
@@ -292,14 +345,28 @@ export default function Accounts() {
                         {ROLES[a.role]}
                       </Badge>
                     </td>
-                    <td>
+                    <td
+                      className={`px-5 py-[15px] border-b border-[#f0f2f5] text-[11px] text-[#727b89] last:border-b-0 ${
+                        selected.includes(a.id) ? 'bg-[#fffbf8]' : ''
+                      }`}
+                    >
                       <Badge tone={a.status === 'active' ? 'green' : 'neutral'} dot>
                         {a.status === 'active' ? 'Hoạt động' : 'Đã khóa'}
                       </Badge>
                     </td>
-                    <td className="muted">{date(a.joinedAt)}</td>
-                    <td>
-                      <div className="row-actions">
+                    <td
+                      className={`px-5 py-[15px] border-b border-[#f0f2f5] text-[11px] text-muted last:border-b-0 ${
+                        selected.includes(a.id) ? 'bg-[#fffbf8]' : ''
+                      }`}
+                    >
+                      {date(a.joinedAt)}
+                    </td>
+                    <td
+                      className={`px-5 py-[15px] border-b border-[#f0f2f5] text-[11px] text-[#727b89] last:border-b-0 ${
+                        selected.includes(a.id) ? 'bg-[#fffbf8]' : ''
+                      }`}
+                    >
+                      <div className="flex justify-end gap-0.5">
                         <IconButton
                           icon={Pencil}
                           label={`Sửa ${a.username}`}
@@ -340,25 +407,25 @@ export default function Accounts() {
           description="Tài khoản sẽ được loại khỏi danh sách quản lý mẫu trên trình duyệt."
           onClose={() => setDeleting(null)}
         >
-          <div className="modal-body">
-            <div className="danger-box">
+          <div className="px-6 py-6 sm:px-[18px] sm:py-5">
+            <div className="p-[14px] sm:p-3 border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px] leading-[1.8] mt-[17px]">
               Kiểm tra danh sách trước khi xóa. Nhật ký và các đóng góp đã ghi nhận vẫn được giữ để
               tra cứu.
             </div>
-            <ul className="deletion-list">
+            <ul className="max-h-[250px] overflow-y-auto list-none p-0 mt-[15px]">
               {accounts
                 .filter((a) => deleting.includes(a.id))
                 .map((a) => (
-                  <li key={a.id}>
-                    <strong>{a.fullName}</strong>
-                    <span>
+                  <li key={a.id} className="py-3 border-b border-border">
+                    <strong className="block font-medium text-[12px]">{a.fullName}</strong>
+                    <span className="block text-[#a0abb9] text-[11px] mt-[6px]">
                       {a.username} · {a.email}
                     </span>
                   </li>
                 ))}
             </ul>
           </div>
-          <div className="modal-footer">
+          <div className="sticky bottom-0 z-[1] border-t border-border px-[26px] py-[17px] flex flex-wrap gap-2.5 justify-end items-center bg-[#fdfdfe] rounded-b-[14px] sm:px-[18px] sm:py-[15px] sm:gap-[9px]">
             <Button onClick={() => setDeleting(null)}>Hủy</Button>
             <Button variant="danger" icon={Trash2} onClick={remove}>
               Xác nhận xóa
@@ -426,7 +493,7 @@ function AccountForm({ account, onClose }) {
       onClose={onClose}
     >
       <form onSubmit={submit}>
-        <div className="modal-body form-grid">
+        <div className="px-6 py-6 sm:px-[18px] sm:py-5 grid grid-cols-2 sm:grid-cols-1 gap-x-[18px] gap-y-[21px] sm:gap-[18px]">
           <Field label="Họ và tên *">
             <input
               autoFocus
@@ -447,7 +514,7 @@ function AccountForm({ account, onClose }) {
               disabled={!!account.id}
             />
           </Field>
-          <Field label="Email *" className="full-width">
+          <Field label="Email *" className="col-span-full">
             <input
               type="email"
               required
@@ -481,14 +548,17 @@ function AccountForm({ account, onClose }) {
             </select>
           </Field>
           {errors.length > 0 && (
-            <div className="form-error full-width" role="alert">
+            <div
+              className="col-span-full mt-[10px] p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px] leading-[1.8] [&_p]:my-[3px]"
+              role="alert"
+            >
               {errors.map((error) => (
                 <p key={error}>{error}</p>
               ))}
             </div>
           )}
         </div>
-        <div className="modal-footer">
+        <div className="sticky bottom-0 z-[1] border-t border-border px-[26px] py-[17px] flex flex-wrap gap-2.5 justify-end items-center bg-[#fdfdfe] rounded-b-[14px] sm:px-[18px] sm:py-[15px] sm:gap-[9px]">
           <Button onClick={onClose} type="button">
             Hủy
           </Button>
@@ -596,34 +666,53 @@ function ImportDialog({ onClose }) {
         if (!busy) onClose();
       }}
     >
-      <div className="import-steps">
+      <div className="flex items-center justify-center gap-5 sm:gap-[9px] pt-[22px] sm:pt-5 px-5 sm:px-[13px]">
         {['Tải danh sách', 'Kiểm tra dữ liệu', 'Hoàn tất'].map((label, i) => (
-          <div key={label} className={step >= i + 1 ? 'active' : ''}>
-            <span>{step > i + 1 ? <Check size={14} /> : i + 1}</span>
+          <div
+            key={label}
+            className={`flex items-center gap-[9px] sm:gap-[5px] text-[11px] sm:text-[9px] ${
+              step >= i + 1 ? 'text-[#d18b55]' : 'text-[#b4bdc8]'
+            }`}
+          >
+            <span
+              className={`rounded-full w-[23px] h-[23px] sm:w-5 sm:h-5 grid place-items-center text-[11px] sm:text-[10px] ${
+                step >= i + 1 ? 'bg-[#fff1e4] text-[#cf8d59]' : 'bg-[#f2f4f6] text-[#b6bfca]'
+              }`}
+            >
+              {step > i + 1 ? <Check size={14} /> : i + 1}
+            </span>
             {label}
-            {i < 2 && <ChevronRight size={14} />}
+            {i < 2 && <ChevronRight size={14} className="ml-[15px] sm:ml-1 text-[#d0d5dc]" />}
           </div>
         ))}
       </div>
-      <div className="modal-body">
+      <div className="px-6 py-6 sm:px-[18px] sm:py-5">
         {done ? (
-          <div className="import-success">
-            <span>
+          <div className="flex flex-col items-center text-center py-[26px] px-[10px] gap-[15px]">
+            <span className="h-[84px] w-[84px] rounded-full grid place-items-center text-[#75aa88] bg-[#eff8f1]">
               <CheckCircle2 size={44} />
             </span>
-            <h2>Danh sách đã sẵn sàng!</h2>
-            <p>
+            <h2 className="text-[23px] sm:text-[20px] font-semibold tracking-[-0.6px] mt-2">
+              Danh sách đã sẵn sàng!
+            </h2>
+            <p className="text-[12px] sm:text-[11px] text-[#9aaabb] leading-[1.9]">
               Đã thêm <b>{resultCount} tài khoản</b> vào phần quản lý.
             </p>
             {bad.length > 0 && (
-              <p>{bad.length} dòng lỗi được bỏ qua. Tải danh sách lỗi để chỉnh sửa và nhập lại.</p>
+              <p className="text-[12px] sm:text-[11px] text-[#9aaabb] leading-[1.9]">
+                {bad.length} dòng lỗi được bỏ qua. Tải danh sách lỗi để chỉnh sửa và nhập lại.
+              </p>
             )}
-            <Badge tone="green">Đã lưu thay đổi trên trình duyệt</Badge>
+            <Badge tone="green" className="mt-[10px]">
+              Đã lưu thay đổi trên trình duyệt
+            </Badge>
           </div>
         ) : !rows ? (
           <>
             <div
-              className={`dropzone ${drag ? 'dragging' : ''}`}
+              className={`border-[1.5px] border-dashed rounded-xl flex flex-col items-center text-center pt-[31px] px-5 pb-[25px] sm:px-4 sm:py-[25px] ${
+                drag ? 'bg-[#fff7ed] border-accent' : 'bg-[#fcfdff] border-[#d8dee6]'
+              }`}
               onDragOver={(e) => {
                 e.preventDefault();
                 if (!busy) setDrag(true);
@@ -635,12 +724,19 @@ function ImportDialog({ onClose }) {
                 if (!busy) choose(e.dataTransfer.files[0]);
               }}
             >
-              <span className="upload-cloud">
+              <span className="bg-[#fff3e9] text-[#dda371] w-[58px] h-[58px] grid place-items-center rounded-[15px] mb-[17px]">
                 <Upload size={28} />
               </span>
-              <h3>{busy ? 'Đang kiểm tra file…' : 'Kéo thả file Excel vào đây'}</h3>
-              <p>hoặc chọn file từ thiết bị của bạn</p>
-              <Button icon={FileSpreadsheet} busy={busy} onClick={() => ref.current.click()}>
+              <h3 className="text-[14px] sm:text-[13px] font-medium text-[#7c899c]">
+                {busy ? 'Đang kiểm tra file…' : 'Kéo thả file Excel vào đây'}
+              </h3>
+              <p className="text-[11px] text-[#a9b2c0] mt-2">hoặc chọn file từ thiết bị của bạn</p>
+              <Button
+                className="mt-[18px]"
+                icon={FileSpreadsheet}
+                busy={busy}
+                onClick={() => ref.current.click()}
+              >
                 Chọn file Excel
               </Button>
               <input
@@ -655,35 +751,52 @@ function ImportDialog({ onClose }) {
                   e.target.value = '';
                 }}
               />
-              <small>Định dạng .xlsx · Tối đa 5 MB · 1.000 dòng</small>
+              <small className="text-[11px] text-[#bac1cc] mt-[17px]">
+                Định dạng .xlsx · Tối đa 5 MB · 1.000 dòng
+              </small>
             </div>
-            {file && <p className="file-caption">File đã chọn: {file.name}</p>}
+            {file && (
+              <p className="text-[11px] text-[#93a0b1] mt-3">File đã chọn: {file.name}</p>
+            )}
             {error && (
-              <div className="form-error" role="alert">
+              <div
+                className="p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px] leading-[1.8] mt-[17px]"
+                role="alert"
+              >
                 {error}
               </div>
             )}
-            <div className="template-callout">
-              <FileSpreadsheet size={23} />
+            <div className="flex flex-wrap items-center gap-[14px] sm:gap-[9px] py-5 border-b border-border text-[#8dac98]">
+              <FileSpreadsheet size={23} className="sm:w-5" />
               <div>
-                <strong>Chưa có danh sách đúng định dạng?</strong>
-                <p>Tải mẫu với tên cột và dữ liệu ví dụ.</p>
+                <strong className="text-[11px] text-[#92a69b] font-medium">
+                  Chưa có danh sách đúng định dạng?
+                </strong>
+                <p className="text-[11px] sm:text-[10px] text-[#aab9af] mt-[5px]">
+                  Tải mẫu với tên cột và dữ liệu ví dụ.
+                </p>
               </div>
-              <Button icon={Download} onClick={() => run(downloadAccountTemplate)}>
+              <Button
+                className="ml-auto text-[11px] sm:ml-[30px] sm:text-[10px]"
+                icon={Download}
+                onClick={() => run(downloadAccountTemplate)}
+              >
                 Tải file mẫu
               </Button>
             </div>
-            <details className="import-guide">
-              <summary>Cấu trúc file và các vai trò được hỗ trợ</summary>
-              <p>
+            <details className="mt-5 text-[#a4afbf] text-[11px]">
+              <summary className="text-[11px] text-[#92a0b1] cursor-pointer">
+                Cấu trúc file và các vai trò được hỗ trợ
+              </summary>
+              <p className="mt-3 leading-[1.9]">
                 Các cột bắt buộc: <b>username, fullName, email, role</b>. Cột <b>status</b> có thể
                 bỏ trống (mặc định active).
               </p>
-              <p>
+              <p className="mt-3 leading-[1.9]">
                 Vai trò: ADMIN, STUDENT_AFFAIRS_ADMIN, CLUB_MANAGER, CLUB_MEMBER. Trạng thái: active
                 hoặc locked.
               </p>
-              <p>
+              <p className="mt-3 leading-[1.9]">
                 Đọc trang tính TaiKhoan, hoặc trang đầu tiên nếu không có. Dòng 1 là tên cột; mỗi
                 tài khoản là một dòng. Không dùng công thức.
               </p>
@@ -691,17 +804,20 @@ function ImportDialog({ onClose }) {
           </>
         ) : (
           <>
-            <div className="file-summary">
-              <span className="excel-icon">
+            <div className="flex items-center gap-3 p-[15px] sm:p-[11px] flex-wrap border border-border rounded-md">
+              <span className="w-[35px] h-[35px] grid place-items-center rounded-xl bg-[#e6f0e9] text-[#66a07b] shrink-0">
                 <FileSpreadsheet size={24} />
               </span>
               <div>
-                <strong>{file.name}</strong>
-                <small>
+                <strong className="text-[12px] sm:text-[11px] font-medium text-[#7a899c] break-all">
+                  {file.name}
+                </strong>
+                <small className="block text-[11px] sm:text-[10px] text-[#a2b0bf] mt-[6px]">
                   {rows.length} dòng dữ liệu · {(file.size / 1024).toFixed(1)} KB
                 </small>
               </div>
               <Button
+                className="ml-auto sm:ml-[47px] sm:text-[10px]"
                 disabled={busy}
                 onClick={() => {
                   setRows(null);
@@ -711,45 +827,67 @@ function ImportDialog({ onClose }) {
                 Chọn file khác
               </Button>
             </div>
-            <div className="import-counts">
-              <span>
+            <div className="flex gap-[30px] sm:gap-4 pt-5 text-[#78a489] text-[11px]">
+              <span className="flex items-center gap-[7px]">
                 <CheckCircle2 size={17} />
-                <b>{good.length}</b> dòng hợp lệ
+                <b className="font-semibold">{good.length}</b> dòng hợp lệ
               </span>
-              <span className={bad.length ? 'has-errors' : ''}>
+              <span
+                className={`flex items-center gap-[7px] ${bad.length ? 'text-[#d09a69]' : ''}`}
+              >
                 <CircleAlert size={17} />
-                <b>{bad.length}</b> dòng cần sửa
+                <b className="font-semibold">{bad.length}</b> dòng cần sửa
               </span>
             </div>
             {bad.length > 0 && (
-              <div className="warning-box">
+              <div className="p-[14px] sm:p-3 border border-[#f2e5ca] bg-[#fff8ec] text-[#b49a71] rounded-[7px] text-[11px] leading-[1.8] mt-[17px]">
                 Chỉ các dòng hợp lệ sẽ được thêm. {bad.length} dòng lỗi được bỏ qua và có thể tải về
                 để chỉnh sửa.
               </div>
             )}
-            <div className="table-scroll preview-table">
-              <table>
+            <div className="overflow-x-auto border border-border rounded-[7px] mt-5">
+              <table className="w-full border-collapse text-left whitespace-nowrap">
                 <thead>
                   <tr>
-                    <th>DÒNG</th>
-                    <th>TÀI KHOẢN</th>
-                    <th>VAI TRÒ</th>
-                    <th>KẾT QUẢ KIỂM TRA</th>
+                    <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-[13px] py-[11px] border-y border-[#f0f2f5]">
+                      DÒNG
+                    </th>
+                    <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-[13px] py-[11px] border-y border-[#f0f2f5]">
+                      TÀI KHOẢN
+                    </th>
+                    <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-[13px] py-[11px] border-y border-[#f0f2f5]">
+                      VAI TRÒ
+                    </th>
+                    <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-[13px] py-[11px] border-y border-[#f0f2f5]">
+                      KẾT QUẢ KIỂM TRA
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.slice((page - 1) * 6, page * 6).map((r) => (
                     <tr key={r.row}>
-                      <td>{r.row}</td>
-                      <td>
-                        <strong>{r.fullName || 'Chưa có tên'}</strong>
-                        <small className="cell-sub">{r.email || 'Chưa có email'}</small>
-                        <small className="cell-sub">{r.username}</small>
+                      <td className="p-[13px] text-[11px] align-top border-b border-[#f0f2f5] last:border-b-0">
+                        {r.row}
                       </td>
-                      <td>{ROLES[r.role] || r.role || '—'}</td>
-                      <td>
+                      <td className="p-[13px] text-[11px] align-top border-b border-[#f0f2f5] last:border-b-0">
+                        <strong className="font-medium text-[#4a5462]">
+                          {r.fullName || 'Chưa có tên'}
+                        </strong>
+                        <small className="block text-[#717d8d] text-[10px] mt-[5px] leading-[1.6]">
+                          {r.email || 'Chưa có email'}
+                        </small>
+                        <small className="block text-[#717d8d] text-[10px] mt-[5px] leading-[1.6]">
+                          {r.username}
+                        </small>
+                      </td>
+                      <td className="p-[13px] text-[11px] align-top border-b border-[#f0f2f5] last:border-b-0">
+                        {ROLES[r.role] || r.role || '—'}
+                      </td>
+                      <td className="p-[13px] text-[11px] align-top border-b border-[#f0f2f5] last:border-b-0">
                         {r.errors.length ? (
-                          <span className="inline-error">{r.errors.join(' · ')}</span>
+                          <span className="text-[#c18578] text-[11px] whitespace-normal block min-w-[150px] max-w-[260px] leading-[1.7]">
+                            {r.errors.join(' · ')}
+                          </span>
                         ) : (
                           <Badge tone="green">
                             <Check size={12} />
@@ -766,9 +904,9 @@ function ImportDialog({ onClose }) {
           </>
         )}
       </div>
-      <div className="modal-footer">
+      <div className="sticky bottom-0 z-[1] border-t border-border px-[26px] py-[17px] flex flex-wrap gap-2.5 justify-end items-center bg-[#fdfdfe] rounded-b-[14px] sm:px-[18px] sm:py-[15px] sm:gap-[9px]">
         {bad.length > 0 && (
-          <Button className="push-left" icon={Download} onClick={() => run(downloadErrors)}>
+          <Button className="mr-auto" icon={Download} onClick={() => run(downloadErrors)}>
             Tải {bad.length} dòng lỗi
           </Button>
         )}
