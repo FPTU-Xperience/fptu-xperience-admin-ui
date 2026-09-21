@@ -66,8 +66,8 @@ export default function Login() {
     clearError()
 
     try {
-      await googleLogin(response.credential)
-      navigateAfterLogin()
+      const userData = await googleLogin(response.credential)
+      navigateAfterLogin(userData)
     } catch (err) {
       setLocalError(err.message || 'Đăng nhập Google thất bại.')
     }
@@ -84,16 +84,25 @@ export default function Login() {
     }
 
     try {
-      await devLogin(devEmail.trim())
-      navigateAfterLogin()
+      const userData = await devLogin(devEmail.trim())
+      navigateAfterLogin(userData)
     } catch (err) {
       setLocalError(err.message || 'Dev login thất bại.')
     }
   }
 
-  const navigateAfterLogin = () => {
-    navigate('/ctsv/overview')
-    window.location.reload()
+  const navigateAfterLogin = (userData) => {
+    const roles = userData?.roles || []
+
+    // Check for admin or system admin role
+    const isAdminRole = roles.includes('SYSTEM_ADMIN') || roles.includes('ADMIN')
+
+    // Navigate to appropriate page - HashRouter handles the hash automatically
+    if (isAdminRole) {
+      navigate('/admin/accounts', { replace: true })
+    } else {
+      navigate('/ctsv/overview', { replace: true })
+    }
   }
 
   const displayError = localError || error

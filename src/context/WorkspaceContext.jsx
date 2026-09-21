@@ -54,6 +54,32 @@ function readState() {
 export function WorkspaceProvider({ children }) {
   const [state, setState] = useState(readState);
   const stateRef = useRef(state);
+
+  // Initialize role from localStorage user (set by AuthContext after login)
+  const [role, updateRole] = useState(() => {
+    try {
+      // First check sessionStorage for manual preview role switch
+      const sessionRole = sessionStorage.getItem('fptu-preview-role');
+      if (sessionRole) {
+        return sessionRole === 'ADMIN' ? 'ADMIN' : 'STUDENT_AFFAIRS_ADMIN';
+      }
+
+      // Then check localStorage for user role from login
+      const storedUser = localStorage.getItem('fptu-auth-user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        const roles = user?.roles || [];
+        if (roles.includes('SYSTEM_ADMIN') || roles.includes('ADMIN')) {
+          return 'ADMIN';
+        }
+        if (roles.includes('STUDENT_AFFAIRS_ADMIN')) {
+          return 'STUDENT_AFFAIRS_ADMIN';
+        }
+      }
+    } catch { /* ignore */ }
+    return 'STUDENT_AFFAIRS_ADMIN';
+  });
+
   useEffect(() => {
     let ignore = false;
 
@@ -98,15 +124,34 @@ export function WorkspaceProvider({ children }) {
     };
   }, []);
 
-  const [role, updateRole] = useState(() => {
-    try {
-      return sessionStorage.getItem('fptu-preview-role') === 'ADMIN'
-        ? 'ADMIN'
-        : 'STUDENT_AFFAIRS_ADMIN';
-    } catch {
-      return 'STUDENT_AFFAIRS_ADMIN';
-    }
-  });
+  // Listen for user changes and sync role
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'fptu-auth-user') {
+        try {
+          if (e.newValue) {
+            const user = JSON.parse(e.newValue);
+            const roles = user?.roles || [];
+            let newRole = 'STUDENT_AFFAIRS_ADMIN';
+
+            if (roles.includes('SYSTEM_ADMIN') || roles.includes('ADMIN')) {
+              newRole = 'ADMIN';
+            } else if (roles.includes('STUDENT_AFFAIRS_ADMIN')) {
+              newRole = 'STUDENT_AFFAIRS_ADMIN';
+            }
+
+            // Only update if user didn't manually switch role (sessionStorage takes precedence)
+            if (!sessionStorage.getItem('fptu-preview-role')) {
+              updateRole(newRole);
+            }
+          }
+        } catch { /* ignore */ }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   function setRole(next) {
     try {
       sessionStorage.setItem('fptu-preview-role', next);

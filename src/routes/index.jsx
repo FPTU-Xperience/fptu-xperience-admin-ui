@@ -17,11 +17,16 @@ import Login from '../pages/Login.jsx'
 
 // Protected route wrapper that checks for admin role
 function AdminRoute({ children }) {
-  const { user, isAdminUser } = useAuth()
+  const { user } = useAuth()
+  const roles = user?.roles || []
+  const isAdmin = roles.includes('SYSTEM_ADMIN') || roles.includes('ADMIN')
 
   // Only allow admin users for admin routes
-  if (!isAdminUser(user)) {
-    return <Navigate to="/ctsv/overview" replace />
+  if (!isAdmin) {
+    if (roles.includes('STUDENT_AFFAIRS_ADMIN')) {
+      return <Navigate to="/ctsv/overview" replace />
+    }
+    return <Navigate to="/login" replace />
   }
 
   return children
@@ -29,13 +34,15 @@ function AdminRoute({ children }) {
 
 // Protected route for CTSV pages
 function CTSVRoute({ children }) {
-  const { user, isAdminUser } = useAuth()
+  const { user } = useAuth()
+  const roles = user?.roles || []
+  const isCTSV = roles.includes('STUDENT_AFFAIRS_ADMIN')
 
   // Only allow admin/CTSV users for CTSV routes
-  if (!isAdminUser(user)) {
+  if (!isCTSV) {
     // For now, redirect to login if not authenticated
     // In the future, could show a "not authorized" page
-    return <Navigate to="/ctsv/overview" replace />
+    return <Navigate to="/login" replace />
   }
 
   return children
@@ -45,10 +52,28 @@ export default function AppRoutes() {
   const { user } = useAuth()
   const { role } = useWorkspace()
 
-  // Determine if user is admin based on session role switcher or actual role
-  // For now, use the workspace role switcher for preview
+  // Determine if user is admin based on:
+  // 1. Session role switcher (for preview mode)
+  // 2. User's actual role from login
+  const userRoles = user?.roles || []
+  const isUserAdmin = userRoles.includes('SYSTEM_ADMIN') || userRoles.includes('ADMIN')
+  const isUserCTSV = userRoles.includes('STUDENT_AFFAIRS_ADMIN')
+
+  // Use workspace role (which includes session storage for preview mode)
   const previewRole = role
   const nav = navigationFor(previewRole === 'ADMIN')
+
+  // Determine default redirect based on user role
+  const getDefaultRedirect = () => {
+    if (isUserAdmin) {
+      return '/admin/accounts'
+    }
+    if (isUserCTSV) {
+      return '/ctsv/overview'
+    }
+    // Fallback to workspace role
+    return nav[0]?.path || '/ctsv/overview'
+  }
 
   return (
     <Routes>
@@ -160,8 +185,8 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Default redirect */}
-      <Route path="*" element={<Navigate to={nav[0]?.path || '/ctsv/overview'} replace />} />
+      {/* Default redirect based on user role */}
+      <Route path="*" element={<Navigate to={getDefaultRedirect()} replace />} />
     </Routes>
   )
 }

@@ -16,6 +16,8 @@ import { ROLE_LABELS } from '../context/AuthContext.jsx'
 export default function Sidebar({ nav, mobile, onOpenHelp }) {
   const { user, logout } = useAuth()
   const { state, role, setRole } = useWorkspace()
+
+  // Determine admin status based on role (sessionStorage preview takes precedence, else use user role)
   const admin = role === 'ADMIN'
   const navigate = useNavigate()
   const pending = state.applications.filter((a) => a.status === 'pending').length
@@ -26,10 +28,14 @@ export default function Sidebar({ nav, mobile, onOpenHelp }) {
     navigate(value === 'ADMIN' ? '/admin/accounts' : '/ctsv/overview')
   }
 
-  function handleLogout() {
-    logout()
-    navigate('/login')
-    window.location.reload()
+  async function handleLogout() {
+    // Clear sessionStorage role switcher on logout
+    try {
+      sessionStorage.removeItem('fptu-preview-role')
+    } catch { /* ignore */ }
+    // Wait for logout to complete (clears user state)
+    await logout()
+    // Navigate after state is cleared - App.jsx will render Login
   }
 
   // Get display name for user
@@ -57,7 +63,7 @@ export default function Sidebar({ nav, mobile, onOpenHelp }) {
       </NavLink>
 
       {/* Role switcher for preview (dev only) */}
-      <div className="workspace-switch">
+      {/* <div className="workspace-switch">
         <span className="workspace-icon">
           {admin ? <ShieldCheck size={19} /> : <GraduationCap size={21} />}
         </span>
@@ -73,7 +79,7 @@ export default function Sidebar({ nav, mobile, onOpenHelp }) {
           </select>
         </div>
         <ChevronDown size={14} />
-      </div>
+      </div> */}
 
       <nav aria-label="Điều hướng chính">
         {nav.map(({ path, label, icon: Icon, group }) => (

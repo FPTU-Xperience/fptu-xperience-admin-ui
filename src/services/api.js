@@ -11,6 +11,331 @@ const BASE_URL = (
 ).replace(/\/+$/, '');
 
 // =============================================================================
+// MOCK DATA
+// =============================================================================
+
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true' || !import.meta.env.VITE_API_BASE_URL;
+
+const mockUsers = [
+  {
+    id: 'mock-sysadmin-001',
+    userId: 'mock-sysadmin-001',
+    username: 'systemadmin',
+    studentCode: 'SA001',
+    fullName: 'Quản trị hệ thống',
+    name: 'Quản trị hệ thống',
+    email: 'systemadmin@club.local',
+    roles: ['SYSTEM_ADMIN'],
+    isLocked: false,
+    createdAt: '2024-01-01T00:00:00Z',
+    clubIds: [],
+  },
+  {
+    id: 'mock-ctsv-001',
+    userId: 'mock-ctsv-001',
+    username: 'studentaffairs',
+    studentCode: 'CTSV001',
+    fullName: 'Cán bộ công tác sinh viên',
+    name: 'Cán bộ công tác sinh viên',
+    email: 'studentaffairs@club.local',
+    roles: ['STUDENT_AFFAIRS_ADMIN'],
+    isLocked: false,
+    createdAt: '2024-01-01T00:00:00Z',
+    clubIds: [],
+  },
+  {
+    id: 'user-001',
+    userId: 'user-001',
+    username: 'nguyen.van.a',
+    studentCode: 'DE170001',
+    fullName: 'Nguyễn Văn A',
+    name: 'Nguyễn Văn A',
+    email: 'nguyen.van.a@student.fpt.edu.vn',
+    roles: ['CLUB_MANAGER'],
+    isLocked: false,
+    createdAt: '2024-09-01T00:00:00Z',
+    clubIds: ['club-001'],
+  },
+  {
+    id: 'user-002',
+    userId: 'user-002',
+    username: 'tran.thi.b',
+    studentCode: 'DE170002',
+    fullName: 'Trần Thị B',
+    name: 'Trần Thị B',
+    email: 'tran.thi.b@student.fpt.edu.vn',
+    roles: ['CLUB_MEMBER'],
+    isLocked: false,
+    createdAt: '2024-09-15T00:00:00Z',
+    clubIds: ['club-001', 'club-002'],
+  },
+];
+
+const mockClubs = [
+  {
+    id: 'club-001',
+    name: 'FPTU Music Club',
+    type: 'art',
+    description: 'Câu lạc bộ âm nhạc của trường ĐH FPT',
+    status: 'active',
+    foundedAt: '2020-09-01T00:00:00Z',
+    memberCount: 45,
+    managerId: 'user-001',
+  },
+  {
+    id: 'club-002',
+    name: 'FPTU Tech Club',
+    type: 'technology',
+    description: 'Câu lạc bộ công nghệ thông tin',
+    status: 'active',
+    foundedAt: '2021-03-15T00:00:00Z',
+    memberCount: 78,
+    managerId: 'user-003',
+  },
+  {
+    id: 'club-003',
+    name: 'FPTU Sports Club',
+    type: 'sports',
+    description: 'Câu lạc bộ thể thao',
+    status: 'active',
+    foundedAt: '2019-01-10T00:00:00Z',
+    memberCount: 120,
+    managerId: 'user-004',
+  },
+];
+
+const mockActivities = [
+  {
+    id: 'act-001',
+    clubId: 'club-001',
+    name: 'Music Festival 2026',
+    description: 'Lễ hội âm nhạc mùa xuân',
+    startAt: '2026-04-15T18:00:00Z',
+    endAt: '2026-04-15T22:00:00Z',
+    status: 'upcoming',
+    participantCount: 200,
+  },
+  {
+    id: 'act-002',
+    clubId: 'club-002',
+    name: 'Hackathon 2026',
+    description: 'Cuộc thi lập trình Hackathon',
+    startAt: '2026-05-01T08:00:00Z',
+    endAt: '2026-05-03T18:00:00Z',
+    status: 'upcoming',
+    participantCount: 150,
+  },
+];
+
+const mockReports = [
+  {
+    id: 'report-001',
+    clubId: 'club-001',
+    title: 'Báo cáo hoạt động tháng 1/2026',
+    status: 'pending',
+    submittedAt: '2026-02-01T10:00:00Z',
+    period: '2026-01',
+  },
+  {
+    id: 'report-002',
+    clubId: 'club-002',
+    title: 'Báo cáo hoạt động tháng 1/2026',
+    status: 'approved',
+    submittedAt: '2026-02-01T14:00:00Z',
+    reviewedAt: '2026-02-05T09:00:00Z',
+    period: '2026-01',
+  },
+];
+
+const mockRoles = [
+  { id: 'role-001', name: 'SYSTEM_ADMIN', displayName: 'Quản trị hệ thống' },
+  { id: 'role-002', name: 'ADMIN', displayName: 'Quản trị viên' },
+  { id: 'role-003', name: 'STUDENT_AFFAIRS_ADMIN', displayName: 'Công tác sinh viên' },
+  { id: 'role-004', name: 'CLUB_MANAGER', displayName: 'Chủ nhiệm CLB' },
+  { id: 'role-005', name: 'TREASURER', displayName: 'Thủ quỹ' },
+  { id: 'role-006', name: 'CLUB_MEMBER', displayName: 'Thành viên CLB' },
+];
+
+const mockNotifications = [
+  {
+    id: 'notif-001',
+    type: 'info',
+    title: 'Báo cáo mới được gửi',
+    message: 'FPTU Music Club đã nộp báo cáo hoạt động tháng 1/2026',
+    read: false,
+    createdAt: '2026-02-01T10:00:00Z',
+  },
+  {
+    id: 'notif-002',
+    type: 'warning',
+    title: 'Cảnh báo bất thường XP',
+    message: 'Phát hiện bất thường điểm XP của sinh viên DE170001',
+    read: false,
+    createdAt: '2026-02-02T08:30:00Z',
+  },
+];
+
+// Mock API handler
+function mockRequest(path, options = {}) {
+  const { method = 'GET', body } = options;
+
+  // Parse path and params
+  const pathParts = path.split('/').filter(Boolean);
+  const resource = pathParts[0];
+  const id = pathParts[1];
+
+  // Simulate network delay
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      try {
+        let response = null;
+        let status = 200;
+
+        // Auth endpoints
+        if (path.includes('/api/auth/')) {
+          if (path.includes('/dev-login') && method === 'POST') {
+            const email = body?.email || '';
+            const emailLower = email.toLowerCase();
+            let user = null;
+            let token = 'mock-token-' + Date.now();
+
+            if (emailLower.includes('systemadmin') || (emailLower.includes('admin') && emailLower.includes('.local'))) {
+              user = { ...mockUsers[0], email }; // SYSTEM_ADMIN
+            } else if (emailLower.includes('studentaffairs') || emailLower.includes('ctsv') || emailLower.includes('sinhvien') || emailLower.includes('affairs')) {
+              user = { ...mockUsers[1], email }; // STUDENT_AFFAIRS_ADMIN
+            } else {
+              status = 403;
+              response = { message: 'Tài khoản không có quyền truy cập hệ thống.' };
+            }
+
+            if (status === 200) {
+              // Store email for mock me endpoint
+              setMockUserEmail(email);
+              response = {
+                token,
+                refreshToken: 'mock-refresh-' + Date.now(),
+                user,
+              };
+            }
+          } else if (path.includes('/logout')) {
+            response = { success: true };
+          } else if (path.includes('/refresh') && method === 'POST') {
+            response = {
+              token: 'mock-token-' + Date.now(),
+              refreshToken: 'mock-refresh-' + Date.now(),
+            };
+          }
+        }
+        // Me endpoints - determine user based on stored email
+        else if (path.includes('/api/v1/me') || path.includes('/admin/me') || path.includes('/student-affairs/me')) {
+          const token = getAccessToken();
+          const storedEmail = getMockUserEmail();
+
+          if (token && token.startsWith('mock-token-')) {
+            // Determine user based on email
+            const email = (storedEmail || '').toLowerCase();
+            if (email.includes('systemadmin') || (email.includes('admin') && email.includes('.local'))) {
+              response = { ...mockUsers[0], email: storedEmail };
+            } else if (email.includes('studentaffairs') || email.includes('ctsv') || email.includes('sinhvien') || email.includes('affairs')) {
+              response = { ...mockUsers[1], email: storedEmail };
+            } else {
+              response = { ...mockUsers[0], email: storedEmail };
+            }
+          } else {
+            status = 401;
+            response = { message: 'Unauthorized' };
+          }
+        }
+        // Users endpoints
+        else if (resource === 'users' || (resource === 'api' && pathParts[1] === 'users')) {
+          if (path.includes('/roles')) {
+            response = mockRoles;
+          } else if (id) {
+            response = mockUsers.find(u => u.id === id || u.userId === id) || mockUsers[0];
+          } else {
+            response = { items: mockUsers, total: mockUsers.length };
+          }
+        }
+        // Clubs endpoints
+        else if (resource === 'clubs' || (resource === 'api' && pathParts[1] === 'clubs')) {
+          if (id) {
+            response = mockClubs.find(c => c.id === id) || mockClubs[0];
+          } else {
+            response = { items: mockClubs, total: mockClubs.length };
+          }
+        }
+        // Activities endpoints
+        else if (resource === 'activities' || (resource === 'api' && pathParts[1] === 'activities')) {
+          if (id) {
+            response = mockActivities.find(a => a.id === id) || mockActivities[0];
+          } else {
+            response = { items: mockActivities, total: mockActivities.length };
+          }
+        }
+        // Reports endpoints
+        else if (resource === 'reports' || (resource === 'api' && pathParts[1] === 'reports')) {
+          if (id) {
+            response = mockReports.find(r => r.id === id) || mockReports[0];
+          } else {
+            response = { items: mockReports, total: mockReports.length };
+          }
+        }
+        // Notifications
+        else if (resource === 'notifications' || (resource === 'api' && pathParts[1] === 'notifications')) {
+          if (id) {
+            response = mockNotifications.find(n => n.id === id) || mockNotifications[0];
+          } else {
+            response = { items: mockNotifications, total: mockNotifications.length };
+          }
+        }
+        // Health check
+        else if (path === '/' || path === '/health') {
+          response = { status: 'ok', timestamp: new Date().toISOString() };
+        }
+        // KPI
+        else if (path.includes('/kpis/')) {
+          response = {
+            leaderboard: [
+              { clubId: 'club-001', name: 'FPTU Music Club', score: 95, rank: 1 },
+              { clubId: 'club-002', name: 'FPTU Tech Club', score: 88, rank: 2 },
+              { clubId: 'club-003', name: 'FPTU Sports Club', score: 82, rank: 3 },
+            ],
+            rules: [
+              { id: 'rule-001', name: 'Chấm điểm định kỳ', weight: 0.3 },
+              { id: 'rule-002', name: 'Hoạt động cộng đồng', weight: 0.25 },
+              { id: 'rule-003', name: 'Báo cáo đúng hạn', weight: 0.2 },
+              { id: 'rule-004', name: 'Thành viên tích cực', weight: 0.15 },
+              { id: 'rule-005', name: 'Sáng tạo nội dung', weight: 0.1 },
+            ],
+          };
+        }
+        // Deadlines
+        else if (path.includes('/deadlines')) {
+          response = [
+            { id: 'dl-001', period: '2026-01', dueDate: '2026-02-05T23:59:59Z', type: 'monthly' },
+            { id: 'dl-002', period: '2026-02', dueDate: '2026-03-05T23:59:59Z', type: 'monthly' },
+          ];
+        }
+        // Default response
+        else {
+          response = { success: true, path, method };
+        }
+
+        if (status !== 200) {
+          const err = new Error(response?.message || `API Error ${status}`);
+          err.status = status;
+          reject(err);
+        } else {
+          resolve(response);
+        }
+      } catch (e) {
+        reject(e);
+      }
+    }, 100 + Math.random() * 200); // 100-300ms delay
+  });
+}
+
+// =============================================================================
 // TOKEN MANAGEMENT
 // =============================================================================
 
@@ -25,6 +350,26 @@ function getAccessToken() {
 function getRefreshToken() {
   try {
     return localStorage.getItem('refreshToken')
+  } catch {
+    return null
+  }
+}
+
+function setMockUserEmail(email) {
+  try {
+    if (email) {
+      localStorage.setItem('mockUserEmail', email)
+    } else {
+      localStorage.removeItem('mockUserEmail')
+    }
+  } catch {
+    // Ignore localStorage issues
+  }
+}
+
+function getMockUserEmail() {
+  try {
+    return localStorage.getItem('mockUserEmail')
   } catch {
     return null
   }
@@ -166,41 +511,50 @@ async function request(path, options = {}) {
     finalHeaders.set('Content-Type', 'application/json')
   }
 
-  const response = await fetch(buildUrl(path, params), {
-    method,
-    headers: finalHeaders,
-    body:
-      body === undefined || body === null
-        ? undefined
-        : body instanceof FormData
-          ? body
-          : JSON.stringify(body),
-  })
-
-  // Handle empty responses
-  const text = await response.text()
-  let data = null
   try {
-    data = text ? JSON.parse(text) : null
-  } catch {
-    data = text
-  }
+    const response = await fetch(buildUrl(path, params), {
+      method,
+      headers: finalHeaders,
+      body:
+        body === undefined || body === null
+          ? undefined
+          : body instanceof FormData
+            ? body
+            : JSON.stringify(body),
+    })
 
-  if (!response.ok) {
-    let message = ''
-    if (data && typeof data === 'object') {
-      message = data.message || data.error || data.detail || JSON.stringify(data)
-    } else {
-      message = text || `API ${response.status}`
+    // Handle empty responses
+    const text = await response.text()
+    let data = null
+    try {
+      data = text ? JSON.parse(text) : null
+    } catch {
+      data = text
     }
 
-    // Create error with status for handling in components
-    const err = new Error(message)
-    err.status = response.status
-    throw err
-  }
+    if (!response.ok) {
+      let message = ''
+      if (data && typeof data === 'object') {
+        message = data.message || data.error || data.detail || JSON.stringify(data)
+      } else {
+        message = text || `API ${response.status}`
+      }
 
-  return data
+      // Create error with status for handling in components
+      const err = new Error(message)
+      err.status = response.status
+      throw err
+    }
+
+    return data
+  } catch (err) {
+    // If network error and mock mode is enabled, use mock data
+    if (USE_MOCK && (err.name === 'TypeError' || err.message.includes('fetch'))) {
+      console.warn(`[Mock API] Falling back to mock for: ${method} ${path}`);
+      return mockRequest(path, options);
+    }
+    throw err;
+  }
 }
 
 // =============================================================================
@@ -241,6 +595,7 @@ export const api = {
     try {
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
+      localStorage.removeItem('mockUserEmail')
     } catch {
       // Ignore localStorage issues
     }
@@ -248,6 +603,8 @@ export const api = {
 
   getAccessToken,
   getRefreshToken,
+  setMockUserEmail,
+  getMockUserEmail,
 
   // ---------------------------------------------------------------------------
   // File Download Helpers
