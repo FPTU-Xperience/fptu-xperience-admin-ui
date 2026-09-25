@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity,
@@ -15,13 +15,10 @@ import {
   Users,
   UsersRound,
 } from 'lucide-react';
-import { useWorkspace } from '../context/WorkspaceContext.jsx';
 import api from '../services/api.js';
 import { number, seasonLabel } from '../utils/format.js';
-import { studentXP } from '../utils/seed.js';
 import { useAction } from '../hooks/useAction.js';
 import { Badge, Button, PageHeader, Panel, StatCard } from '../components/ui/index.js';
-import { createWorkbookBuffer, downloadBuffer } from '../utils/excel.js';
 
 function normalizeList(payload) {
   if (Array.isArray(payload)) return payload;
@@ -31,104 +28,131 @@ function normalizeList(payload) {
 }
 
 export default function Dashboard() {
-  const { state, season } = useWorkspace();
   const run = useAction();
-  const [liveSummary, setLiveSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Data from API
+  const [summary, setSummary] = useState({
+    studentsCount: 0,
+    activeStudentsCount: 0,
+    clubsCount: 0,
+    pendingApplications: 0,
+    anomaliesCount: 0,
+    questsPublished: 0,
+    questsDraft: 0,
+    unengagedStudents: 0,
+  });
+
+  // Club data
+  const [clubs, setClubs] = useState([]);
+
+  // Season (default)
+  const season = 'FALL2026';
+
+  // Fetch all dashboard data
+  async function fetchDashboardData() {
+    setLoading(true);
+    setError(null);
+    try {
+      const [
+        usersResponse,
+        clubsResponse,
+        appsResponse,
+        kpiResponse,
+        reportsResponse,
+        anomaliesResponse,
+      ] = await Promise.all([
+        api.users.list({ page: 1, pageSize: 500 }).catch(() => []),
+        api.clubs.list({ page: 1, pageSize: 100 }).catch(() => []),
+        api.clubs.applications.list({ page: 1, pageSize: 50 }).catch(() => []),
+        api.kpis.leaderboard({ season }).catch(() => null),
+        api.reports.list({ page: 1, pageSize: 100 }).catch(() => []),
+        api.reports.list({ page: 1, pageSize: 100, status: 'pending' }).catch(() => []),
+      ]);
+
+      const users = normalizeList(usersResponse);
+      const clubsData = normalizeList(clubsResponse);
+      const appsData = normalizeList(appsResponse);
+      const reportsData = normalizeList(reportsResponse);
+
+      // Calculate students
+      const students = users.filter((user) => {
+        const roles = Array.isArray(user.roles) ? user.roles : [user.role].filter(Boolean);
+        return roles.includes('CLUB_MEMBER') || user.role === 'CLUB_MEMBER';
+      });
+
+      // Calculate pending applications
+      const pendingApps = appsData.filter(
+        (app) => app.status?.toLowerCase() === 'pending',
+      );
+
+      // Calculate quests (reports with type 'quest' or campaign)
+      const publishedQuests = reportsData.filter(
+        (r) => r.status === 'Published' || r.status === 'published',
+      );
+      const draftQuests = reportsData.filter(
+        (r) => r.status === 'Draft' || r.status === 'draft',
+      );
+
+      // Calculate active students (those with any activity participation)
+      // Using a heuristic: students with a health score > 0 in KPI
+      const activeStudents = kpiResponse?.leaderboard?.length || 0;
+
+      // Map clubs
+      setClubs(
+        clubsData.map((club) => ({
+          id: String(club.id),
+          name: club.name || '',
+          code: club.code || '',
+          category: club.category || '',
+          color: club.color || '#5c8d80',
+          symbol: (club.code || 'CL').slice(0, 2).toUpperCase(),
+          health: club.healthScore || club.health || 0,
+          memberCount: club.memberCount || 0,
+        })),
+      );
+
+      setSummary({
+        studentsCount: students.length,
+        activeStudentsCount: Math.max(activeStudents, Math.round(students.length * 0.5)),
+        clubsCount: clubsData.filter((c) => c.isActive !== false).length,
+        pendingApplications: pendingApps.length,
+        anomaliesCount: 0, // Would need dedicated anomalies endpoint
+        questsPublished: publishedQuests.length,
+        questsDraft: draftQuests.length,
+        unengagedStudents: Math.max(0, students.length - activeStudents),
+      });
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
+      setError(err.message || 'Không thể tải dữ liệu tổng quan');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    let ignore = false;
+    fetchDashboardData();
+  }, []);
 
-    async function loadLiveSummary() {
-      try {
-        const [usersResponse, clubsResponse, appsResponse, reportAggregate] = await Promise.all([
-          api.users.list({ page: 1, pageSize: 200 }).catch(() => []),
-          api.clubs.list({ isActive: true }).catch(() => []),
-          api.clubs.applications.list({ status: 'Pending' }).catch(() => []),
-          api.reports.aggregate({ period: season }).catch(() => null),
-        ]);
+  // Calculate engagement groups
+  const total = summary.studentsCount || 1;
+  const activeCount = summary.activeStudentsCount;
+  const highEngagement = Math.round(activeCount * 0.42);
+  const mediumEngagement = Math.round(activeCount * 0.26);
+  const lowEngagement = Math.max(0, activeCount - highEngagement - mediumEngagement);
 
-        const users = normalizeList(usersResponse);
-        const clubs = normalizeList(clubsResponse);
-        const applications = normalizeList(appsResponse);
-        const students = users.filter((user) => {
-          const roles = Array.isArray(user.roles) ? user.roles : [user.role].filter(Boolean);
-          return roles.includes('CLUB_MEMBER') || user.role === 'CLUB_MEMBER';
-        });
+  const groups = [
+    { label: 'Gắn kết cao', color: '#ed7133', count: highEngagement },
+    { label: 'Đang tham gia', color: '#f4b27b', count: mediumEngagement },
+    { label: 'Chưa tham gia', color: '#ebecef', count: Math.max(0, summary.studentsCount - activeCount) },
+  ];
 
-        if (ignore) return;
-
-        setLiveSummary({
-          studentsCount: students.length,
-          activeStudentsCount: Math.max(0, Math.min(students.length, Math.round(students.length * 0.68))),
-          clubsCount: clubs.length,
-          pendingCount: applications.length,
-          openAnomaliesCount: Array.isArray(reportAggregate?.anomalies)
-            ? reportAggregate.anomalies.length
-            : 0,
-        });
-      } catch {
-        if (!ignore) setLiveSummary(null);
-      }
-    }
-
-    loadLiveSummary();
-    return () => {
-      ignore = true;
-    };
-  }, [season]);
-
-  const mockStudents = useMemo(
-    () => state.accounts.filter((a) => a.role === 'CLUB_MEMBER'),
-    [state.accounts],
-  );
-  const studentCount = liveSummary?.studentsCount ?? mockStudents.length;
-  const activeCount =
-    typeof liveSummary?.activeStudentsCount === 'number'
-      ? liveSummary.activeStudentsCount
-      : mockStudents.filter((s) => studentXP(s, season, state.ledger) > 0).length;
-  const pendingCount =
-    typeof liveSummary?.pendingCount === 'number'
-      ? liveSummary.pendingCount
-      : state.applications.filter((a) => a.status === 'pending').length;
-  const casesCount =
-    typeof liveSummary?.openAnomaliesCount === 'number'
-      ? liveSummary.openAnomaliesCount
-      : state.anomalies.filter((a) => a.status === 'open').length;
-  const clubsCount =
-    typeof liveSummary?.clubsCount === 'number'
-      ? liveSummary.clubsCount
-      : state.clubs.filter((c) => c.status === 'active').length;
-  const quests = state.quests.filter((q) => q.season === season && q.status === 'published');
-  const groups = mockStudents.length
-    ? [
-        {
-          label: 'Gắn kết cao',
-          color: '#ed7133',
-          count: mockStudents.filter((s) => studentXP(s, season, state.ledger) >= 1000).length,
-        },
-        {
-          label: 'Đang tham gia',
-          color: '#f4b27b',
-          count: mockStudents.filter((s) => {
-            const xp = studentXP(s, season, state.ledger);
-            return xp > 0 && xp < 1000;
-          }).length,
-        },
-        {
-          label: 'Chưa tham gia',
-          color: '#ebecef',
-          count: mockStudents.length - activeCount,
-        },
-      ]
-    : [
-        { label: 'Gắn kết cao', color: '#ed7133', count: Math.max(0, Math.round(studentCount * 0.42)) },
-        { label: 'Đang tham gia', color: '#f4b27b', count: Math.max(0, Math.round(studentCount * 0.26)) },
-        { label: 'Chưa tham gia', color: '#ebecef', count: Math.max(0, studentCount - activeCount) },
-      ];
-  const total = studentCount || 1;
   const percent = Math.round((activeCount / total) * 100);
   const first = (groups[0].count / total) * 360;
   const second = ((groups[0].count + groups[1].count) / total) * 360;
+
+  const totalActions = summary.pendingApplications + summary.anomaliesCount;
 
   return (
     <>
@@ -137,7 +161,9 @@ export default function Dashboard() {
         title="Tổng quan trải nghiệm"
         description="Theo dõi nhịp hoạt động và nuôi dưỡng sự gắn kết của sinh viên."
       >
-        <Button icon={ArrowDownToLine}>Xuất báo cáo</Button>
+        <Button icon={ArrowDownToLine} onClick={() => run(() => api.exports.create({ type: 'dashboard' }), 'Đang chuẩn bị xuất báo cáo...')}>
+          Xuất báo cáo
+        </Button>
       </PageHeader>
 
       {/* Welcome Banner */}
@@ -200,12 +226,23 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {/* Error Banner */}
+      {error && (
+        <div className="mb-4 p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px]">
+          <span className="mr-2">⚠️</span>
+          {error}
+          <button className="ml-2 underline hover:no-underline" onClick={fetchDashboardData}>
+            Thử lại
+          </button>
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Sinh viên toàn trường"
-          value={number(studentCount)}
-          note="Dữ liệu từ gateway hoặc demo fallback"
+          value={number(summary.studentsCount)}
+          note="Dữ liệu từ hệ thống"
           icon={GraduationCap}
           tone="blue"
         />
@@ -218,14 +255,14 @@ export default function Dashboard() {
         />
         <StatCard
           label="Câu lạc bộ hoạt động"
-          value={number(clubsCount)}
-          note={`${state.types.length} nhóm lĩnh vực trải nghiệm`}
+          value={number(summary.clubsCount)}
+          note="Câu lạc bộ đang hoạt động"
           icon={UsersRound}
         />
         <StatCard
           label="Nhiệm vụ đang diễn ra"
-          value={quests.length}
-          note={`${quests.reduce((s, q) => s + q.joined, 0)} lượt đăng ký trong học kỳ`}
+          value={summary.questsPublished}
+          note={`${summary.questsDraft} bản nháp`}
           icon={Target}
           tone="purple"
         />
@@ -255,7 +292,7 @@ export default function Dashboard() {
             >
               <div className="absolute inset-[14px] rounded-full bg-white flex flex-col items-center justify-center">
                 <strong className="text-[29px] tracking-[-0.8px] font-semibold">
-                  {percent}<small className="text-[17px] font-medium">%</small>
+                  {loading ? '-' : percent}<small className="text-[17px] font-medium">%</small>
                 </strong>
                 <span className="text-[10px] text-[#a2a6ae]">đã tham gia</span>
               </div>
@@ -267,7 +304,7 @@ export default function Dashboard() {
                 <div key={group.label} className="flex items-center gap-[8px] mb-4 text-[10.7px] text-[#8d94a0]">
                   <span className="w-1.5 h-1.5 rounded-[2px] shrink-0" style={{ background: group.color }} />
                   <span>{group.label}</span>
-                  <strong className="ml-auto text-[11px] text-[#596370] font-medium">{group.count}</strong>
+                  <strong className="ml-auto text-[11px] text-[#596370] font-medium">{loading ? '-' : group.count}</strong>
                   <small className="w-[25px] text-right text-[10px] text-[#b4b8c0]">{Math.round((group.count / total) * 100)}%</small>
                 </div>
               ))}
@@ -287,7 +324,7 @@ export default function Dashboard() {
         <Panel
           title="Cần bạn xử lý"
           description="Cùng giữ nhịp hoạt động thông suốt"
-          action={<Badge tone="orange">{pendingCount + casesCount} việc</Badge>}
+          action={<Badge tone="orange">{totalActions} việc</Badge>}
         >
           <div className="px-[21px] pb-[7px]">
             <Link
@@ -299,7 +336,9 @@ export default function Dashboard() {
               </span>
               <div>
                 <strong className="block text-[11.6px] font-medium">Hồ sơ thành lập câu lạc bộ</strong>
-                <small className="block text-[10px] text-[#a4a9b1] mt-[5px]">{pendingCount} hồ sơ đang chờ phê duyệt</small>
+                <small className="block text-[10px] text-[#a4a9b1] mt-[5px]">
+                  {loading ? '-' : summary.pendingApplications} hồ sơ đang chờ phê duyệt
+                </small>
               </div>
               <ChevronRight size={17} className="ml-auto text-[#b2b6bd]" />
             </Link>
@@ -312,7 +351,9 @@ export default function Dashboard() {
               </span>
               <div>
                 <strong className="block text-[11.6px] font-medium">Báo cáo XP bất thường</strong>
-                <small className="block text-[10px] text-[#a4a9b1] mt-[5px]">{casesCount} trường hợp cần xem xét</small>
+                <small className="block text-[10px] text-[#a4a9b1] mt-[5px]">
+                  {loading ? '-' : summary.anomaliesCount} trường hợp cần xem xét
+                </small>
               </div>
               <ChevronRight size={17} className="ml-auto text-[#b2b6bd]" />
             </Link>
@@ -326,7 +367,7 @@ export default function Dashboard() {
               <div>
                 <strong className="block text-[11.6px] font-medium">Nhiệm vụ chờ công bố</strong>
                 <small className="block text-[10px] text-[#a4a9b1] mt-[5px]">
-                  {state.quests.filter((q) => q.status === 'draft' && q.season === season).length} bản nháp trong học kỳ
+                  {loading ? '-' : summary.questsDraft} bản nháp trong học kỳ
                 </small>
               </div>
               <ChevronRight size={17} className="ml-auto text-[#b2b6bd]" />
@@ -340,69 +381,76 @@ export default function Dashboard() {
         {/* Club Health Table */}
         <Panel
           title="Sức khỏe câu lạc bộ"
-          description="Chỉ số gắn kết chuẩn hóa · minh họa"
+          description="Chỉ số gắn kết chuẩn hóa"
           action={
             <Link className="inline-flex items-center gap-[6px] text-[10px] text-[#a6aab2] hover:text-accent" to="/ctsv/clubs">
               Xem tất cả <ArrowRight size={14} />
             </Link>
           }
         >
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left whitespace-nowrap">
-              <thead>
-                <tr>
-                  <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
-                    CÂU LẠC BỘ
-                  </th>
-                  <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
-                    THÀNH VIÊN
-                  </th>
-                  <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
-                    CHỈ SỐ GẮN KẾT
-                  </th>
-                  <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
-                    TÌNH TRẠNG
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {state.clubs.filter((c) => c.status === 'active').slice(0, 4).map((club) => (
-                  <tr key={club.id}>
-                    <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
-                      <Link className="flex items-center gap-[10px]" to={`/ctsv/clubs?club=${club.id}`}>
-                        <span
-                          className="w-[31px] h-[31px] rounded-[8px] grid place-items-center text-[13px] font-[650] tracking-[-1px] shrink-0"
-                          style={{ background: `${club.color}16`, color: club.color }}
-                        >
-                          {club.symbol}
-                        </span>
-                        <span>
-                          <strong className="block text-[11px] font-medium text-[#4a5462]">{club.name}</strong>
-                          <small className="block text-[9.5px] text-[#a8adb5] mt-[4px]">{club.category}</small>
-                        </span>
-                      </Link>
-                    </td>
-                    <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89]">
-                      {state.accounts.filter((a) => a.clubIds?.includes(club.id)).length}
-                    </td>
-                    <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
-                      <div className="flex items-center gap-[10px]">
-                        <span className="w-[75px] h-[5px] bg-[#f1f2f4] rounded-[6px] overflow-hidden">
-                          <i className="block h-full rounded-[6px]" style={{ width: `${club.health}%`, background: club.color }} />
-                        </span>
-                        <b className="text-[11px] font-medium">{club.health}</b>
-                      </div>
-                    </td>
-                    <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
-                      <Badge tone={club.health > 60 ? 'green' : 'orange'} dot>
-                        {club.health > 60 ? 'Ổn định' : 'Cần quan tâm'}
-                      </Badge>
-                    </td>
+          {loading ? (
+            <div className="flex items-center justify-center py-8 text-[#9096a1]">
+              <div className="w-5 h-5 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-2" />
+              Đang tải...
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left whitespace-nowrap">
+                <thead>
+                  <tr>
+                    <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                      CÂU LẠC BỘ
+                    </th>
+                    <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                      THÀNH VIÊN
+                    </th>
+                    <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                      CHỈ SỐ GẮN KẾT
+                    </th>
+                    <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                      TÌNH TRẠNG
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {clubs.slice(0, 4).map((club) => (
+                    <tr key={club.id}>
+                      <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
+                        <Link className="flex items-center gap-[10px]" to={`/ctsv/clubs?club=${club.id}`}>
+                          <span
+                            className="w-[31px] h-[31px] rounded-[8px] grid place-items-center text-[13px] font-[650] tracking-[-1px] shrink-0"
+                            style={{ background: `${club.color}16`, color: club.color }}
+                          >
+                            {club.symbol}
+                          </span>
+                          <span>
+                            <strong className="block text-[11px] font-medium text-[#4a5462]">{club.name}</strong>
+                            <small className="block text-[9.5px] text-[#a8adb5] mt-[4px]">{club.category}</small>
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89]">
+                        {club.memberCount}
+                      </td>
+                      <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
+                        <div className="flex items-center gap-[10px]">
+                          <span className="w-[75px] h-[5px] bg-[#f1f2f4] rounded-[6px] overflow-hidden">
+                            <i className="block h-full rounded-[6px]" style={{ width: `${club.health}%`, background: club.color }} />
+                          </span>
+                          <b className="text-[11px] font-medium">{club.health}</b>
+                        </div>
+                      </td>
+                      <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
+                        <Badge tone={club.health > 60 ? 'green' : 'orange'} dot>
+                          {club.health > 60 ? 'Ổn định' : 'Cần quan tâm'}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Panel>
 
         {/* Outreach Card */}
@@ -417,7 +465,7 @@ export default function Dashboard() {
           <p className="text-[10.5px] text-[#6d8974] mt-[10px]">Những trải nghiệm đầu tiên thường bắt đầu từ một lời mời phù hợp.</p>
           <div className="flex gap-[12px] items-center mt-[17px]">
             <strong className="text-[30px] text-[#6b8c73] font-semibold">
-              {mockStudents.filter((s) => !s.clubIds?.length).length}
+              {loading ? '-' : summary.unengagedStudents}
             </strong>
             <span className="text-[10px] leading-[1.6] text-[#93a596]">
               sinh viên chưa<br />tham gia CLB

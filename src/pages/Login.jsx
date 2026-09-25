@@ -249,8 +249,8 @@ export default function Login() {
                     Tài khoản test:
                   </span>
                   {[
-                    { role: 'SYSTEM_ADMIN', email: 'systemadmin@club.local' },
-                    { role: 'STUDENT_AFFAIRS', email: 'studentaffairs@club.local' },
+                    { role: 'ADMIN', email: 'admin@fpt.edu.vn' },
+                    { role: 'CLUB_MANAGER', email: 'manager.tech@fpt.edu.vn' },
                   ].map((account) => (
                     <div
                       key={account.email}

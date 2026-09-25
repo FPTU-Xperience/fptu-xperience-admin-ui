@@ -18,8 +18,9 @@ import {
   X,
 } from 'lucide-react';
 import { ROLES, date, normalize, number } from '../utils/format.js';
-import { useWorkspace } from '../context/WorkspaceContext.jsx';
-import { guardAccountChanges, validateAccount, validateImportRows } from '../utils/accounts.js';
+import api from '../services/api.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import { validateAccount, validateImportRows } from '../utils/accounts.js';
 import {
   createWorkbookBuffer,
   downloadAccountTemplate,
@@ -44,17 +45,50 @@ import {
 } from '../components/ui/index.js';
 
 export default function Accounts() {
-  const { state, commit } = useWorkspace();
+  const { user } = useAuth();
   const run = useAction();
+
+  // State for accounts list
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Filter state
   const [tab, setTab] = useState('all');
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
+
+  // Selection & actions
   const [selected, setSelected] = useState([]);
   const [editing, setEditing] = useState(null);
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState(null);
-  const accounts = state.accounts;
+
+  // Fetch accounts from API
+  async function fetchAccounts() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.users.list({ page: 1, pageSize: 500 });
+      const items = response?.items || response || [];
+      // Map backend fields to frontend format
+      const mapped = items.map(mapUserToAccount);
+      setAccounts(mapped);
+    } catch (err) {
+      console.error('Failed to fetch accounts:', err);
+      setError(err.message || 'Không thể tải danh sách tài khoản');
+      setAccounts([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
+
+  // Filter accounts
   const filtered = accounts.filter(
     (a) =>
       (tab === 'all' || a.role === tab) &&
@@ -64,51 +98,52 @@ export default function Accounts() {
   const pageCount = Math.max(1, Math.ceil(filtered.length / 8));
   const safePage = Math.min(page, pageCount);
   const visible = filtered.slice((safePage - 1) * 8, safePage * 8);
+
   useEffect(() => {
     setPage(1);
     setSelected([]);
   }, [tab, status, query]);
+
   function toggle(id) {
     setSelected((old) => (old.includes(id) ? old.filter((key) => key !== id) : [...old, id]));
   }
-  async function remove() {
+
+  async function handleDelete() {
     const ok = await run(
-      () =>
-        commit(
-          'Xóa tài khoản',
-          `${deleting.length} tài khoản: ${accounts
-            .filter((a) => deleting.includes(a.id))
-            .map((a) => a.username)
-            .join(', ')}`,
-          'admin',
-          (draft) => {
-            guardAccountChanges(draft.accounts, deleting, 'admin-self');
-            draft.accounts = draft.accounts.filter((a) => !deleting.includes(a.id));
-          },
-        ),
-      `Đã xóa ${deleting.length} tài khoản khỏi danh sách mẫu.`,
+      async () => {
+        for (const id of deleting) {
+          await api.users.delete(id);
+        }
+        setAccounts((prev) => prev.filter((a) => !deleting.includes(a.id)));
+      },
+      `Đã xóa ${deleting.length} tài khoản.`,
     );
     if (ok) {
       setDeleting(null);
       setSelected([]);
     }
   }
-  function toggleLock(account) {
-    run(
-      () =>
-        commit(
-          account.status === 'active' ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
-          account.username,
-          'admin',
-          (draft) => {
-            const next = { ...account, status: account.status === 'active' ? 'locked' : 'active' };
-            guardAccountChanges(draft.accounts, [account.id], 'admin-self', next);
-            draft.accounts = draft.accounts.map((a) => (a.id === account.id ? next : a));
-          },
-        ),
+
+  async function handleToggleLock(account) {
+    await run(
+      async () => {
+        if (account.status === 'active') {
+          await api.users.lock(account.id);
+        } else {
+          await api.users.unlock(account.id);
+        }
+        setAccounts((prev) =>
+          prev.map((a) =>
+            a.id === account.id
+              ? { ...a, status: account.status === 'active' ? 'locked' : 'active' }
+              : a,
+          ),
+        );
+      },
       account.status === 'active' ? 'Đã khóa tài khoản.' : 'Đã mở khóa tài khoản.',
     );
   }
+
   return (
     <>
       <PageHeader
@@ -172,7 +207,6 @@ export default function Accounts() {
         >
           Tải file mẫu <Download size={15} />
         </button>
-        {/* Ẩn trên mobile giống rule cũ `.import-banner > .btn { display:none }` */}
         <Button className="hidden sm:inline-flex" onClick={() => setImporting(true)}>
           Nhập danh sách
           <ChevronRight size={15} />
@@ -188,9 +222,23 @@ export default function Accounts() {
             </span>
           </h2>
           <Badge tone="neutral" className="hidden sm:inline-flex">
-            Dữ liệu trên trình duyệt
+            Dữ liệu thực từ API
           </Badge>
         </div>
+
+        {error && (
+          <div className="px-[17px] py-3 mb-4 p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px]">
+            <CircleAlert size={16} className="inline mr-2" />
+            {error}
+            <button
+              className="ml-2 underline hover:no-underline"
+              onClick={fetchAccounts}
+            >
+              Thử lại
+            </button>
+          </div>
+        )}
+
         <Tabs
           active={tab}
           onChange={setTab}
@@ -243,7 +291,12 @@ export default function Accounts() {
             </Button>
           </div>
         )}
-        {filtered.length ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-[#9096a1]">
+            <div className="w-6 h-6 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-3" />
+            Đang tải danh sách tài khoản...
+          </div>
+        ) : filtered.length ? (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left whitespace-nowrap">
               <thead>
@@ -313,7 +366,7 @@ export default function Accounts() {
                         <div>
                           <strong className="block text-[12px]">
                             {a.fullName}
-                            {a.id === 'admin-self' && (
+                            {a.id === user?.id && (
                               <span className="text-[9px] px-[5px] py-[2px] bg-[#f0edf8] text-[#a194b6] rounded ml-2">
                                 Bạn
                               </span>
@@ -375,13 +428,13 @@ export default function Accounts() {
                         <IconButton
                           icon={a.status === 'active' ? LockKeyhole : UnlockKeyhole}
                           label={`${a.status === 'active' ? 'Khóa' : 'Mở khóa'} ${a.username}`}
-                          disabled={a.id === 'admin-self'}
-                          onClick={() => toggleLock(a)}
+                          disabled={a.id === user?.id}
+                          onClick={() => handleToggleLock(a)}
                         />
                         <IconButton
                           icon={Trash2}
                           label={`Xóa ${a.username}`}
-                          disabled={a.id === 'admin-self'}
+                          disabled={a.id === user?.id}
                           onClick={() => setDeleting([a.id])}
                         />
                       </div>
@@ -399,18 +452,40 @@ export default function Accounts() {
         )}
         <Pagination page={safePage} total={filtered.length} onChange={setPage} />
       </Panel>
-      {editing && <AccountForm account={editing} onClose={() => setEditing(null)} />}
-      {importing && <ImportDialog onClose={() => setImporting(false)} />}
+      {editing && (
+        <AccountForm
+          account={editing}
+          accounts={accounts}
+          onClose={() => setEditing(null)}
+          onSave={(saved) => {
+            if (editing.id) {
+              setAccounts((prev) => prev.map((a) => (a.id === saved.id ? saved : a)));
+            } else {
+              setAccounts((prev) => [saved, ...prev]);
+            }
+            setEditing(null);
+          }}
+        />
+      )}
+      {importing && (
+        <ImportDialog
+          accounts={accounts}
+          onClose={() => setImporting(false)}
+          onImport={(newAccounts) => {
+            setAccounts((prev) => [...newAccounts, ...prev]);
+            setImporting(false);
+          }}
+        />
+      )}
       {deleting && (
         <Modal
           title={`Xóa ${deleting.length} tài khoản?`}
-          description="Tài khoản sẽ được loại khỏi danh sách quản lý mẫu trên trình duyệt."
+          description="Tài khoản sẽ bị xóa vĩnh viễn khỏi hệ thống."
           onClose={() => setDeleting(null)}
         >
           <div className="px-6 py-6 sm:px-[18px] sm:py-5">
             <div className="p-[14px] sm:p-3 border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px] leading-[1.8] mt-[17px]">
-              Kiểm tra danh sách trước khi xóa. Nhật ký và các đóng góp đã ghi nhận vẫn được giữ để
-              tra cứu.
+              Kiểm tra danh sách trước khi xóa. Tài khoản đã xóa không thể khôi phục.
             </div>
             <ul className="max-h-[250px] overflow-y-auto list-none p-0 mt-[15px]">
               {accounts
@@ -427,7 +502,7 @@ export default function Accounts() {
           </div>
           <div className="sticky bottom-0 z-[1] border-t border-border px-[26px] py-[17px] flex flex-wrap gap-2.5 justify-end items-center bg-[#fdfdfe] rounded-b-[14px] sm:px-[18px] sm:py-[15px] sm:gap-[9px]">
             <Button onClick={() => setDeleting(null)}>Hủy</Button>
-            <Button variant="danger" icon={Trash2} onClick={remove}>
+            <Button variant="danger" icon={Trash2} onClick={handleDelete}>
               Xác nhận xóa
             </Button>
           </div>
@@ -437,8 +512,22 @@ export default function Accounts() {
   );
 }
 
-function AccountForm({ account, onClose }) {
-  const { state, commit } = useWorkspace();
+// Map backend user to frontend account format
+function mapUserToAccount(user) {
+  const roles = Array.isArray(user.roles) ? user.roles : user.role ? [user.role] : ['CLUB_MEMBER'];
+  return {
+    id: String(user.id ?? user.userId ?? crypto.randomUUID()),
+    username: user.username ?? user.studentCode ?? '',
+    fullName: user.fullName ?? user.name ?? '',
+    email: user.email ?? '',
+    role: roles[0] ?? 'CLUB_MEMBER',
+    status: user.isLocked || user.locked ? 'locked' : 'active',
+    joinedAt: user.createdAt ?? new Date().toISOString(),
+    clubIds: Array.isArray(user.clubIds) ? user.clubIds : [],
+  };
+}
+
+function AccountForm({ account, accounts, onClose, onSave }) {
   const run = useAction();
   const [values, setValues] = useState({
     username: '',
@@ -449,7 +538,9 @@ function AccountForm({ account, onClose }) {
     ...account,
   });
   const [errors, setErrors] = useState([]);
+  const [saving, setSaving] = useState(false);
   const update = (key) => (e) => setValues((old) => ({ ...old, [key]: e.target.value }));
+
   async function submit(e) {
     e.preventDefault();
     const input = {
@@ -458,34 +549,44 @@ function AccountForm({ account, onClose }) {
       fullName: values.fullName.trim(),
       email: values.email.trim().toLowerCase(),
     };
-    const issues = validateAccount(input, state.accounts, account.id);
+    const issues = validateAccount(input, accounts, account.id);
     setErrors(issues);
     if (issues.length) return;
+
     const ok = await run(
-      () =>
-        commit(
-          account.id ? 'Cập nhật tài khoản' : 'Thêm tài khoản',
-          `${input.username} · ${ROLES[input.role]}`,
-          'admin',
-          (draft) => {
-            const issues = validateAccount(input, draft.accounts, account.id);
-            if (issues.length) throw new Error(issues.join('. '));
-            if (account.id) {
-              guardAccountChanges(draft.accounts, [account.id], 'admin-self', input);
-              draft.accounts = draft.accounts.map((a) => (a.id === account.id ? input : a));
-            } else
-              draft.accounts.unshift({
-                ...input,
-                id: crypto.randomUUID(),
-                joinedAt: new Date().toISOString(),
-                clubIds: [],
-              });
-          },
-        ),
-      account.id ? 'Đã cập nhật tài khoản.' : 'Đã thêm tài khoản vào danh sách.',
+      async () => {
+        setSaving(true);
+        try {
+          let saved;
+          if (account.id) {
+            // Update existing
+            const payload = {
+              fullName: input.fullName,
+              email: input.email,
+              isActive: input.status === 'active',
+              roles: [input.role],
+            };
+            saved = await api.users.update(account.id, payload);
+          } else {
+            // Create new
+            const payload = {
+              username: input.username,
+              fullName: input.fullName,
+              email: input.email,
+              roles: [input.role],
+            };
+            saved = await api.users.create(payload);
+          }
+          const mapped = mapUserToAccount(saved);
+          onSave(mapped);
+        } finally {
+          setSaving(false);
+        }
+      },
+      account.id ? 'Đã cập nhật tài khoản.' : 'Đã thêm tài khoản mới.',
     );
-    if (ok) onClose();
   }
+
   return (
     <Modal
       title={account.id ? 'Chỉnh sửa tài khoản' : 'Thêm tài khoản mới'}
@@ -528,7 +629,6 @@ function AccountForm({ account, onClose }) {
             <select
               value={values.role}
               onChange={update('role')}
-              disabled={account.id === 'admin-self'}
             >
               {Object.entries(ROLES).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -541,7 +641,6 @@ function AccountForm({ account, onClose }) {
             <select
               value={values.status}
               onChange={update('status')}
-              disabled={account.id === 'admin-self'}
             >
               <option value="active">Đang hoạt động</option>
               <option value="locked">Đã khóa</option>
@@ -559,11 +658,11 @@ function AccountForm({ account, onClose }) {
           )}
         </div>
         <div className="sticky bottom-0 z-[1] border-t border-border px-[26px] py-[17px] flex flex-wrap gap-2.5 justify-end items-center bg-[#fdfdfe] rounded-b-[14px] sm:px-[18px] sm:py-[15px] sm:gap-[9px]">
-          <Button onClick={onClose} type="button">
+          <Button onClick={onClose} type="button" disabled={saving}>
             Hủy
           </Button>
-          <Button type="submit" variant="primary" icon={account.id ? Check : Plus}>
-            {account.id ? 'Lưu thay đổi' : 'Thêm tài khoản'}
+          <Button type="submit" variant="primary" icon={account.id ? Check : Plus} disabled={saving}>
+            {saving ? 'Đang lưu...' : account.id ? 'Lưu thay đổi' : 'Thêm tài khoản'}
           </Button>
         </div>
       </form>
@@ -571,8 +670,7 @@ function AccountForm({ account, onClose }) {
   );
 }
 
-function ImportDialog({ onClose }) {
-  const { state, commit } = useWorkspace();
+function ImportDialog({ accounts, onClose, onImport }) {
   const run = useAction();
   const [file, setFile] = useState(null);
   const [rows, setRows] = useState(null);
@@ -584,14 +682,17 @@ function ImportDialog({ onClose }) {
   const [resultCount, setResultCount] = useState(0);
   const ref = useRef();
   const requestId = useRef(0);
+
   useEffect(
     () => () => {
       requestId.current += 1;
     },
     [],
   );
+
   const good = rows?.filter((r) => !r.errors.length) || [];
   const bad = rows?.filter((r) => r.errors.length) || [];
+
   async function choose(selected) {
     if (!selected) return;
     const id = ++requestId.current;
@@ -601,7 +702,7 @@ function ImportDialog({ onClose }) {
     setError('');
     setPage(1);
     try {
-      const parsed = await readAccountWorkbook(selected, state.accounts);
+      const parsed = await readAccountWorkbook(selected, accounts);
       if (id === requestId.current) setRows(parsed);
     } catch (e) {
       if (id === requestId.current) setError(e.message);
@@ -609,37 +710,44 @@ function ImportDialog({ onClose }) {
       if (id === requestId.current) setBusy(false);
     }
   }
+
   async function importRows() {
     setBusy(true);
-    const ok = await run(() =>
-      commit(
-        'Nhập tài khoản từ Excel',
-        `${file.name}: thêm ${good.length} dòng, bỏ qua ${bad.length} dòng lỗi`,
-        'admin',
-        (draft) => {
-          const checked = validateImportRows(good, draft.accounts);
-          const conflicts = checked.filter((r) => r.errors.length);
-          if (conflicts.length)
-            throw new Error(
-              'Danh sách tài khoản đã thay đổi. Hãy chọn lại file để kiểm tra trùng dữ liệu.',
-            );
-          draft.accounts.unshift(
-            ...checked.map(({ row, errors, ...account }) => ({
-              ...account,
-              id: crypto.randomUUID(),
-              joinedAt: new Date().toISOString(),
-              clubIds: [],
-            })),
+    const ok = await run(
+      async () => {
+        const checked = validateImportRows(good, accounts);
+        const conflicts = checked.filter((r) => r.errors.length);
+        if (conflicts.length)
+          throw new Error(
+            'Danh sách tài khoản đã thay đổi. Hãy chọn lại file để kiểm tra trùng dữ liệu.',
           );
-        },
-      ),
+
+        // Create accounts via API
+        const created = [];
+        for (const { row, errors, ...account } of checked) {
+          try {
+            const payload = {
+              username: account.username,
+              fullName: account.fullName,
+              email: account.email,
+              roles: [account.role],
+            };
+            const saved = await api.users.create(payload);
+            created.push(mapUserToAccount(saved));
+          } catch (err) {
+            console.error(`Failed to create account ${account.username}:`, err);
+          }
+        }
+
+        setResultCount(created.length);
+        onImport(created);
+        setDone(true);
+      },
+      `Đã nhập ${good.length} tài khoản từ Excel.`,
     );
     setBusy(false);
-    if (ok) {
-      setResultCount(good.length);
-      setDone(true);
-    }
   }
+
   async function downloadErrors() {
     const buffer = await createWorkbookBuffer(
       'DongLoi',
@@ -656,7 +764,9 @@ function ImportDialog({ onClose }) {
     );
     downloadBuffer(buffer, 'FPTU_Loi_nhap_tai_khoan.xlsx');
   }
+
   const step = done ? 3 : rows ? 2 : 1;
+
   return (
     <Modal
       title="Nhập tài khoản từ Excel"
@@ -696,7 +806,7 @@ function ImportDialog({ onClose }) {
               Danh sách đã sẵn sàng!
             </h2>
             <p className="text-[12px] sm:text-[11px] text-[#9aaabb] leading-[1.9]">
-              Đã thêm <b>{resultCount} tài khoản</b> vào phần quản lý.
+              Đã thêm <b>{resultCount} tài khoản</b> vào hệ thống.
             </p>
             {bad.length > 0 && (
               <p className="text-[12px] sm:text-[11px] text-[#9aaabb] leading-[1.9]">
@@ -704,7 +814,7 @@ function ImportDialog({ onClose }) {
               </p>
             )}
             <Badge tone="green" className="mt-[10px]">
-              Đã lưu thay đổi trên trình duyệt
+              Dữ liệu đã đồng bộ với server
             </Badge>
           </div>
         ) : !rows ? (

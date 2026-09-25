@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Check, ShieldCheck, Users } from 'lucide-react';
-import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import api from '../services/api.js';
 import { ROLES } from '../utils/format.js';
 import { PageHeader, Panel, StatCard } from '../components/ui/index.js';
 
@@ -19,7 +20,48 @@ const permissions = [
 ];
 
 export function RoleMatrix() {
-  const { state } = useWorkspace();
+  const [roleCounts, setRoleCounts] = useState({
+    ADMIN: 0,
+    STUDENT_AFFAIRS_ADMIN: 0,
+    CLUB_MANAGER: 0,
+    CLUB_MEMBER: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch user counts by role
+  useEffect(() => {
+    async function fetchRoleCounts() {
+      setLoading(true);
+      try {
+        const response = await api.users.list({ page: 1, pageSize: 500 });
+        const users = Array.isArray(response) ? response : response?.items || [];
+
+        const counts = {
+          ADMIN: 0,
+          STUDENT_AFFAIRS_ADMIN: 0,
+          CLUB_MANAGER: 0,
+          CLUB_MEMBER: 0,
+        };
+
+        users.forEach((user) => {
+          const roles = Array.isArray(user.roles) ? user.roles : [user.role].filter(Boolean);
+          if (roles.includes('ADMIN')) counts.ADMIN++;
+          else if (roles.includes('SYSTEM_ADMIN')) counts.ADMIN++;
+          else if (roles.includes('STUDENT_AFFAIRS_ADMIN')) counts.STUDENT_AFFAIRS_ADMIN++;
+          else if (roles.includes('CLUB_MANAGER')) counts.CLUB_MANAGER++;
+          else if (roles.includes('CLUB_MEMBER')) counts.CLUB_MEMBER++;
+        });
+
+        setRoleCounts(counts);
+      } catch (err) {
+        console.error('Failed to fetch role counts:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchRoleCounts();
+  }, []);
 
   return (
     <>
@@ -35,7 +77,7 @@ export function RoleMatrix() {
           <StatCard
             key={key}
             label={label}
-            value={state.accounts.filter((a) => a.role === key).length}
+            value={loading ? '-' : roleCounts[key] || 0}
             note="tài khoản được gán vai trò"
             icon={key === 'ADMIN' ? ShieldCheck : Users}
             tone={key === 'ADMIN' ? 'purple' : key === 'STUDENT_AFFAIRS_ADMIN' ? 'orange' : 'blue'}

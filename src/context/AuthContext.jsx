@@ -79,15 +79,10 @@ export function AuthProvider({ children }) {
       const response = await api.auth.google(googleCredential)
 
       // Handle response format from backend
-      let token = null
-      let refreshToken = null
-      let userData = null
-
-      if (typeof response === 'object') {
-        token = response.token || response.accessToken
-        refreshToken = response.refreshToken
-        userData = response.user || response.actor
-      }
+      // Backend returns: { accessToken, user, refreshToken, ... }
+      const token = response?.accessToken || response?.token
+      const refreshToken = response?.refreshToken
+      let userData = response?.user || response?.actor
 
       if (!token) {
         throw new Error('Invalid login response - no token received')
@@ -120,130 +115,61 @@ export function AuthProvider({ children }) {
   }
 
   /**
-   * Dev login - tries backend dev-login first, falls back to mock if unavailable
+   * Dev login - bypass login for development
    * @param {string} email - Email of the account to login as
    */
   async function devLogin(email) {
     setIsLoading(true)
     setError(null)
     try {
-      // Try backend dev-login first
       const response = await api.auth.devLogin(email)
 
-      let token = null
-      let refreshToken = null
-      let userData = null
+      // Handle response format from backend
+      // Backend returns: { accessToken, user, refreshToken, expiresAtUtc, ... }
+      const token = response?.accessToken || response?.token
+      const refreshToken = response?.refreshToken
+      let userData = response?.user || response?.actor
 
-      if (typeof response === 'object') {
-        token = response.token || response.accessToken
-        refreshToken = response.refreshToken
-        userData = response.user || response.actor
+      if (!token) {
+        throw new Error('Invalid login response - no token received')
       }
 
-      if (token) {
-        api.setToken(token)
-        if (refreshToken) {
-          api.setRefreshToken(refreshToken)
-        }
-
-        // Fetch user info from appropriate me endpoint based on role
-        try {
-          // Try to determine which me endpoint to call based on role
-          const roles = userData?.roles || []
-          if (roles.includes(ROLES.SYSTEM_ADMIN) || roles.includes(ROLES.ADMIN)) {
-            userData = await api.auth.adminMe()
-          } else if (roles.includes(ROLES.STUDENT_AFFAIRS_ADMIN)) {
-            userData = await api.auth.ctsvMe()
-          } else {
-            userData = await api.auth.me()
-          }
-        } catch {
-          // If me endpoint fails, use data from login response
-          if (!userData) {
-            userData = { roles: [ROLES.ADMIN] }
-          }
-        }
-
-        // Store user in localStorage for Login page redirect logic
-        try {
-          localStorage.setItem('fptu-auth-user', JSON.stringify(userData))
-        } catch { /* Ignore */ }
-
-        setUser(userData)
-        return userData
+      api.setToken(token)
+      if (refreshToken) {
+        api.setRefreshToken(refreshToken)
       }
 
-      // If no token returned, throw error
-      throw new Error('Dev login failed - no token received')
+      // Fetch user info from appropriate me endpoint based on role
+      try {
+        const roles = userData?.roles || []
+        if (roles.includes(ROLES.SYSTEM_ADMIN) || roles.includes(ROLES.ADMIN)) {
+          userData = await api.auth.adminMe()
+        } else if (roles.includes(ROLES.STUDENT_AFFAIRS_ADMIN)) {
+          userData = await api.auth.ctsvMe()
+        } else {
+          userData = await api.auth.me()
+        }
+      } catch {
+        // If me endpoint fails, use data from login response
+        if (!userData) {
+          userData = { roles: [ROLES.ADMIN] }
+        }
+      }
+
+      // Store user in localStorage for Login page redirect logic
+      try {
+        localStorage.setItem('fptu-auth-user', JSON.stringify(userData))
+      } catch { /* Ignore */ }
+
+      setUser(userData)
+      return userData
     } catch (err) {
-      // If backend returns 403 or is unreachable, try mock login for testing
-      if (err.status === 403 || err.message?.includes('403') || err.name === 'TypeError' || err.message?.includes('fetch')) {
-        console.warn('Backend dev-login unavailable, using mock authentication')
-        return mockLogin(email)
-      }
-      throw err
+      const message = err.message || 'Dev login thất bại'
+      setError(message)
+      throw new Error(message)
     } finally {
       setIsLoading(false)
     }
-  }
-
-  /**
-   * Mock login for testing when backend dev-login is disabled
-   * Only ADMIN and STUDENT_AFFAIRS_ADMIN can access the system
-   */
-  function mockLogin(email) {
-    const emailLower = email.toLowerCase()
-
-    // Check for valid admin emails
-    const isSystemAdmin = emailLower.includes('systemadmin') ||
-      emailLower.includes('admin') && emailLower.includes('.local')
-
-    const isStudentAffairs = emailLower.includes('studentaffairs') ||
-      emailLower.includes('ctsv') ||
-      emailLower.includes('sinhvien') ||
-      emailLower.includes('affairs')
-
-    let mockUser = null
-    const mockToken = 'mock-token-' + Date.now()
-
-    if (isSystemAdmin) {
-      mockUser = {
-        id: 'mock-sysadmin-001',
-        email: email,
-        name: 'Quản trị hệ thống',
-        fullName: 'Quản trị hệ thống',
-        username: email.split('@')[0],
-        roles: [ROLES.SYSTEM_ADMIN],
-        actor: { id: 1, email, roles: [ROLES.SYSTEM_ADMIN] }
-      }
-    } else if (isStudentAffairs) {
-      mockUser = {
-        id: 'mock-ctsv-001',
-        email: email,
-        name: 'Cán bộ công tác sinh viên',
-        fullName: 'Cán bộ công tác sinh viên',
-        username: email.split('@')[0],
-        roles: [ROLES.STUDENT_AFFAIRS_ADMIN],
-        actor: { id: 2, email, roles: [ROLES.STUDENT_AFFAIRS_ADMIN] }
-      }
-    } else {
-      // Only ADMIN and STUDENT_AFFAIRS_ADMIN can access
-      throw new Error('Tài khoản không có quyền truy cập hệ thống.')
-    }
-
-    // Store mock token and email for mock API
-    api.setToken(mockToken)
-    api.setRefreshToken('mock-refresh-' + Date.now())
-    api.setMockUserEmail(email)
-
-    // Store user in localStorage for Login page redirect logic
-    try {
-      localStorage.setItem('fptu-auth-user', JSON.stringify(mockUser))
-    } catch { /* Ignore */ }
-
-    setUser(mockUser)
-    console.log('Mock login successful:', mockUser)
-    return mockUser
   }
 
   async function logout() {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Check,
   History,
@@ -9,16 +9,81 @@ import {
   SlidersHorizontal,
   Trash2,
 } from 'lucide-react';
-import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import api from '../services/api.js';
 import { date, number } from '../utils/format.js';
-import { validateRubric } from '../utils/governance.js';
 import { useAction } from '../hooks/useAction.js';
 import { Badge, Button, Field, IconButton, Modal, PageHeader, Panel } from '../components/ui/index.js';
 
+// Default rubrics based on club types
+const DEFAULT_RUBRICS = [
+  {
+    id: 'tech',
+    type: 'Công nghệ',
+    version: 1,
+    cap: 2000,
+    scale: 100,
+    status: 'published',
+    effective: '2026-09-01',
+    criteria: [
+      { name: 'Tham gia sự kiện kỹ thuật', xp: 30, weight: 100 },
+    ],
+    history: [],
+  },
+  {
+    id: 'art',
+    type: 'Nghệ thuật',
+    version: 1,
+    cap: 1500,
+    scale: 100,
+    status: 'published',
+    effective: '2026-09-01',
+    criteria: [
+      { name: 'Tham gia workshop sáng tạo', xp: 25, weight: 100 },
+    ],
+    history: [],
+  },
+  {
+    id: 'sports',
+    type: 'Thể thao',
+    version: 1,
+    cap: 1800,
+    scale: 100,
+    status: 'published',
+    effective: '2026-09-01',
+    criteria: [
+      { name: 'Tham gia giải đấu', xp: 35, weight: 100 },
+    ],
+    history: [],
+  },
+];
+
 export function Rubrics() {
-  const { state } = useWorkspace();
+  const [rubrics, setRubrics] = useState(DEFAULT_RUBRICS);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [edit, setEdit] = useState(null);
   const [history, setHistory] = useState(null);
+
+  // Fetch rubrics from API
+  async function fetchRubrics() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/api/rubrics');
+      if (Array.isArray(response) && response.length > 0) {
+        setRubrics(response);
+      }
+    } catch (err) {
+      console.error('Failed to fetch rubrics:', err);
+      // Keep default rubrics on error
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchRubrics();
+  }, []);
 
   return (
     <>
@@ -27,6 +92,17 @@ export function Rubrics() {
         title="Thang điểm XP"
         description="Cấu hình tiêu chí phù hợp từng loại CLB, với lịch sử phiên bản rõ ràng."
       />
+
+      {/* Error Banner */}
+      {error && (
+        <div className="mb-4 p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px]">
+          <span className="mr-2">⚠️</span>
+          {error}
+          <button className="ml-2 underline hover:no-underline" onClick={fetchRubrics}>
+            Thử lại
+          </button>
+        </div>
+      )}
 
       {/* Rubric Note */}
       <div className="flex items-center gap-[17px] p-[22px_26px] bg-[#f6f3ec] border border-[#eae5d9] rounded-[10px] mb-[23px]">
@@ -42,53 +118,60 @@ export function Rubrics() {
       </div>
 
       {/* Rubric Grid */}
-      <div className="grid sm:grid-cols-2 gap-[21px]">
-        {state.rubrics.map((rubric) => (
-          <Panel key={rubric.id} className="p-[24px]">
-            {/* Top Row */}
-            <div className="flex items-center justify-between mb-4">
-              <span className="w-[42px] h-[42px] rounded-[10px] bg-[#fcf3e8] grid place-items-center text-[#d2a171]">
-                <SlidersHorizontal size={22} />
-              </span>
-              <Badge tone={rubric.status === 'published' ? 'green' : 'neutral'}>
-                {rubric.status === 'published' ? 'Đã công bố' : 'Bản nháp'}
-              </Badge>
-            </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-12 text-[#9096a1]">
+          <div className="w-6 h-6 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-3" />
+          Đang tải thang điểm...
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-[21px]">
+          {rubrics.map((rubric) => (
+            <Panel key={rubric.id} className="p-[24px]">
+              {/* Top Row */}
+              <div className="flex items-center justify-between mb-4">
+                <span className="w-[42px] h-[42px] rounded-[10px] bg-[#fcf3e8] grid place-items-center text-[#d2a171]">
+                  <SlidersHorizontal size={22} />
+                </span>
+                <Badge tone={rubric.status === 'published' ? 'green' : 'neutral'}>
+                  {rubric.status === 'published' ? 'Đã công bố' : 'Bản nháp'}
+                </Badge>
+              </div>
 
-            {/* Name */}
-            <div className="flex items-center gap-[10px] mb-[8px]">
-              <h2 className="text-[16px] font-semibold">CLB {rubric.type.toLowerCase()}</h2>
-              <Badge tone="orange">v{rubric.version}</Badge>
-            </div>
-            <p className="text-[11px] text-[#818794] mb-[18px]">Hiệu lực từ {date(rubric.effective)}</p>
+              {/* Name */}
+              <div className="flex items-center gap-[10px] mb-[8px]">
+                <h2 className="text-[16px] font-semibold">CLB {rubric.type?.toLowerCase() || 'Mặc định'}</h2>
+                <Badge tone="orange">v{rubric.version}</Badge>
+              </div>
+              <p className="text-[11px] text-[#818794] mb-[18px]">Hiệu lực từ {date(rubric.effective)}</p>
 
-            {/* Criteria */}
-            <div className="divide-y divide-[#e9ebee]">
-              {rubric.criteria.map((criterion, i) => (
-                <div key={i} className="flex items-center justify-between py-[13px]">
-                  <div>
-                    <strong className="block text-[11px] font-normal text-[#798494]">{criterion.name}</strong>
-                    <small className="block text-[10px] text-[#a6afb9] mt-[5px]">{criterion.xp} XP / đóng góp hợp lệ</small>
+              {/* Criteria */}
+              <div className="divide-y divide-[#e9ebee]">
+                {(rubric.criteria || []).map((criterion, i) => (
+                  <div key={i} className="flex items-center justify-between py-[13px]">
+                    <div>
+                      <strong className="block text-[11px] font-normal text-[#798494]">{criterion.name}</strong>
+                      <small className="block text-[10px] text-[#a6afb9] mt-[5px]">{criterion.xp} XP / đóng góp hợp lệ</small>
+                    </div>
+                    <b className="text-[13px] font-medium text-[#b58d68]">{criterion.weight}%</b>
                   </div>
-                  <b className="text-[13px] font-medium text-[#b58d68]">{criterion.weight}%</b>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* Normalization Info */}
-            <div className="flex items-center gap-[9px] bg-[#f9fafb] p-[11px] my-[14px] text-[10px] text-[#a4aab2]">
-              <Scale size={16} />
-              <span>Chuẩn hóa: min(XP / {number(rubric.cap)}, 1) × {rubric.scale}</span>
-            </div>
+              {/* Normalization Info */}
+              <div className="flex items-center gap-[9px] bg-[#f9fafb] p-[11px] my-[14px] text-[10px] text-[#a4aab2]">
+                <Scale size={16} />
+                <span>Chuẩn hóa: min(XP / {number(rubric.cap)}, 1) × {rubric.scale}</span>
+              </div>
 
-            {/* Actions */}
-            <div className="flex justify-between gap-[10px] mt-5">
-              <Button icon={History} onClick={() => setHistory(rubric)}>Lịch sử</Button>
-              <Button icon={Pencil} onClick={() => setEdit(rubric)}>Tạo phiên bản mới</Button>
-            </div>
-          </Panel>
-        ))}
-      </div>
+              {/* Actions */}
+              <div className="flex justify-between gap-[10px] mt-5">
+                <Button icon={History} onClick={() => setHistory(rubric)}>Lịch sử</Button>
+                <Button icon={Pencil} onClick={() => setEdit(rubric)}>Tạo phiên bản mới</Button>
+              </div>
+            </Panel>
+          ))}
+        </div>
+      )}
 
       {/* Info Line */}
       <div className="flex items-center gap-[8px] text-[11px] text-[#717d8d] my-[20px] leading-relaxed">
@@ -109,21 +192,21 @@ export function Rubrics() {
               <span className="text-[12px] text-[#717d8d]">Phiên bản hiện tại · {date(history.effective)}</span>
             </div>
 
-            {[...history.history].reverse().map((v) => (
-              <details key={v.version} className="border-t border-[#e9ebee] py-[15px]">
-                <summary className="cursor-pointer text-[11px] text-[#718094] hover:text-accent">
-                  Phiên bản {v.version} · {date(v.effective)}
-                </summary>
-                <div className="mt-[9px] text-[11px] text-[#8a94a3] leading-relaxed space-y-2">
-                  {v.criteria.map((c, i) => (
-                    <p key={i}>{c.name}: {c.xp} XP · {c.weight}%</p>
-                  ))}
-                  <p>Chuẩn hóa: ngưỡng {v.cap} XP / thang {v.scale}</p>
-                </div>
-              </details>
-            ))}
-
-            {!history.history.length && (
+            {(history.history || []).length > 0 ? (
+              [...history.history].reverse().map((v) => (
+                <details key={v.version} className="border-t border-[#e9ebee] py-[15px]">
+                  <summary className="cursor-pointer text-[11px] text-[#718094] hover:text-accent">
+                    Phiên bản {v.version} · {date(v.effective)}
+                  </summary>
+                  <div className="mt-[9px] text-[11px] text-[#8a94a3] leading-relaxed space-y-2">
+                    {(v.criteria || []).map((c, i) => (
+                      <p key={i}>{c.name}: {c.xp} XP · {c.weight}%</p>
+                    ))}
+                    <p>Chuẩn hóa: ngưỡng {v.cap} XP / thang {v.scale}</p>
+                  </div>
+                </details>
+              ))
+            ) : (
               <p className="text-[11px] text-[#818794] py-[15px] border-t border-[#e9ebee]">
                 Đây là phiên bản đầu tiên, chưa có thay đổi.
               </p>
@@ -133,60 +216,66 @@ export function Rubrics() {
       )}
 
       {/* Edit Form */}
-      {edit && <RubricForm rubric={edit} onClose={() => setEdit(null)} />}
+      {edit && (
+        <RubricForm
+          rubric={edit}
+          rubrics={rubrics}
+          onClose={() => setEdit(null)}
+          onSave={(saved) => {
+            setRubrics((prev) => prev.map((r) => (r.id === saved.id ? saved : r)));
+            setEdit(null);
+          }}
+        />
+      )}
     </>
   );
 }
 
-function RubricForm({ rubric, onClose }) {
-  const { commit } = useWorkspace();
+function RubricForm({ rubric, rubrics, onClose, onSave }) {
   const run = useAction();
   const [form, setForm] = useState(structuredClone(rubric));
-  const sum = form.criteria.reduce((total, c) => total + Number(c.weight), 0);
+  const sum = (form.criteria || []).reduce((total, c) => total + Number(c.weight), 0);
 
   function updateCriterion(i, key, value) {
     setForm((old) => ({
       ...old,
-      criteria: old.criteria.map((c, index) => (index === i ? { ...c, [key]: value } : c)),
+      criteria: (old.criteria || []).map((c, index) => (index === i ? { ...c, [key]: value } : c)),
     }));
   }
 
   async function submit(e) {
     e.preventDefault();
     const ok = await run(
-      () =>
-        commit(
-          'Công bố phiên bản thang XP',
-          `${rubric.type}: v${rubric.version} → v${rubric.version + 1}`,
-          'affairs',
-          (draft) => {
-            validateRubric(form);
-            const current = draft.rubrics.find((r) => r.id === rubric.id);
-            if (current.version !== rubric.version)
-              throw new Error('Thang điểm đã thay đổi. Hãy mở lại phiên bản mới nhất.');
-            const { history, ...snapshot } = current;
-            draft.rubrics = draft.rubrics.map((r) =>
-              r.id === rubric.id
-                ? {
-                    ...form,
-                    version: rubric.version + 1,
-                    status: 'published',
-                    cap: Number(form.cap),
-                    scale: Number(form.scale),
-                    criteria: form.criteria.map((c) => ({
-                      ...c,
-                      xp: Number(c.xp),
-                      weight: Number(c.weight),
-                    })),
-                    history: [...history, snapshot],
-                  }
-                : r,
-            );
-          },
-        ),
+      () => {
+        // Validate total weight = 100
+        const totalWeight = (form.criteria || []).reduce((sum, c) => sum + Number(c.weight), 0);
+        if (Math.abs(totalWeight - 100) > 0.01) {
+          throw new Error('Tổng trọng số phải bằng 100%.');
+        }
+
+        // Create new version
+        const existingRubric = rubrics.find((r) => r.id === rubric.id);
+        const newVersion = {
+          ...form,
+          version: Number(rubric.version) + 1,
+          status: 'published',
+          cap: Number(form.cap),
+          scale: Number(form.scale),
+          criteria: (form.criteria || []).map((c) => ({
+            ...c,
+            xp: Number(c.xp),
+            weight: Number(c.weight),
+          })),
+          history: [
+            ...(existingRubric?.history || []),
+            { ...existingRubric, history: undefined },
+          ],
+        };
+
+        onSave(newVersion);
+      },
       `Đã lưu phiên bản ${rubric.version + 1} của thang điểm.`,
     );
-    if (ok) onClose();
   }
 
   return (
@@ -207,7 +296,7 @@ function RubricForm({ rubric, onClose }) {
           </div>
 
           {/* Criteria Rows */}
-          {form.criteria.map((c, i) => (
+          {(form.criteria || []).map((c, i) => (
             <div key={i} className="grid grid-cols-[1fr_95px_95px_30px] gap-[10px] items-center mb-[12px]">
               <input
                 required
@@ -241,9 +330,9 @@ function RubricForm({ rubric, onClose }) {
               <IconButton
                 icon={Trash2}
                 label={`Xóa tiêu chí ${i + 1}`}
-                disabled={form.criteria.length === 1}
+                disabled={(form.criteria || []).length === 1}
                 onClick={() =>
-                  setForm({ ...form, criteria: form.criteria.filter((_, index) => index !== i) })
+                  setForm({ ...form, criteria: (form.criteria || []).filter((_, index) => index !== i) })
                 }
               />
             </div>
@@ -255,12 +344,15 @@ function RubricForm({ rubric, onClose }) {
               type="button"
               icon={Plus}
               onClick={() =>
-                setForm({ ...form, criteria: [...form.criteria, { name: '', xp: 20, weight: 0 }] })
+                setForm({
+                  ...form,
+                  criteria: [...(form.criteria || []), { name: '', xp: 20, weight: 0 }],
+                })
               }
             >
               Thêm tiêu chí
             </Button>
-            <Badge tone={sum === 100 ? 'green' : 'red'}>Tổng trọng số: {sum}% / 100%</Badge>
+            <Badge tone={Math.abs(sum - 100) < 0.01 ? 'green' : 'red'}>Tổng trọng số: {sum}% / 100%</Badge>
           </div>
 
           {/* Form Section Title */}
@@ -313,7 +405,7 @@ function RubricForm({ rubric, onClose }) {
             type="submit"
             variant="primary"
             icon={Check}
-            disabled={Math.abs(sum - 100) > 0.001}
+            disabled={Math.abs(sum - 100) > 0.01}
           >
             Công bố phiên bản {rubric.version + 1}
           </Button>

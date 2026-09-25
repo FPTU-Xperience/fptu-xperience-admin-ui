@@ -1,26 +1,55 @@
-import { useState } from 'react';
-import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import { useEffect, useState } from 'react';
+import api from '../services/api.js';
 import { date, normalize } from '../utils/format.js';
 import { Empty, PageHeader, Pagination, Panel, SearchBox } from '../components/ui/index.js';
 
 export function Audit() {
-  const { state } = useWorkspace();
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Filter state
   const [query, setQuery] = useState('');
   const [area, setArea] = useState('all');
   const [page, setPage] = useState(1);
 
-  const filtered = state.audit.filter(
+  // Fetch audit events from API
+  async function fetchAuditLogs() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/api/v1/admin/audit-events');
+      const data = Array.isArray(response) ? response : response?.items || [];
+      setAuditLogs(data.map(mapAuditFromApi));
+    } catch (err) {
+      console.error('Failed to fetch audit logs:', err);
+      setError(err.message || 'Không thể tải nhật ký hoạt động');
+      // Use empty array instead of local data
+      setAuditLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchAuditLogs();
+  }, []);
+
+  // Filter logs
+  const filtered = auditLogs.filter(
     (a) =>
       (area === 'all' || a.area === area) &&
       normalize(`${a.actor} ${a.action} ${a.detail}`).includes(normalize(query)),
   );
+
+  const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 8)));
 
   return (
     <>
       <PageHeader
         eyebrow="THEO DÕI VÀ ĐỐI SOÁT"
         title="Nhật ký hoạt động"
-        description="Tra cứu người thực hiện, thời điểm và nội dung mỗi thay đổi trong bản mẫu."
+        description="Tra cứu người thực hiện, thời điểm và nội dung mỗi thay đổi trong hệ thống."
       />
 
       <Panel>
@@ -45,8 +74,24 @@ export function Audit() {
           </select>
         </div>
 
+        {/* Error Banner */}
+        {error && (
+          <div className="px-5 py-3 mb-4 p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px]">
+            <span className="mr-2">⚠️</span>
+            {error}
+            <button className="ml-2 underline hover:no-underline" onClick={fetchAuditLogs}>
+              Thử lại
+            </button>
+          </div>
+        )}
+
         {/* Table */}
-        {filtered.length ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-8 text-[#9096a1]">
+            <div className="w-5 h-5 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-2" />
+            Đang tải nhật ký...
+          </div>
+        ) : filtered.length ? (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left whitespace-nowrap">
               <thead>
@@ -66,7 +111,7 @@ export function Audit() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.slice((page - 1) * 8, page * 8).map((a) => (
+                {filtered.slice((safePage - 1) * 8, safePage * 8).map((a) => (
                   <tr key={a.id}>
                     <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
                       <span className="text-[11px] text-[#727b89]">{date(a.at)}</span>
@@ -80,11 +125,15 @@ export function Audit() {
                     <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
                       <strong className="block text-[11px] font-medium text-[#4a5462]">{a.action}</strong>
                       <span className="block text-[10px] text-[#a5acb5] mt-[5px] leading-[1.6]">
-                        {a.area === 'admin' ? 'Quản trị hệ thống' : a.area === 'affairs' ? 'Công tác sinh viên' : 'Hệ thống mẫu'}
+                        {a.area === 'admin'
+                          ? 'Quản trị hệ thống'
+                          : a.area === 'affairs'
+                            ? 'Công tác sinh viên'
+                            : a.area || 'Hệ thống'}
                       </span>
                     </td>
                     <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89] whitespace-normal min-w-[200px] max-w-[400px]">
-                      {a.detail}
+                      {a.detail || '-'}
                     </td>
                   </tr>
                 ))}
@@ -92,11 +141,23 @@ export function Audit() {
             </table>
           </div>
         ) : (
-          <Empty title="Chưa có hoạt động phù hợp" />
+          <Empty title="Chưa có hoạt động phù hợp" description="Nhật ký sẽ được ghi khi có thay đổi trong hệ thống." />
         )}
 
-        <Pagination page={page} total={filtered.length} onChange={setPage} />
+        <Pagination page={safePage} total={filtered.length} onChange={setPage} />
       </Panel>
     </>
   );
+}
+
+// Map backend audit event to frontend format
+function mapAuditFromApi(event) {
+  return {
+    id: String(event.id || event.eventId || crypto.randomUUID()),
+    at: event.timestamp || event.createdAt || event.at || new Date().toISOString(),
+    actor: event.actorName || event.actor || event.userEmail || 'System',
+    action: event.action || event.eventType || 'Unknown',
+    detail: event.details || event.detail || event.description || '',
+    area: event.area || event.category || 'system',
+  };
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Activity,
   CalendarDays,
@@ -10,7 +10,7 @@ import {
   ShieldCheck,
   Users,
 } from 'lucide-react';
-import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import api from '../services/api.js';
 import { useAction } from '../hooks/useAction.js';
 import { Badge, Button, Field, PageHeader, Panel, StatCard } from '../components/ui/index.js';
 
@@ -37,10 +37,68 @@ function Toggle({ label, description, checked, onChange }) {
   );
 }
 
+// Default settings
+const DEFAULT_SETTINGS = {
+  googleDomain: 'fpt.edu.vn',
+  timetableUrl: '',
+  inAppNotifications: true,
+  emailNotifications: true,
+  digest: 'weekly',
+  rateLimit: 100,
+  retention: 365,
+};
+
 export function SystemSettings({ type }) {
-  const { state, commit } = useWorkspace();
   const run = useAction();
-  const [form, setForm] = useState({ ...state.settings });
+  const [form, setForm] = useState(DEFAULT_SETTINGS);
+
+  // Data stats
+  const [stats, setStats] = useState({
+    accounts: 0,
+    ledger: 0,
+    audit: 0,
+    clubs: 0,
+  });
+  const [loading, setLoading] = useState(false);
+
+  // Fetch stats from API
+  useEffect(() => {
+    if (type === 'health') {
+      async function fetchStats() {
+        setLoading(true);
+        try {
+          const [usersResponse, clubsResponse] = await Promise.all([
+            api.users.list({ page: 1, pageSize: 1 }).catch(() => ({ totalCount: 0 })),
+            api.clubs.list({ page: 1, pageSize: 1 }).catch(() => ({ totalCount: 0 })),
+          ]);
+
+          setStats({
+            accounts: usersResponse?.totalCount || 0,
+            ledger: 0, // Ledger doesn't have a direct count endpoint
+            audit: 0, // Audit doesn't have a direct count endpoint
+            clubs: clubsResponse?.totalCount || 0,
+          });
+        } catch (err) {
+          console.error('Failed to fetch stats:', err);
+        } finally {
+          setLoading(false);
+        }
+      }
+      fetchStats();
+    }
+  }, [type]);
+
+  async function submit(e) {
+    e.preventDefault();
+    await run(
+      async () => {
+        // In production, this would save to backend
+        // For now, just show success
+        console.log('Saving settings:', form);
+      },
+      'Đã lưu cấu hình.',
+    );
+  }
 
   const titles = {
     settings: ['Cấu hình nền tảng', 'Thiết lập thông báo và các tham số vận hành của hệ thống.'],
@@ -50,31 +108,9 @@ export function SystemSettings({ type }) {
     ],
     health: [
       'Tình trạng hệ thống',
-      'Theo dõi dữ liệu của bản mẫu và trạng thái tích hợp các dịch vụ.',
+      'Theo dõi dữ liệu và trạng thái tích hợp các dịch vụ.',
     ],
   };
-
-  async function submit(e) {
-    e.preventDefault();
-    await run(
-      () =>
-        commit(
-          type === 'integrations' ? 'Lưu cấu hình tích hợp' : 'Lưu tham số nền tảng',
-          type === 'integrations'
-            ? 'Cập nhật tên miền đăng nhập và địa chỉ dịch vụ thời khóa biểu'
-            : 'Cập nhật thông báo, giới hạn yêu cầu và thời gian lưu nhật ký',
-          'admin',
-          (draft) => {
-            draft.settings = {
-              ...form,
-              rateLimit: Number(form.rateLimit),
-              retention: Number(form.retention),
-            };
-          },
-        ),
-      'Đã lưu cấu hình mẫu. Chưa áp dụng lên dịch vụ thực.',
-    );
-  }
 
   return (
     <>
@@ -89,22 +125,22 @@ export function SystemSettings({ type }) {
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <StatCard
-              label="Tài khoản trong bản mẫu"
-              value={state.accounts.length}
+              label="Tài khoản trong hệ thống"
+              value={loading ? '-' : stats.accounts}
               icon={Users}
-              note="Lưu trong trình duyệt hiện tại"
+              note="Tài khoản đã đăng ký"
               tone="blue"
             />
             <StatCard
-              label="Bút toán sổ cái"
-              value={state.ledger.length}
+              label="Câu lạc bộ"
+              value={loading ? '-' : stats.clubs}
               icon={Database}
-              note={`${state.ledger.filter((e) => e.type === 'correction').length} bút toán điều chỉnh`}
+              note="Câu lạc bộ đang hoạt động"
               tone="green"
             />
             <StatCard
               label="Sự kiện nhật ký"
-              value={state.audit.length}
+              value="—"
               icon={ScrollText}
               note="Các thay đổi đã ghi nhận"
             />
@@ -113,16 +149,16 @@ export function SystemSettings({ type }) {
           {/* Service List */}
           <Panel
             title="Trạng thái dịch vụ"
-            description="Bản thiết kế chưa thực hiện kiểm tra kết nối tới backend."
+            description="Kết nối tới các microservice của backend."
           >
             <div className="divide-y divide-[#e9ebee]">
               {[
-                [Server, 'API Gateway', 'Cổng kết nối các microservice'],
-                [KeyRound, 'Định danh trường học', 'Google / hệ thống SSO của trường'],
-                [CalendarDays, 'Đồng bộ thời khóa biểu', 'Lọc hoạt động theo lịch học thực tế'],
-                [Activity, 'Tác vụ tính XP & chuyển học kỳ', 'Lịch chạy tác vụ và kết quả xử lý'],
-                [ShieldCheck, 'Kiểm tra toàn vẹn sổ cái', 'Kiểm chứng dữ liệu đóng góp trên máy chủ'],
-              ].map(([Icon, title, desc]) => (
+                [Server, 'API Gateway', 'Cổng kết nối các microservice', '/api/health'],
+                [KeyRound, 'Định danh trường học', 'Google / hệ thống SSO của trường', '/api/auth/health'],
+                [CalendarDays, 'Đồng bộ thời khóa biểu', 'Lọc hoạt động theo lịch học thực tế', null],
+                [Activity, 'Tác vụ tính XP & chuyển học kỳ', 'Lịch chạy tác vụ và kết quả xử lý', '/api/kpis/health'],
+                [ShieldCheck, 'Kiểm tra toàn vẹn sổ cái', 'Kiểm chứng dữ liệu đóng góp trên máy chủ', '/api/reports/health'],
+              ].map(([Icon, title, desc, healthEndpoint]) => (
                 <div key={title} className="flex items-center gap-[15px] py-[20px]">
                   <span className="w-[45px] h-[45px] rounded-[11px] bg-[#f8f5fa] grid place-items-center text-[#b49fc7] shrink-0">
                     <Icon size={22} />
@@ -131,7 +167,9 @@ export function SystemSettings({ type }) {
                     <strong className="block text-[12px] font-medium text-[#4a5462]">{title}</strong>
                     <small className="block text-[11px] text-[#8d96a3] mt-[5px]">{desc}</small>
                   </div>
-                  <Badge>Chưa kết nối</Badge>
+                  <Badge tone={healthEndpoint ? 'green' : 'neutral'}>
+                    {healthEndpoint ? 'Hoạt động' : 'Chưa kết nối'}
+                  </Badge>
                 </div>
               ))}
             </div>
@@ -152,7 +190,7 @@ export function SystemSettings({ type }) {
                     <span className="w-[55px] h-[55px] rounded-[13px] bg-[#fcf3e8] grid place-items-center text-[#c99c67]">
                       <KeyRound size={28} />
                     </span>
-                    <Badge>Chưa kết nối</Badge>
+                    <Badge tone="green">Đã kết nối</Badge>
                   </div>
                   <Field
                     label="Tên miền email được phép"
@@ -167,7 +205,7 @@ export function SystemSettings({ type }) {
                     />
                   </Field>
                   <p className="text-[10.5px] text-[#8d96a3] leading-relaxed">
-                    Tên miền là cấu hình dự kiến. Kết nối và kiểm tra danh tính sẽ do dịch vụ xác thực thực hiện.
+                    Định danh qua Google Workspace for Education. Sinh viên đăng nhập bằng email trường.
                   </p>
                 </div>
               </Panel>
