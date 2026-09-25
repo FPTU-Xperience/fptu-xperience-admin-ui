@@ -162,14 +162,14 @@ export function Quests() {
                 {/* Quest Content */}
                 <div className="p-[22px]">
                   <div className="text-[9px] tracking-[1px] font-semibold text-[#929aa6] mb-[10px]">
-                    {q.category || 'Nhiệm vụ'} · {q.kind || 'Cá nhân'}
+                    {q.category} · {q.kind}
                   </div>
                   <h2 className="text-[15px] font-semibold text-[#4a5462] mb-[12px]">{q.name}</h2>
-                  <p className="text-[11px] text-[#717d8d] mb-[18px] min-h-[52px]">{q.description}</p>
+                  <p className="text-[11px] text-[#717d8d] mb-[18px] min-h-[52px]">{q.description || 'Chưa có mô tả'}</p>
 
                   <div className="flex items-center gap-[8px] text-[11px] text-[#717d8d] mb-[10px]">
                     <UsersRound size={15} />
-                    {q.scope || 'Toàn bộ sinh viên'}
+                    {q.scope}
                   </div>
                   <div className="flex items-center gap-[8px] text-[11px] text-[#717d8d] mb-[21px]">
                     <Clock3 size={15} />
@@ -228,23 +228,48 @@ export function Quests() {
   );
 }
 
-// Map backend report to quest format
+// Helper to safely convert any value to a renderable string
+function safeString(value, fallback = '') {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'object') {
+    // Try common property names
+    const candidate =
+      value.name || value.title || value.label || value.displayName || value.value || fallback;
+    return safeString(candidate, fallback);
+  }
+  return fallback;
+}
+
+function safeNumber(value, fallback = 0) {
+  if (typeof value === 'number' && !Number.isNaN(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? fallback : parsed;
+  }
+  return fallback;
+}
+
+// Map backend report to quest format (only safe scalar fields)
 function mapQuestFromApi(report) {
+  const status = safeString(report.status, 'draft').toLowerCase();
+
   return {
-    id: String(report.id),
-    name: report.title || report.name || '',
-    description: report.description || report.details || '',
-    category: report.category || report.tag || 'Nhiệm vụ',
-    kind: report.reportType || 'Cá nhân',
-    scope: 'Toàn bộ sinh viên',
-    reward: 100,
-    target: 50,
-    deadline: report.dueDate || report.deadline,
-    season: report.period || DEFAULT_SEASON,
+    id: String(report.id || report.activityId || crypto.randomUUID()),
+    name: safeString(report.title || report.name || report.activityName, 'Nhiệm vụ chưa đặt tên'),
+    description: safeString(report.description || report.purpose, ''),
+    category: safeString(report.category || report.activityType || report.tag, 'Nhiệm vụ'),
+    kind: safeString(report.reportType || report.kind || report.scope, 'Cá nhân'),
+    scope: safeString(report.scope || report.targetAudience, 'Toàn bộ sinh viên'),
+    reward: safeNumber(report.reward || report.xpReward || report.xp, 0),
+    target: safeNumber(report.target || report.targetParticipantCount || report.joined, 0),
+    deadline: safeString(report.dueDate || report.deadline || report.activityDate, ''),
+    season: safeString(report.period || report.season, DEFAULT_SEASON),
     icon: 'sparkles',
-    status: report.status?.toLowerCase() || 'draft',
-    joined: 0,
-    completed: 0,
+    status: status,
+    joined: safeNumber(report.joined, 0),
+    completed: safeNumber(report.completed, 0),
   };
 }
 

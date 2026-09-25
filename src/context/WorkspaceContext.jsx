@@ -1,9 +1,34 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import api from '../services/api.js';
-import { createSeed } from '../utils/seed.js';
 
 const KEY = 'fptu-xperience-demo-v1';
 const WorkspaceContext = createContext(null);
+
+// Default empty state - no seed/mock data
+function createEmptyState() {
+  return {
+    version: 1,
+    accounts: [],
+    clubs: [],
+    types: [],
+    applications: [],
+    rubrics: [],
+    quests: [],
+    anomalies: [],
+    seasons: [],
+    ledger: [],
+    audit: [],
+    settings: {
+      googleDomain: 'fpt.edu.vn',
+      timetableUrl: '',
+      inAppNotifications: true,
+      emailNotifications: true,
+      digest: 'weekly',
+      rateLimit: 100,
+      retention: 365,
+    },
+  };
+}
 
 function extractUsers(payload) {
   if (Array.isArray(payload)) return payload;
@@ -49,13 +74,13 @@ function readState() {
   } catch {
     /* A corrupt or unavailable store must not crash the preview. */
   }
-  return createSeed();
+  return createEmptyState();
 }
 export function WorkspaceProvider({ children }) {
   const [state, setState] = useState(readState);
   const stateRef = useRef(state);
 
-  // Initialize role from localStorage user (set by AuthContext after login)
+  // Sync role from localStorage on mount and after login
   const [role, updateRole] = useState(() => {
     try {
       // First check sessionStorage for manual preview role switch
@@ -79,6 +104,39 @@ export function WorkspaceProvider({ children }) {
     } catch { /* ignore */ }
     return 'STUDENT_AFFAIRS_ADMIN';
   });
+
+  // Sync role when localStorage changes (same tab - after login)
+  useEffect(() => {
+    const handleAuthChange = () => {
+      try {
+        const sessionRole = sessionStorage.getItem('fptu-preview-role');
+        if (sessionRole) {
+          updateRole(sessionRole === 'ADMIN' ? 'ADMIN' : 'STUDENT_AFFAIRS_ADMIN');
+          return;
+        }
+
+        const storedUser = localStorage.getItem('fptu-auth-user');
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          const roles = user?.roles || [];
+          if (roles.includes('SYSTEM_ADMIN') || roles.includes('ADMIN')) {
+            updateRole('ADMIN');
+          } else if (roles.includes('STUDENT_AFFAIRS_ADMIN')) {
+            updateRole('STUDENT_AFFAIRS_ADMIN');
+          }
+        }
+      } catch { /* ignore */ }
+    };
+
+    // Listen for custom event dispatched after login
+    window.addEventListener('fptu-auth-changed', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+
+    return () => {
+      window.removeEventListener('fptu-auth-changed', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -124,34 +182,6 @@ export function WorkspaceProvider({ children }) {
     };
   }, []);
 
-  // Listen for user changes and sync role
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'fptu-auth-user') {
-        try {
-          if (e.newValue) {
-            const user = JSON.parse(e.newValue);
-            const roles = user?.roles || [];
-            let newRole = 'STUDENT_AFFAIRS_ADMIN';
-
-            if (roles.includes('SYSTEM_ADMIN') || roles.includes('ADMIN')) {
-              newRole = 'ADMIN';
-            } else if (roles.includes('STUDENT_AFFAIRS_ADMIN')) {
-              newRole = 'STUDENT_AFFAIRS_ADMIN';
-            }
-
-            // Only update if user didn't manually switch role (sessionStorage takes precedence)
-            if (!sessionStorage.getItem('fptu-preview-role')) {
-              updateRole(newRole);
-            }
-          }
-        } catch { /* ignore */ }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
   function setRole(next) {
     try {
       sessionStorage.setItem('fptu-preview-role', next);

@@ -162,6 +162,10 @@ export function AuthProvider({ children }) {
       } catch { /* Ignore */ }
 
       setUser(userData)
+
+      // Dispatch custom event to notify WorkspaceContext to update role
+      window.dispatchEvent(new Event('fptu-auth-changed'))
+
       return userData
     } catch (err) {
       const message = err.message || 'Dev login thất bại'

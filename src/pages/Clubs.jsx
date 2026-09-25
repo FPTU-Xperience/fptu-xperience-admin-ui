@@ -495,21 +495,43 @@ export function Clubs() {
   );
 }
 
+// Helper to safely convert any value to a renderable string
+function safeString(value, fallback = '') {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'object') {
+    const candidate =
+      value.name || value.title || value.label || value.displayName || value.value || fallback;
+    return safeString(candidate, fallback);
+  }
+  return fallback;
+}
+
+function safeNumber(value, fallback = 0) {
+  if (typeof value === 'number' && !Number.isNaN(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? fallback : parsed;
+  }
+  return fallback;
+}
+
 // Map backend club to frontend format
 function mapClubsFromApi(clubs) {
   return clubs.map((club) => ({
     id: String(club.id),
-    name: club.name || '',
-    code: club.code || '',
-    category: club.category || '',
-    description: club.description || '',
+    name: safeString(club.name, ''),
+    code: safeString(club.code, ''),
+    category: safeString(club.category, ''),
+    description: safeString(club.description, ''),
     status: club.isActive ? 'active' : 'paused',
-    color: club.color || '#5c8d80',
-    symbol: (club.code || 'CL').slice(0, 2).toUpperCase(),
-    health: club.healthScore || club.health || 0,
-    email: club.contactEmail || '',
-    leader: club.managerName || club.leader || '',
-    memberCount: club.memberCount || 0,
+    color: safeString(club.color, '#5c8d80'),
+    symbol: safeString(club.code, 'CL').slice(0, 2).toUpperCase(),
+    health: safeNumber(club.healthScore || club.health, 0),
+    email: safeString(club.contactEmail, ''),
+    leader: safeString(club.managerName || club.leader, ''),
+    memberCount: safeNumber(club.memberCount, 0),
   }));
 }
 
@@ -517,16 +539,16 @@ function mapClubsFromApi(clubs) {
 function mapApplicationsFromApi(apps) {
   return apps.map((app) => ({
     id: String(app.id),
-    name: app.clubName || app.name || '',
-    category: app.category || '',
-    members: app.founderCount || app.members || 0,
-    applicant: app.applicantName || app.applicant || '',
-    submitted: app.submittedAt || app.submitted || new Date().toISOString(),
-    purpose: app.description || app.purpose || '',
-    plan: app.plan || '',
-    code: app.clubCode || '',
-    status: app.status?.toLowerCase() || 'pending',
-    note: app.reviewNote || '',
+    name: safeString(app.clubName || app.name, ''),
+    category: safeString(app.category, ''),
+    members: safeNumber(app.founderCount || app.members, 0),
+    applicant: safeString(app.applicantName || app.applicant, ''),
+    submitted: safeString(app.submittedAt || app.submitted, new Date().toISOString()),
+    purpose: safeString(app.description || app.purpose, ''),
+    plan: safeString(app.plan, ''),
+    code: safeString(app.clubCode, ''),
+    status: safeString(app.status, 'pending').toLowerCase(),
+    note: safeString(app.reviewNote, ''),
     reviewedAt: app.reviewedAt,
   }));
 }

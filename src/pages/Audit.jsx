@@ -150,14 +150,27 @@ export function Audit() {
   );
 }
 
+// Helper to safely convert any value to a renderable string
+function safeString(value, fallback = '') {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'object') {
+    const candidate =
+      value.name || value.title || value.label || value.displayName || value.value || fallback;
+    return safeString(candidate, fallback);
+  }
+  return fallback;
+}
+
 // Map backend audit event to frontend format
 function mapAuditFromApi(event) {
   return {
     id: String(event.id || event.eventId || crypto.randomUUID()),
-    at: event.timestamp || event.createdAt || event.at || new Date().toISOString(),
-    actor: event.actorName || event.actor || event.userEmail || 'System',
-    action: event.action || event.eventType || 'Unknown',
-    detail: event.details || event.detail || event.description || '',
-    area: event.area || event.category || 'system',
+    at: safeString(event.timestamp || event.createdAt || event.at, new Date().toISOString()),
+    actor: safeString(event.actorName || event.actor || event.userEmail, 'System'),
+    action: safeString(event.action || event.eventType, 'Unknown'),
+    detail: safeString(event.details || event.detail || event.description, ''),
+    area: safeString(event.area || event.category, 'system'),
   };
 }

@@ -250,6 +250,7 @@ export default function Login() {
                   </span>
                   {[
                     { role: 'ADMIN', email: 'admin@fpt.edu.vn' },
+                    { role: 'STUDENT_AFFAIRS_ADMIN', email: 'ctsv.an@fpt.edu.vn' },
                     { role: 'CLUB_MANAGER', email: 'manager.tech@fpt.edu.vn' },
                   ].map((account) => (
                     <div
@@ -259,7 +260,7 @@ export default function Login() {
                     >
                       <code className="text-[12px] text-[#5c6270] font-mono">{account.email}</code>
                       <span className="text-[10px] font-semibold text-[#ed641c] bg-[#fff0e5] px-[8px] py-[3px] rounded-[4px] uppercase tracking-[0.3px]">
-                        {account.role}
+                        {account.role === 'STUDENT_AFFAIRS_ADMIN' ? 'CTSV' : account.role}
                       </span>
                     </div>
                   ))}
