@@ -84,8 +84,7 @@ export default function Sidebar({ nav, mobile, onOpenHelp }) {
 
       {/* Bottom section */}
       <div className="mt-auto pt-[14px]">
-        {/* Support card */}
-        <div className="relative mx-[3px] mb-[15px] p-[15px_13px] rounded-[9px] bg-gradient-to-br from-[#faf4ef] to-[#fcf9f4] border border-[#f1e8dd] overflow-hidden">
+        {/* <div className="relative mx-[3px] mb-[15px] p-[15px_13px] rounded-[9px] bg-gradient-to-br from-[#faf4ef] to-[#fcf9f4] border border-[#f1e8dd] overflow-hidden">
           <span className="absolute -right-[75px] -bottom-[50px] w-[130px] h-[130px] rounded-full border border-[#eddcca88] pointer-events-none" />
 
           <span className="relative z-10 block text-[#cd8c58] mb-[9px]">
@@ -103,7 +102,7 @@ export default function Sidebar({ nav, mobile, onOpenHelp }) {
           >
             Khám phá không gian <ArrowRight size={14} />
           </button>
-        </div>
+        </div> */}
 
         {/* Help link */}
         <button

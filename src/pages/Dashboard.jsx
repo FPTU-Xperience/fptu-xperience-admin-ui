@@ -166,8 +166,7 @@ export default function Dashboard() {
         </Button>
       </PageHeader>
 
-      {/* Welcome Banner */}
-      <section className="relative border border-[#f3e3d8] overflow-hidden rounded-[12px] bg-gradient-to-br from-[#fff6ee] via-[#fff7ef] to-[#fff1e3] min-h-[244px] mb-6 flex items-center justify-between">
+      {/* <section className="relative border border-[#f3e3d8] overflow-hidden rounded-[12px] bg-gradient-to-br from-[#fff6ee] via-[#fff7ef] to-[#fff1e3] min-h-[244px] mb-6 flex items-center justify-between">
         <div className="relative z-10 p-[29px_33px]">
           <Badge tone="orange">
             <Sparkles size={12} />
@@ -184,18 +183,14 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {/* Experience Art */}
         <div className="absolute right-[4%] top-0 w-[360px] h-full" aria-hidden="true">
-          {/* Orbits */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[170px] h-[170px] rounded-full border border-[#e9cbb282]" />
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[235px] h-[235px] rounded-full border border-dashed border-[#e9cbb282]" />
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[330px] h-[330px] rounded-full border border-[#f0d9c66b]" />
 
-          {/* Art dots */}
           <span className="absolute right-[66px] top-[29px] w-2 h-2 bg-[#e8be8b] rounded-full" />
           <span className="absolute left-[49px] top-[137px] w-[5px] h-[5px] bg-[#93b8a2] rounded-full" />
 
-          {/* Orbit chips */}
           <div className="absolute left-[44px] top-[30px] w-[64px] h-[58px] rounded-[14px] bg-[#fffdfa] border border-[#f3e8dd] shadow-[0_8px_14px_#ab764318] rotate-[-12deg] grid place-items-center text-[#bd8d52]">
             <GraduationCap size={31} />
           </div>
@@ -206,14 +201,12 @@ export default function Dashboard() {
             <Target size={22} />
           </div>
 
-          {/* Experience Core */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[-8deg] w-[120px] h-[120px] rounded-[31px] bg-gradient-to-br from-[#fa9b4f] to-[#ed6a29] shadow-[0_13px_35px_#e88b4030,inset_0_0_0_1px_#fca160] text-white flex flex-col items-center justify-center">
             <span className="absolute top-[12px] left-[15px] text-[13px] font-bold tracking-[-0.5px]">fptu</span>
             <strong className="text-[67px] leading-[70px] tracking-[-5px] font-[750] italic mt-[8px]">X</strong>
             <small className="text-[8px] tracking-[2px] font-medium leading-[1.7] ml-[5px]">XPERIENCE</small>
           </div>
 
-          {/* Floating pill */}
           <div className="absolute right-[13px] bottom-[39px] bg-[#fffefa] shadow-[0_4px_16px_#a4815615] border border-[#f5e4d5] rounded-[7px] flex gap-[6px] items-center text-[9.3px] text-[#8e8073] p-[10px] rotate-[-4deg]">
             <span className="w-[18px] h-[18px] rounded-full bg-[#eff6e9] text-[#8daf74] grid place-items-center">
               <Check size={13} />
@@ -221,10 +214,9 @@ export default function Dashboard() {
             Kết nối để trưởng thành
           </div>
 
-          {/* Sparkle */}
           <Sparkles className="absolute right-[71px] bottom-[81px] text-[#e2a569]" size={23} />
         </div>
-      </section>
+      </section> */}
 
       {/* Error Banner */}
       {error && (
