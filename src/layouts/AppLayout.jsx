@@ -23,9 +23,9 @@ export default function AppLayout({ children }) {
   const current = nav.find((n) => n.path === location.pathname) || nav[0];
 
   useEffect(() => {
-    document.title = `${current.label} | FPTU Xperience`;
+    document.title = `${current?.label || 'Dashboard'} | FPTU Xperience`;
     setMobile(false);
-  }, [location.pathname, current.label]);
+  }, [location.pathname, current?.label]);
 
   useEffect(() => {
     const listener = (e) => {
@@ -40,10 +40,11 @@ export default function AppLayout({ children }) {
   }, []);
 
   return (
-    <div className="app-shell">
+    <div className="min-h-screen">
+      {/* Skip link */}
       <a
-        className="skip-link"
         href="#main-content"
+        className="fixed left-[10px] top-[-60px] bg-[#ed641c] text-white px-3 py-3 z-[100] rounded-[7px] transition-top focus:top-[10px]"
         onClick={(e) => {
           e.preventDefault();
           document.getElementById('main-content')?.focus();
@@ -51,15 +52,21 @@ export default function AppLayout({ children }) {
       >
         Đến nội dung chính
       </a>
+
+      {/* Mobile backdrop */}
       {mobile && (
         <button
-          className="sidebar-backdrop"
+          className="fixed inset-0 bg-[#27334360] z-[29] border-0 cursor-default"
           aria-label="Đóng điều hướng"
           onClick={() => setMobile(false)}
         />
       )}
+
+      {/* Sidebar */}
       <Sidebar nav={nav} mobile={mobile} onOpenHelp={() => setHelp(true)} />
-      <div className="main-shell">
+
+      {/* Main content area */}
+      <div className="ml-[245px] min-h-screen">
         <Topbar
           admin={admin}
           current={current}
@@ -69,22 +76,36 @@ export default function AppLayout({ children }) {
           onOpenSearch={() => setSearch(true)}
           onOpenNotifications={() => setNotifications(true)}
         />
-        <main id="main-content" tabIndex={-1}>
+
+        <main id="main-content" tabIndex={-1} className="px-[32px] pt-[22px] pb-0 max-w-[1650px] mx-auto">
           <ContextBar admin={admin} season={season} onSeasonChange={setSeason} />
           {children}
-          <footer className="page-footer">
+
+          {/* Footer */}
+          <footer className="flex justify-between items-center gap-[15px] text-[10px] text-[#b0b5be] py-[24px] mt-[8px]">
             <span>© 2026 FPTU Xperience</span>
             <span>Trải nghiệm hôm nay. Giá trị ngày mai.</span>
           </footer>
         </main>
       </div>
+
+      {/* Toast notification */}
       {toast && (
-        <div className={`toast ${toast.type}`} role={toast.type === 'error' ? 'alert' : 'status'}>
+        <div
+          role={toast.type === 'error' ? 'alert' : 'status'}
+          className={`fixed bottom-[25px] left-1/2 ml-[122px] -translate-x-1/2 z-[150] bg-white border rounded-[10px] px-4 py-[14px] flex items-center gap-3 shadow-[0_8px_40px_#1730231a] ${
+            toast.type === 'error'
+              ? 'border-[#efd9d5] text-[#cd8a7d]'
+              : 'border-[#dfece3] text-[#73a78a]'
+          }`}
+        >
           {toast.type === 'error' ? <ShieldAlert size={19} /> : <Check size={19} />}
-          <span>{toast.message}</span>
+          <span className={toast.type === 'error' ? 'text-[#ad8b80]' : 'text-[#74877b]'}>{toast.message}</span>
           <IconButton icon={X} label="Đóng thông báo" onClick={dismissToast} />
         </div>
       )}
+
+      {/* Modals */}
       {search && <SearchModal nav={nav} onClose={() => setSearch(false)} />}
       {help && <HelpModal onClose={() => setHelp(false)} />}
       {notifications && (
