@@ -530,6 +530,7 @@ function mapClubsFromApi(clubs) {
     symbol: safeString(club.code, 'CL').slice(0, 2).toUpperCase(),
     health: safeNumber(club.healthScore || club.health, 0),
     email: safeString(club.contactEmail, ''),
+    phone: safeString(club.contactPhone, ''),
     leader: safeString(club.managerName || club.leader, ''),
     memberCount: safeNumber(club.memberCount, 0),
   }));
@@ -563,11 +564,12 @@ function ClubForm({ club, types, onClose, onSave }) {
     description: '',
     leader: '',
     email: '',
+    phone: '',
     status: 'active',
     ...club,
   });
   const bind = (key) => ({
-    value: form[key],
+    value: form[key] || '',
     onChange: (e) => setForm({ ...form, [key]: e.target.value }),
   });
 
@@ -582,8 +584,9 @@ function ClubForm({ club, types, onClose, onSave }) {
             name: form.name.trim(),
             code: form.code.trim(),
             category: form.category,
-            description: form.description,
-            contactEmail: form.email,
+            description: form.description || '',
+            contactEmail: form.email || form.contactEmail || '',
+            contactPhone: form.phone || form.contactPhone || '',
             isActive: form.status === 'active',
           };
 
@@ -600,6 +603,7 @@ function ClubForm({ club, types, onClose, onSave }) {
       },
       'Đã lưu thông tin câu lạc bộ.',
     );
+    if (ok) onClose();
   }
 
   return (
@@ -629,7 +633,10 @@ function ClubForm({ club, types, onClose, onSave }) {
             <input maxLength={100} {...bind('leader')} />
           </Field>
           <Field label="Email liên hệ">
-            <input type="email" {...bind('email')} />
+            <input type="email" {...bind('email')} placeholder="clb@fpt.edu.vn" />
+          </Field>
+          <Field label="Số điện thoại liên hệ">
+            <input type="tel" maxLength={20} {...bind('phone')} placeholder="09xxxxxxxx" />
           </Field>
           <Field label="Mô tả hoạt động" className="sm:col-span-2">
             <textarea rows={3} maxLength={500} {...bind('description')} />
