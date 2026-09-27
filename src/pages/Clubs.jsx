@@ -234,40 +234,42 @@ export function Clubs() {
               {filtered.map((club) => (
                 <article
                   key={club.id}
-                  className="bg-white border border-[#e9ebee] rounded-[10px] p-[22px] pb-0"
+                  className="bg-white border border-[#e9ebee] rounded-[10px] overflow-hidden flex flex-col"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <span
-                      className="w-[46px] h-[46px] rounded-[12px] grid place-items-center text-[19px] font-[650] tracking-[-1px] shrink-0"
-                      style={{ background: `${club.color}15`, color: club.color }}
-                    >
-                      {club.symbol}
+                  <div className="p-[22px] flex-1">
+                    <div className="flex items-center justify-between mb-4">
+                      <span
+                        className="w-[46px] h-[46px] rounded-[12px] grid place-items-center text-[19px] font-[650] tracking-[-1px] shrink-0"
+                        style={{ background: `${club.color}15`, color: club.color }}
+                      >
+                        {club.symbol}
+                      </span>
+                      <Badge tone={club.status === 'active' ? 'green' : 'neutral'} dot>
+                        {club.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
+                      </Badge>
+                    </div>
+                    <h3 className="text-[15px] tracking-[-0.3px] mb-[7px]">{club.name}</h3>
+                    <span className="text-[10.5px] text-[#adb3bc] flex items-center gap-[7px] mb-[13px]">
+                      {club.category}
+                      <i className="w-[3px] h-[3px] bg-[#ccc] rounded-full" />
+                      {club.code}
                     </span>
-                    <Badge tone={club.status === 'active' ? 'green' : 'neutral'} dot>
-                      {club.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
-                    </Badge>
-                  </div>
-                  <h3 className="text-[15px] tracking-[-0.3px] mb-[7px]">{club.name}</h3>
-                  <span className="text-[10.5px] text-[#adb3bc] flex items-center gap-[7px] mb-[13px]">
-                    {club.category}
-                    <i className="w-[3px] h-[3px] bg-[#ccc] rounded-full" />
-                    {club.code}
-                  </span>
-                  <p className="text-[11.5px] text-[#717d8d] my-[13px] min-h-[34px]">{club.description}</p>
-                  <div className="flex justify-between text-[10px] items-center gap-[8px] mb-[13px] text-[#929da9]">
-                    <span className="flex items-center gap-[6px]">
-                      <UsersRound size={15} />
-                      {club.memberCount || 0} thành viên
-                    </span>
-                    <span className={(club.health || 0) < 50 ? 'text-[#d27332]' : 'text-[#358b6c]'}>
-                      {club.health || 0}/100 gắn kết
-                    </span>
-                  </div>
-                  <div className="w-full h-[5px] bg-[#f1f2f4] rounded-[6px] overflow-hidden mb-[22px]">
-                    <i className="block h-full rounded-[6px]" style={{ width: `${club.health || 0}%`, background: club.color }} />
+                    <p className="text-[11.5px] text-[#717d8d] my-[13px] min-h-[34px]">{club.description}</p>
+                    <div className="flex justify-between text-[10px] items-center gap-[8px] mb-[13px] text-[#929da9]">
+                      <span className="flex items-center gap-[6px]">
+                        <UsersRound size={15} />
+                        {club.memberCount || 0} thành viên
+                      </span>
+                      <span className={(club.health || 0) < 50 ? 'text-[#d27332]' : 'text-[#358b6c]'}>
+                        {club.health || 0}/100 gắn kết
+                      </span>
+                    </div>
+                    <div className="w-full h-[5px] bg-[#f1f2f4] rounded-[6px] overflow-hidden">
+                      <i className="block h-full rounded-[6px]" style={{ width: `${club.health || 0}%`, background: club.color }} />
+                    </div>
                   </div>
                   <button
-                    className="flex justify-between items-center w-full py-[14px] -mx-[22px] px-[22px] border-t border-[#e9ebee] text-[11px] text-[#83909d] hover:bg-[#fcfcfd] hover:text-accent transition-colors -mb-[22px] pt-[14px]"
+                    className="flex justify-between items-center w-full py-[14px] px-[22px] border-t border-[#e9ebee] text-[11px] text-[#83909d] hover:bg-[#fcfcfd] hover:text-accent transition-colors"
                     onClick={() => setDetail(club)}
                   >
                     Xem câu lạc bộ <ArrowRight size={15} />

@@ -17,7 +17,7 @@ export function Modal({ title, description, children, onClose, wide = false }) {
   }, []);
   return (
     <dialog
-      className={`border border-[#eceef2] p-0 bg-white rounded-xl sm:rounded-[14px] w-[560px] max-w-[calc(100vw-20px)] sm:max-w-[calc(100vw-30px)] max-h-[94dvh] sm:max-h-[90dvh] shadow-modal text-ink [&::backdrop]:bg-[#27334366] [&::backdrop]:backdrop-blur-[3px] ${
+      className={`border border-[#eceef2] p-0 bg-white rounded-xl sm:rounded-[14px] w-[560px] max-w-[calc(100vw-20px)] sm:max-w-[calc(100vw-30px)] max-h-[94dvh] sm:max-h-[90dvh] shadow-modal text-ink mx-auto my-auto [&::backdrop]:bg-[#27334366] [&::backdrop]:backdrop-blur-[3px] ${
         wide ? 'sm:w-[790px]' : ''
       }`}
       ref={ref}
