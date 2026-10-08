@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import api from '../services/api.js';
 import { ChevronRight, CircleAlert, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { useAction } from '../hooks/useAction.js';
 import { Badge, Button, Empty, Field, Modal, PageHeader, Panel, StatCard, Tabs } from '../components/ui/index.js';
@@ -283,4 +284,22 @@ export function Anomalies() {
       )}
     </>
   );
+}
+
+function mapAnomalyFromApi(a) {
+  return {
+    id: String(a.id),
+    title: a.ruleTriggered || `Bất thường ${String(a.id).slice(0, 8)}`,
+    club: a.campusCode || 'FPTU',
+    source: a.pillarCategory || a.source || 'Hoạt động',
+    amount: Number(a.amount) || 0,
+    student: a.studentName || `Sinh viên #${a.studentUserId}`,
+    evidence: a.reason || 'Dữ liệu phát hiện tự động bởi hệ thống kiểm soát',
+    severity: String(a.severity || 'high').toLowerCase(),
+    status: String(a.status || 'open').toLowerCase(),
+    decision: a.decision,
+    reason: a.reason,
+    rule: a.ruleTriggered,
+    deviation: a.deviation,
+  };
 }

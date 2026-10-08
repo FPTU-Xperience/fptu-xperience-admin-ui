@@ -38,7 +38,7 @@ function AdminRoute({ children }) {
 function CTSVRoute({ children }) {
   const { user } = useAuth()
   const roles = user?.roles || []
-  const isCTSV = roles.includes('STUDENT_AFFAIRS_ADMIN')
+  const isCTSV = roles.includes('STUDENT_AFFAIRS_ADMIN') || roles.includes('ADMIN') || roles.includes('SYSTEM_ADMIN')
 
   // Only allow admin/CTSV users for CTSV routes
   if (!isCTSV) {
