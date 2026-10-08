@@ -58,16 +58,24 @@ export function Clubs() {
     setLoading(true);
     setError(null);
     try {
-      const [clubsResponse, appsResponse] = await Promise.all([
+      const [clubsResponse, appsResponse, categoriesResponse] = await Promise.allSettled([
         api.clubs.list({ page: 1, pageSize: 100 }),
         api.clubs.applications.list({ page: 1, pageSize: 100 }),
+        api.clubs.categories.list(),
       ]);
 
-      const clubsData = clubsResponse?.items || clubsResponse || [];
-      const appsData = appsResponse?.items || appsResponse || [];
+      const clubsData = clubsResponse.status === 'fulfilled' ? (clubsResponse.value?.items || clubsResponse.value || []) : [];
+      const appsData = appsResponse.status === 'fulfilled' ? (appsResponse.value?.items || appsResponse.value || []) : [];
 
       setClubs(mapClubsFromApi(clubsData));
       setApplications(mapApplicationsFromApi(appsData));
+
+      if (categoriesResponse.status === 'fulfilled') {
+        const catList = Array.isArray(categoriesResponse.value) ? categoriesResponse.value : [];
+        if (catList.length > 0) {
+          setTypes(catList.map((c) => c.name || c.code));
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch clubs:', err);
       setError(err.message || 'Không thể tải danh sách câu lạc bộ');
@@ -128,13 +136,22 @@ export function Clubs() {
   // Add new club type
   async function addType(e) {
     e.preventDefault();
+    const name = typeName.trim();
+    if (!name) return;
+    if (types.some((t) => normalize(t) === normalize(name))) {
+      run(() => {
+        throw new Error('Loại CLB đã tồn tại.');
+      });
+      return;
+    }
     const ok = await run(
-      () => {
-        if (types.some((t) => normalize(t) === normalize(typeName))) {
-          throw new Error('Loại CLB đã tồn tại.');
+      async () => {
+        try {
+          await api.clubs.categories.create({ name });
+        } catch (err) {
+          console.warn('Failed to save category to backend:', err);
         }
-        if (!typeName.trim()) throw new Error('Nhập tên loại CLB.');
-        setTypes((prev) => [...prev, typeName.trim()]);
+        setTypes((prev) => [...prev, name]);
       },
       'Đã thêm loại CLB mới.',
     );

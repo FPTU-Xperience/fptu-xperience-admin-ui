@@ -328,6 +328,11 @@ export const api = {
     delete: (id) => api.delete(`/api/clubs/${id}`),
     join: (clubId, payload) => api.post(`/api/clubs/${clubId}/join`, payload),
 
+    categories: {
+      list: () => api.get('/api/clubs/categories'),
+      create: (payload) => api.post('/api/clubs/categories', payload),
+    },
+
     members: {
       list: (clubId, params) => api.get(`/api/clubs/${clubId}/members`, params),
       get: (clubId, memberId, params) => api.get(`/api/clubs/${clubId}/members/${memberId}`, params),
@@ -449,6 +454,16 @@ export const api = {
     create: (payload) => api.post('/api/deadlines', payload),
     update: (period, payload) => api.put(`/api/deadlines/${period}`, payload),
     delete: (period) => api.delete(`/api/deadlines/${period}`),
+  },
+
+  // ---------------------------------------------------------------------------
+  // Seasons / Semesters
+  // ---------------------------------------------------------------------------
+  seasons: {
+    list: () => api.get('/api/v1/semesters'),
+    getActive: () => api.get('/api/v1/semesters/active'),
+    create: (payload) => api.post('/api/v1/semesters', payload),
+    update: (id, payload) => api.put(`/api/v1/semesters/${id}`, payload),
   },
 
   // ---------------------------------------------------------------------------
