@@ -303,9 +303,17 @@ export const api = {
     createRole: (name) => api.post('/api/roles', { name }),
     assignRole: (userId, roleId) => api.post(`/api/users/${userId}/roles`, { roleId }),
     removeRole: (userId, roleId) => api.delete(`/api/users/${userId}/roles/${roleId}`),
+    roleStats: (params) => api.get('/api/roles/stats', params),
   },
 
   // ---------------------------------------------------------------------------
+  // Roles
+  roles: {
+    list: () => api.get('/api/roles'),
+    stats: (params) => api.get('/api/roles/stats', params),
+    create: (name) => api.post('/api/roles', { name }),
+  },
+
   // Clubs
   // ---------------------------------------------------------------------------
   clubs: {

@@ -33,26 +33,15 @@ export function RoleMatrix() {
     async function fetchRoleCounts() {
       setLoading(true);
       try {
-        const response = await api.users.list({ page: 1, pageSize: 500 });
-        const users = Array.isArray(response) ? response : response?.items || [];
-
-        const counts = {
-          ADMIN: 0,
-          STUDENT_AFFAIRS_ADMIN: 0,
-          CLUB_MANAGER: 0,
-          CLUB_MEMBER: 0,
-        };
-
-        users.forEach((user) => {
-          const roles = Array.isArray(user.roles) ? user.roles : [user.role].filter(Boolean);
-          if (roles.includes('ADMIN')) counts.ADMIN++;
-          else if (roles.includes('SYSTEM_ADMIN')) counts.ADMIN++;
-          else if (roles.includes('STUDENT_AFFAIRS_ADMIN')) counts.STUDENT_AFFAIRS_ADMIN++;
-          else if (roles.includes('CLUB_MANAGER')) counts.CLUB_MANAGER++;
-          else if (roles.includes('CLUB_MEMBER')) counts.CLUB_MEMBER++;
-        });
-
-        setRoleCounts(counts);
+        const stats = await (api.roles?.stats ? api.roles.stats() : api.users.roleStats());
+        if (stats) {
+          setRoleCounts({
+            ADMIN: stats.ADMIN ?? stats.admin ?? 0,
+            STUDENT_AFFAIRS_ADMIN: stats.STUDENT_AFFAIRS_ADMIN ?? stats.studentAffairsAdmin ?? 0,
+            CLUB_MANAGER: stats.CLUB_MANAGER ?? stats.clubManager ?? 0,
+            CLUB_MEMBER: stats.CLUB_MEMBER ?? stats.clubMember ?? 0,
+          });
+        }
       } catch (err) {
         console.error('Failed to fetch role counts:', err);
       } finally {
