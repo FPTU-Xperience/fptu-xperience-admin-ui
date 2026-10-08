@@ -504,6 +504,35 @@ export const api = {
     root: () => api.get('/'),
     check: () => api.get('/health'),
   },
+
+  // ---------------------------------------------------------------------------
+  // Student Affairs (CTSV)
+  // ---------------------------------------------------------------------------
+  studentAffairs: {
+    // Declarations queue
+    declarations: {
+      list: (params) => api.get('/api/v1/student-affairs/declarations', params),
+      review: (id, payload) =>
+        api.post(`/api/v1/student-affairs/declarations/${id}/review`, payload),
+    },
+    // Benchmark (6+1 chiều)
+    benchmarks: {
+      list: (params) => api.get('/api/v1/student-affairs/benchmarks', params),
+      getActive: () => api.get('/api/v1/student-affairs/benchmarks/active'),
+      create: (payload) => api.post('/api/v1/student-affairs/benchmarks', payload),
+      update: (id, payload) => api.put(`/api/v1/student-affairs/benchmarks/${id}`, payload),
+      lock: (id) => api.post('/api/v1/student-affairs/benchmarks/${id}/lock'),
+    },
+    // Student radar
+    students: {
+      radar: (id, params) =>
+        api.get(`/api/v1/student-affairs/students/${id}/radar`, params),
+    },
+    // Radar overview (6+1 pillars overview)
+    radar: {
+      overview: (params) => api.get('/api/v1/student-affairs/radar/overview', params),
+    },
+  },
 }
 
 export default api

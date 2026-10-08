@@ -15,8 +15,12 @@ export const SEASONS = ['FALL2026', 'SUMMER2026'];
 export const seasonLabel = (value) =>
   ({ FALL2026: 'Fall 2026', SUMMER2026: 'Summer 2026' })[value] || value;
 export const number = (value) => new Intl.NumberFormat('vi-VN').format(value);
-export const date = (value) =>
-  new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short' }).format(new Date(value));
+export const date = (value) => {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short' }).format(d);
+};
 export const normalize = (value) =>
   String(value ?? '')
     .normalize('NFD')
