@@ -6,6 +6,8 @@ import Dashboard from '../pages/Dashboard.jsx'
 import Accounts from '../pages/Accounts.jsx'
 import { Clubs } from '../pages/Clubs.jsx'
 import { Engagement } from '../pages/Engagement.jsx'
+import { BonusMatrix } from '../pages/BonusMatrix.jsx'
+import { DeclarationsQueue } from '../pages/DeclarationsQueue.jsx'
 import { Quests } from '../pages/Quests.jsx'
 import { Rubrics } from '../pages/Rubrics.jsx'
 import { Seasons } from '../pages/Seasons.jsx'
@@ -100,10 +102,26 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/ctsv/declarations"
+        element={
+          <CTSVRoute>
+            <DeclarationsQueue />
+          </CTSVRoute>
+        }
+      />
+      <Route
         path="/ctsv/engagement"
         element={
           <CTSVRoute>
             <Engagement />
+          </CTSVRoute>
+        }
+      />
+      <Route
+        path="/ctsv/bonus-matrix"
+        element={
+          <CTSVRoute>
+            <BonusMatrix />
           </CTSVRoute>
         }
       />

@@ -37,6 +37,40 @@ export function isAdminUser(user) {
   return isAdmin(user) || isCTSV(user)
 }
 
+// Campus options for the selector
+export const CAMPUS_OPTIONS = [
+  { code: 'GLOBAL', name: 'Toàn trường', shortName: 'Tất cả' },
+  { code: 'HAN', name: 'Hà Nội (Hòa Lạc)', shortName: 'Hà Nội' },
+  { code: 'HCM', name: 'TP. Hồ Chí Minh', shortName: 'TP.HCM' },
+  { code: 'DAN', name: 'Đà Nẵng', shortName: 'Đà Nẵng' },
+  { code: 'CAN', name: 'Cần Thơ', shortName: 'Cần Thơ' },
+  { code: 'QNH', name: 'Quy Nhơn', shortName: 'Quy Nhơn' },
+]
+
+// Get campus code from user object or token
+export function getCampusFromUser(user) {
+  // First try to get from user object directly
+  if (user?.campusCode) return user.campusCode
+
+  // Try to decode from JWT token
+  const token = localStorage.getItem('accessToken')
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      return payload.campusCode || payload.campus || null
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+// Get campus name from code
+export function getCampusName(campusCode) {
+  const campus = CAMPUS_OPTIONS.find(c => c.code === campusCode)
+  return campus?.name || campusCode || 'Không xác định'
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)

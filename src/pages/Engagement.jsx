@@ -8,6 +8,14 @@ import {
   Sparkles,
   UsersRound,
 } from 'lucide-react';
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 import api from '../services/api.js';
 import { MAJORS, normalize, number, seasonLabel } from '../utils/format.js';
 import { createWorkbookBuffer, downloadBuffer } from '../utils/excel.js';
@@ -49,6 +57,9 @@ export function Engagement({ reports = false }) {
   const [cohort, setCohort] = useState('all');
   const [page, setPage] = useState(1);
   const [detail, setDetail] = useState(null);
+  const [radarData, setRadarData] = useState(null);
+  const [radarLoading, setRadarLoading] = useState(false);
+  const [radarError, setRadarError] = useState(null);
   const [busy, setBusy] = useState(false);
 
   // Fetch data from API
@@ -133,6 +144,29 @@ export function Engagement({ reports = false }) {
   // Calculate unengaged count
   const unengagedCount = students.filter((s) => !s.clubIds?.length).length;
   const lowEngagementCount = students.filter((s) => s.clubIds?.length > 0).length;
+
+  // Fetch radar data when student is selected
+  useEffect(() => {
+    if (!detail) {
+      setRadarData(null);
+      return;
+    }
+    async function fetchRadar() {
+      setRadarLoading(true);
+      setRadarError(null);
+      try {
+        const data = await api.studentAffairs.students.radar(detail.id, { semesterCode: season });
+        setRadarData(data);
+      } catch (err) {
+        console.error('Failed to fetch radar:', err);
+        setRadarError(err.message);
+        setRadarData(null);
+      } finally {
+        setRadarLoading(false);
+      }
+    }
+    fetchRadar();
+  }, [detail, season]);
 
   async function exportData() {
     setBusy(true);
@@ -372,6 +406,7 @@ export function Engagement({ reports = false }) {
         <Modal
           title={detail.fullName}
           description={`${detail.username} · ${detail.email}`}
+          wide
           onClose={() => setDetail(null)}
         >
           <div className="px-[26px] py-6">
@@ -384,7 +419,7 @@ export function Engagement({ reports = false }) {
               <span className="text-[11px] text-[#bd9b7e]">Câu lạc bộ đã tham gia</span>
             </div>
 
-            <dl className="grid grid-cols-2 gap-4 text-[11px]">
+            <div className="grid sm:grid-cols-2 gap-4 text-[11px] mb-[20px]">
               <div className="pb-[20px] border-b border-[#e9ebee]">
                 <dt className="text-[10px] text-[#a8b2bf] mb-[10px]">Ngành học</dt>
                 <dd className="text-[12px] text-[#808d9e] font-medium">{detail.major || 'Chưa cập nhật'}</dd>
@@ -393,21 +428,90 @@ export function Engagement({ reports = false }) {
                 <dt className="text-[10px] text-[#a8b2bf] mb-[10px]">Khóa</dt>
                 <dd className="text-[12px] text-[#808d9e] font-medium">{detail.cohort || 'Chưa cập nhật'}</dd>
               </div>
-              <div className="pb-[20px] border-b border-[#e9ebee] sm:col-span-2">
-                <dt className="text-[10px] text-[#a8b2bf] mb-[10px]">Câu lạc bộ</dt>
-                <dd className="text-[12px] text-[#808d9e] font-medium">
-                  {detail.clubIds
-                    ?.map((id) => clubs.find((c) => c.id === id)?.name)
-                    .filter(Boolean)
-                    .join(', ') || 'Chưa tham gia câu lạc bộ'}
-                </dd>
-              </div>
-            </dl>
+            </div>
 
-            <div className="p-[14px] border border-[#e4ebf3] bg-[#f4f7fb] text-[#70869e] rounded-[7px] text-[11px] leading-[1.8] mt-[17px]">
-              {detail.clubIds?.length
-                ? 'Sinh viên đã tham gia câu lạc bộ. Tiếp tục mở rộng cơ hội để duy trì sự gắn kết.'
-                : 'Sinh viên thuộc nhóm cần thêm cơ hội kết nối. Có thể thiết kế nhiệm vụ khám phá phù hợp với ngành học.'}
+            {/* Radar Chart */}
+            <h3 className="text-[13px] text-[#7a8799] font-semibold mb-[14px]">
+              Biểu đồ năng lực · {seasonLabel(season)}
+            </h3>
+
+            {radarLoading ? (
+              <div className="flex items-center justify-center h-[280px] text-[#9096a1]">
+                <div className="w-6 h-6 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-3" />
+                Đang tải biểu đồ…
+              </div>
+            ) : radarError || !radarData ? (
+              <div className="p-[20px] border border-[#e4ebf3] bg-[#f4f7fb] rounded-[9px] text-center text-[11px] text-[#70869e]">
+                Chưa có dữ liệu radar cho học kỳ này.
+              </div>
+            ) : (
+              <>
+                {/* Radar */}
+                <div className="bg-[#fafbfd] rounded-[9px] p-[20px] mb-[16px]">
+                  <ResponsiveContainer width="100%" height={280}>
+                    <RadarChart data={radarData.chart || radarData.data || []}>
+                      <PolarGrid stroke="#e9ebee" />
+                      <PolarAngleAxis
+                        dataKey="name"
+                        tick={{ fontSize: 11, fill: '#718094' }}
+                      />
+                      <Radar
+                        name="Mức độ bão hòa"
+                        dataKey="value"
+                        stroke="#ed641c"
+                        fill="#ed641c"
+                        fillOpacity={0.18}
+                        strokeWidth={2}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Stats Row */}
+                {radarData.stats && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-[12px] mb-[16px]">
+                    {[
+                      { label: 'Chỉ số đa dạng (D)', value: radarData.stats.diversityIndex || radarData.stats.D },
+                      { label: 'Độ đều Shannon (J)', value: radarData.stats.evenness || radarData.stats.J },
+                      { label: 'Hệ số đòn bẩy (M)', value: radarData.stats.leverage || radarData.stats.M },
+                      { label: 'ERI', value: radarData.stats.eri || radarData.stats.ERI },
+                    ].map((stat) => (
+                      <div key={stat.label} className="bg-[#f4f7fb] rounded-[8px] p-[13px] text-center">
+                        <p className="text-[9px] text-[#adb3bc] mb-[6px]">{stat.label}</p>
+                        <p className="text-[18px] font-semibold text-[#4a5462]">
+                          {typeof stat.value === 'number' ? stat.value.toFixed(2) : '—'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tier & Title */}
+                {(radarData.tier || radarData.title || radarData.rank) && (
+                  <div className="flex flex-wrap gap-[10px]">
+                    {radarData.tier && (
+                      <Badge tone="orange">Hạng {radarData.tier}</Badge>
+                    )}
+                    {radarData.title && (
+                      <Badge tone="green">{radarData.title}</Badge>
+                    )}
+                    {radarData.rank && (
+                      <Badge tone="blue">Top {radarData.rank}</Badge>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Club list */}
+            <div className="mt-[20px] pt-[20px] border-t border-[#e9ebee]">
+              <h4 className="text-[11px] text-[#7a8799] font-semibold mb-[10px]">Câu lạc bộ tham gia</h4>
+              <p className="text-[12px] text-[#808d9e]">
+                {detail.clubIds
+                  ?.map((id) => clubs.find((c) => c.id === id)?.name)
+                  .filter(Boolean)
+                  .join(', ') || 'Chưa tham gia câu lạc bộ'}
+              </p>
             </div>
           </div>
           <div className="sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px]">

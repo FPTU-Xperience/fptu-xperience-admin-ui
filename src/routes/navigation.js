@@ -2,6 +2,7 @@ import {
   Activity,
   CalendarDays,
   FileChartColumn,
+  FileCheck2,
   LayoutDashboard,
   Plug,
   ScrollText,
@@ -12,6 +13,7 @@ import {
   Target,
   Users,
   UsersRound,
+  Sparkles
 } from 'lucide-react';
 
 export const affairsNav = [
@@ -21,8 +23,10 @@ export const affairsNav = [
     icon: LayoutDashboard,
     group: 'KHÔNG GIAN LÀM VIỆC',
   },
+  { path: '/ctsv/declarations', label: 'Duyệt hồ sơ tự khai', icon: FileCheck2 },
   { path: '/ctsv/clubs', label: 'Quản lý câu lạc bộ', icon: UsersRound },
   { path: '/ctsv/engagement', label: 'Gắn kết sinh viên', icon: Activity },
+  { path: '/ctsv/bonus-matrix', label: 'Hệ số cộng điểm', icon: Sparkles },
   { path: '/ctsv/quests', label: 'Nhiệm vụ & chiến dịch', icon: Target },
   {
     path: '/ctsv/rubrics',

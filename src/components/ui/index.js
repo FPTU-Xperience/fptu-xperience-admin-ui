@@ -10,3 +10,5 @@ export { Panel } from './Panel.jsx';
 export { Field } from './Field.jsx';
 export { Modal } from './Modal.jsx';
 export { Pagination } from './Pagination.jsx';
+export { RadarChart } from './RadarChart.jsx';
+export { DonutChart } from './DonutChart.jsx';

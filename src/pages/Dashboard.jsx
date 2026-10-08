@@ -12,13 +12,20 @@ import {
   ShieldAlert,
   Sparkles,
   Target,
+  TrendingUp,
+  Layers,
+  LayersPlus,
+  Scale,
+  Briefcase,
   Users,
   UsersRound,
 } from 'lucide-react';
 import api from '../services/api.js';
 import { number, seasonLabel } from '../utils/format.js';
 import { useAction } from '../hooks/useAction.js';
-import { Badge, Button, PageHeader, Panel, StatCard } from '../components/ui/index.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import { isAdmin, getCampusFromUser, getCampusName, CAMPUS_OPTIONS } from '../context/AuthContext.jsx';
+import { Badge, Button, PageHeader, Panel, StatCard, RadarChart, DonutChart } from '../components/ui/index.js';
 
 function normalizeList(payload) {
   if (Array.isArray(payload)) return payload;
@@ -29,8 +36,30 @@ function normalizeList(payload) {
 
 export default function Dashboard() {
   const run = useAction();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Radar overview data
+  const [radarData, setRadarData] = useState(null);
+  const [radarLoading, setRadarLoading] = useState(false);
+  const [radarError, setRadarError] = useState(null);
+
+  // Filter state
+  const [semester, setSemester] = useState('');
+  const [campusCode, setCampusCode] = useState('GLOBAL');
+  const [availableSemesters] = useState([
+    { code: 'FA26', label: 'Mùa thu 2026' },
+    { code: 'SP27', label: 'Mùa xuân 2027' },
+    { code: 'SU27', label: 'Mùa hè 2027' },
+  ]);
+
+  // Determine if user is admin
+  const isAdminUser = isAdmin(user);
+
+  // Get user's campus from token (for CTSV users)
+  const userCampus = getCampusFromUser(user);
+  const userCampusName = getCampusName(userCampus);
 
   // Data from API
   const [summary, setSummary] = useState({
@@ -49,6 +78,29 @@ export default function Dashboard() {
 
   // Season (default)
   const season = 'FALL2026';
+
+  // Fetch radar overview data
+  async function fetchRadarOverview() {
+    setRadarLoading(true);
+    setRadarError(null);
+    try {
+      // For CTSV users, ignore campusCode (backend uses token's campus)
+      const params = {};
+      if (semester) params.semester = semester;
+      if (isAdminUser && campusCode !== 'GLOBAL') {
+        params.campusCode = campusCode;
+      }
+
+      const data = await api.studentAffairs.radar.overview(params);
+      console.log('[src/pages/Dashboard.jsx] Radar Data: ', data)
+      setRadarData(data);
+    } catch (err) {
+      console.error('Failed to fetch radar overview:', err);
+      setRadarError(err.message);
+    } finally {
+      setRadarLoading(false);
+    }
+  }
 
   // Fetch all dashboard data
   async function fetchDashboardData() {
@@ -134,6 +186,18 @@ export default function Dashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Fetch radar data when filters change
+  useEffect(() => {
+    fetchRadarOverview();
+  }, [semester, campusCode, isAdminUser]);
+
+  // For CTSV users, set campus to their own campus
+  useEffect(() => {
+    if (!isAdminUser && userCampus) {
+      setCampusCode(userCampus);
+    }
+  }, [isAdminUser, userCampus]);
 
   // Calculate engagement groups
   const total = summary.studentsCount || 1;
@@ -259,6 +323,200 @@ export default function Dashboard() {
           tone="purple"
         />
       </div>
+
+      {/* Filters Row */}
+      <div className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-white border border-border rounded-xl">
+        {/* Semester Selector */}
+        <div className="flex items-center gap-2">
+          <label className="text-[11px] text-[#7d8591] whitespace-nowrap">Học kỳ:</label>
+          <select
+            className="h-[35px] px-3 border border-[#e1e4e9] rounded-[7px] text-[11px] text-[#303641] bg-white min-w-[120px]"
+            value={semester}
+            onChange={(e) => setSemester(e.target.value)}
+          >
+            <option value="">Mặc định (hiện tại)</option>
+            {availableSemesters.map((s) => (
+              <option key={s.code} value={s.code}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Campus Selector */}
+        <div className="flex items-center gap-2">
+          <label className="text-[11px] text-[#7d8591] whitespace-nowrap">Cơ sở:</label>
+          {isAdminUser ? (
+            <select
+              className="h-[35px] px-3 border border-[#e1e4e9] rounded-[7px] text-[11px] text-[#303641] bg-white min-w-[160px]"
+              value={campusCode}
+              onChange={(e) => setCampusCode(e.target.value)}
+            >
+              {CAMPUS_OPTIONS.map((c) => (
+                <option key={c.code} value={c.code}>{c.name}</option>
+              ))}
+            </select>
+          ) : (
+            <span className="h-[35px] px-3 border border-[#e1e4e9] rounded-[7px] text-[11px] text-[#718094] bg-[#f8f9fa] min-w-[160px] flex items-center">
+              {userCampusName}
+            </span>
+          )}
+        </div>
+
+        {/* Semester badge */}
+        {radarData?.semesterCode && (
+          <Badge tone="orange" className="ml-auto">
+            {radarData.semesterCode} · {radarData.academicYear}
+          </Badge>
+        )}
+      </div>
+
+      {/* Radar 6+1 Section */}
+      {radarLoading ? (
+        <div className="flex items-center justify-center h-[300px] bg-white border border-border rounded-xl mb-6">
+          <div className="w-6 h-6 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-3" />
+          <span className="text-[11px] text-[#9096a1]">Đang tải dữ liệu radar...</span>
+        </div>
+      ) : radarError ? (
+        <div className="p-[20px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-xl mb-6 text-[11px]">
+          <span className="mr-2">⚠️</span>
+          {radarError}
+          <button className="ml-2 underline hover:no-underline" onClick={fetchRadarOverview}>
+            Thử lại
+          </button>
+        </div>
+      ) : radarData ? (
+        <>
+          {/* KPI Cards - Experience Metrics */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StatCard
+              label="Chỉ số ERI"
+              value={radarData.averageERI?.toFixed(1) || '-'}
+              note="Thang 0 - 130"
+              icon={TrendingUp}
+              tone="orange"
+            />
+            <StatCard
+              label="Độ sâu D"
+              value={radarData.averageD?.toFixed(1) || '-'}
+              note="Thang 0 - 100"
+              icon={Layers}
+              tone="blue"
+            />
+            <StatCard
+              label="Độ cân bằng J"
+              value={radarData.averageJ?.toFixed(3) || '-'}
+              note="Thang 0 - 1"
+              icon={LayersPlus}
+              tone="green"
+            />
+            <StatCard
+              label="Hệ số thực chiến M"
+              value={radarData.averageM?.toFixed(2) || '-'}
+              note="Thang 1.0 - 1.3"
+              icon={Briefcase}
+              tone="purple"
+            />
+          </div>
+
+          {/* Radar Chart + Profile Distribution */}
+          <div className="grid lg:grid-cols-[1.17fr_1fr] gap-5 mb-6">
+            {/* Radar Chart */}
+            <Panel
+              title="Biểu đồ Radar 6+1"
+              description="Phân bố điểm bão hòa theo 6 trục lõi và trục thực chiến"
+            >
+              <div className="p-[20px]">
+                <RadarChart
+                  data={radarData.pillars || []}
+                  title=""
+                  height={280}
+                />
+              </div>
+            </Panel>
+
+            {/* Profile Distribution */}
+            <Panel
+              title="Phân bố danh hiệu"
+              description="Sinh viên theo hồ sơ trải nghiệm"
+            >
+              <div className="p-[20px]">
+                <DonutChart
+                  data={radarData.profileTitlesDistribution || []}
+                  title=""
+                  size={140}
+                />
+              </div>
+            </Panel>
+          </div>
+
+          {/* Campus Comparison Table (Admin + GLOBAL only) */}
+          {isAdminUser && campusCode === 'GLOBAL' && radarData.campusesComparison && radarData.campusesComparison.length > 0 && (
+            <Panel
+              title="So sánh 5 cơ sở"
+              description="Chỉ số trải nghiệm theo từng cơ sở FPT"
+              className="mb-6"
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left whitespace-nowrap">
+                  <thead>
+                    <tr>
+                      <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                        CƠ SỞ
+                      </th>
+                      <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                        SINH VIÊN
+                      </th>
+                      <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                        ERI
+                      </th>
+                      <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                        ĐỘ SÂU (D)
+                      </th>
+                      <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                        ĐỘ CÂN BẰNG (J)
+                      </th>
+                      <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                        THỰC CHIẾN (M)
+                      </th>
+                      <th className="bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5]">
+                        TRỤC THẾ MẠNH
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {radarData.campusesComparison.map((campus) => (
+                      <tr key={campus.campusCode}>
+                        <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] font-medium text-[#4a5462]">
+                          {campus.campusName}
+                        </td>
+                        <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89]">
+                          {campus.totalStudents?.toLocaleString() || '-'}
+                        </td>
+                        <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89] font-medium">
+                          {campus.averageERI?.toFixed(1) || '-'}
+                        </td>
+                        <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89]">
+                          {campus.averageD?.toFixed(1) || '-'}
+                        </td>
+                        <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89]">
+                          {campus.averageJ?.toFixed(3) || '-'}
+                        </td>
+                        <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89]">
+                          {campus.averageM?.toFixed(2) || '-'}
+                        </td>
+                        <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
+                          {campus.topStrengthPillar && (
+                            <Badge tone="green">{campus.topStrengthPillar}</Badge>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Panel>
+          )}
+        </>
+      ) : null}
 
       {/* Two Column Layout */}
       <div className="grid lg:grid-cols-[1.17fr_1fr] gap-5 mb-6">

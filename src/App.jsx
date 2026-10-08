@@ -60,7 +60,9 @@ function ProtectedLayout({ children }) {
 import Dashboard from './pages/Dashboard.jsx'
 import Accounts from './pages/Accounts.jsx'
 import { Clubs } from './pages/Clubs.jsx'
+import { DeclarationsQueue } from './pages/DeclarationsQueue.jsx'
 import { Engagement } from './pages/Engagement.jsx'
+import { BonusMatrix } from './pages/BonusMatrix.jsx'
 import { Quests } from './pages/Quests.jsx'
 import { Rubrics } from './pages/Rubrics.jsx'
 import { Seasons } from './pages/Seasons.jsx'
@@ -109,12 +111,20 @@ export default function App() {
         element={<ProtectedLayout><Dashboard /></ProtectedLayout>}
       />
       <Route
+        path="/ctsv/declarations"
+        element={<ProtectedLayout><DeclarationsQueue /></ProtectedLayout>}
+      />
+      <Route
         path="/ctsv/clubs"
         element={<ProtectedLayout><Clubs /></ProtectedLayout>}
       />
       <Route
         path="/ctsv/engagement"
         element={<ProtectedLayout><Engagement /></ProtectedLayout>}
+      />
+      <Route
+        path="/ctsv/bonus-matrix"
+        element={<ProtectedLayout><BonusMatrix /></ProtectedLayout>}
       />
       <Route
         path="/ctsv/quests"
