@@ -78,6 +78,13 @@ export function Clubs() {
       setClubs(mappedClubs);
       setLocalApplications(mappedApps);
 
+      if (categoriesResponse.status === 'fulfilled') {
+        const catList = Array.isArray(categoriesResponse.value) ? categoriesResponse.value : [];
+        if (catList.length > 0) {
+          setTypes(catList.map((c) => c.name || c.code));
+        }
+      }
+
       // Sync applications to global state for NotificationsModal
       commit(
         'Sync applications',
@@ -87,15 +94,6 @@ export function Clubs() {
           next.applications = mappedApps;
         }
       );
-      setClubs(mapClubsFromApi(clubsData));
-      setApplications(mapApplicationsFromApi(appsData));
-
-      if (categoriesResponse.status === 'fulfilled') {
-        const catList = Array.isArray(categoriesResponse.value) ? categoriesResponse.value : [];
-        if (catList.length > 0) {
-          setTypes(catList.map((c) => c.name || c.code));
-        }
-      }
     } catch (err) {
       console.error('Failed to fetch clubs:', err);
       setError(err.message || 'Không thể tải danh sách câu lạc bộ');

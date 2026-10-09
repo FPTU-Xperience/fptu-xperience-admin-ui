@@ -4,7 +4,6 @@ import { ChevronRight, CircleAlert, ShieldAlert, ShieldCheck } from 'lucide-reac
 import { useAction } from '../hooks/useAction.js';
 import { useWorkspace } from '../context/WorkspaceContext.jsx';
 import { Badge, Button, Empty, Field, Modal, PageHeader, Panel, StatCard, Tabs } from '../components/ui/index.js';
-import api from '../services/api.js';
 
 export function Anomalies() {
   const run = useAction();
