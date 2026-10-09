@@ -506,6 +506,21 @@ export const api = {
   },
 
   // ---------------------------------------------------------------------------
+  // Anomalies (XP audit)
+  // ---------------------------------------------------------------------------
+  anomalies: {
+    // Backend doesn't have this endpoint yet; return seed data
+    list: async (params) => {
+      const { createAnomaliesSeed } = await import('../utils/seed.js');
+      const items = createAnomaliesSeed();
+      return params ? { items, total: items.length } : items;
+    },
+    resolve: async (id, decision) => {
+      return { id, ...decision, status: 'resolved' };
+    },
+  },
+
+  // ---------------------------------------------------------------------------
   // Student Affairs (CTSV)
   // ---------------------------------------------------------------------------
   studentAffairs: {

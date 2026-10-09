@@ -266,50 +266,7 @@ export function createSeed() {
       icon: 'sparkles',
     },
   ];
-  const anomalies = [
-    {
-      id: 'case-1',
-      title: 'Check-in đồng loạt trong 1 giây',
-      club: 'FPTU Basketball',
-      student: 'student-7',
-      severity: 'high',
-      amount: 400,
-      count: 20,
-      source: 'Workshop kỹ năng đội nhóm · EVT-028',
-      evidence:
-        '20 lượt check-in cùng thời điểm 14:32:06. Cần đối chiếu với danh sách điểm danh và thời gian sự kiện.',
-      status: 'open',
-      time: '2026-09-15T14:32:06+07:00',
-    },
-    {
-      id: 'case-2',
-      title: 'Trao XP chưa có minh chứng',
-      club: 'FPTU Photography',
-      student: 'student-12',
-      severity: 'medium',
-      amount: 160,
-      count: 2,
-      source: 'Dự án Campus Stories · EVT-019',
-      evidence:
-        'Hai đóng góp sản phẩm được xác nhận nhưng chưa đính kèm đường dẫn hoặc tệp minh chứng.',
-      status: 'open',
-      time: '2026-09-14T09:15:00+07:00',
-    },
-    {
-      id: 'case-3',
-      title: 'XP tăng vượt ngưỡng trong ngày',
-      club: 'F-Code',
-      student: 'student-18',
-      severity: 'medium',
-      amount: 600,
-      count: 3,
-      source: 'Hackathon nội bộ · EVT-032',
-      evidence:
-        'Ba lần trao XP cho cùng sinh viên trong vòng 5 phút. Cần xác minh đóng góp có bị ghi nhận trùng.',
-      status: 'open',
-      time: '2026-09-14T08:30:00+07:00',
-    },
-  ];
+  const anomalies = createAnomaliesSeed();
   return {
     version: 1,
     accounts,
@@ -370,6 +327,53 @@ export function createSeed() {
       },
     ],
   };
+}
+
+export function createAnomaliesSeed() {
+  return [
+    {
+      id: 'case-1',
+      title: 'Check-in đồng loạt trong 1 giây',
+      club: 'FPTU Basketball',
+      student: 'student-7',
+      severity: 'high',
+      amount: 400,
+      count: 20,
+      source: 'Workshop kỹ năng đội nhóm · EVT-028',
+      evidence:
+        '20 lượt check-in cùng thời điểm 14:32:06. Cần đối chiếu với danh sách điểm danh và thời gian sự kiện.',
+      status: 'open',
+      time: '2026-09-15T14:32:06+07:00',
+    },
+    {
+      id: 'case-2',
+      title: 'Trao XP chưa có minh chứng',
+      club: 'FPTU Photography',
+      student: 'student-12',
+      severity: 'medium',
+      amount: 160,
+      count: 2,
+      source: 'Dự án Campus Stories · EVT-019',
+      evidence:
+        'Hai đóng góp sản phẩm được xác nhận nhưng chưa đính kèm đường dẫn hoặc tệp minh chứng.',
+      status: 'open',
+      time: '2026-09-14T09:15:00+07:00',
+    },
+    {
+      id: 'case-3',
+      title: 'XP tăng vượt ngưỡng trong ngày',
+      club: 'F-Code',
+      student: 'student-18',
+      severity: 'medium',
+      amount: 600,
+      count: 3,
+      source: 'Hackathon nội bộ · EVT-032',
+      evidence:
+        'Ba lần trao XP cho cùng sinh viên trong vòng 5 phút. Cần xác minh đóng góp có bị ghi nhận trùng.',
+      status: 'open',
+      time: '2026-09-14T08:30:00+07:00',
+    },
+  ];
 }
 
 export function studentXP(student, season, ledger) {

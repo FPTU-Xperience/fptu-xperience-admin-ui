@@ -15,6 +15,7 @@ import {
 import api from '../services/api.js';
 import { date, normalize } from '../utils/format.js';
 import { useAction } from '../hooks/useAction.js';
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
 import {
   Badge,
   Button,
@@ -33,14 +34,18 @@ const DEFAULT_TYPES = ['Công nghệ', 'Nghệ thuật', 'Thể thao', 'Tình ng
 
 export function Clubs() {
   const run = useAction();
+  const { state, commit } = useWorkspace();
   const [params] = useSearchParams();
 
-  // State
+  // State - applications from global state, clubs from API
   const [clubs, setClubs] = useState([]);
-  const [applications, setApplications] = useState([]);
+  const [localApplications, setLocalApplications] = useState([]);
   const [types, setTypes] = useState(DEFAULT_TYPES);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Derived from global state (keeps NotificationsModal in sync)
+  const applications = state.applications;
 
   // UI State
   const [tab, setTab] = useState(params.get('tab') || 'registry');
@@ -66,13 +71,26 @@ export function Clubs() {
       const clubsData = clubsResponse?.items || clubsResponse || [];
       const appsData = appsResponse?.items || appsResponse || [];
 
-      setClubs(mapClubsFromApi(clubsData));
-      setApplications(mapApplicationsFromApi(appsData));
+      const mappedClubs = mapClubsFromApi(clubsData);
+      const mappedApps = mapApplicationsFromApi(appsData);
+
+      setClubs(mappedClubs);
+      setLocalApplications(mappedApps);
+
+      // Sync applications to global state for NotificationsModal
+      commit(
+        'Sync applications',
+        `Đồng bộ ${mappedApps.length} đơn từ API`,
+        'affairs',
+        (next) => {
+          next.applications = mappedApps;
+        }
+      );
     } catch (err) {
       console.error('Failed to fetch clubs:', err);
       setError(err.message || 'Không thể tải danh sách câu lạc bộ');
       setClubs([]);
-      setApplications([]);
+      setLocalApplications([]);
     } finally {
       setLoading(false);
     }
@@ -114,8 +132,33 @@ export function Clubs() {
         } else {
           await api.clubs.applications.reject(review.id, payload);
         }
-        // Refresh data
-        await fetchData();
+
+        // Update both global and local state
+        commit(
+          approved ? 'Phê duyệt đơn CLB' : 'Từ chối đơn CLB',
+          `${review.name} · ${note.trim().slice(0, 50)}`,
+          'affairs',
+          (next) => {
+            const idx = next.applications.findIndex((a) => a.id === review.id);
+            if (idx !== -1) {
+              next.applications[idx] = {
+                ...next.applications[idx],
+                status: approved ? 'approved' : 'rejected',
+                note: note.trim(),
+                reviewedAt: new Date().toISOString(),
+              };
+            }
+          }
+        );
+
+        // Also update local state for the table
+        setLocalApplications((prev) =>
+          prev.map((a) =>
+            a.id === review.id
+              ? { ...a, status: approved ? 'approved' : 'rejected', note: note.trim() }
+              : a
+          )
+        );
       },
       approved ? 'Đã phê duyệt đơn thành lập CLB.' : 'Đã từ chối đơn thành lập CLB.',
     );
@@ -311,7 +354,7 @@ export function Clubs() {
                   </tr>
                 </thead>
                 <tbody>
-                  {applications.map((a) => (
+                  {localApplications.map((a) => (
                     <tr key={a.id}>
                       <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
                         <strong className="block text-[12px] font-medium text-[#4a5462]">{a.name}</strong>

@@ -1,22 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronRight, CircleAlert, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { useAction } from '../hooks/useAction.js';
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
 import { Badge, Button, Empty, Field, Modal, PageHeader, Panel, StatCard, Tabs } from '../components/ui/index.js';
+import api from '../services/api.js';
 
 export function Anomalies() {
   const run = useAction();
+  const { state, commit } = useWorkspace();
   const [tab, setTab] = useState('open');
   const [item, setItem] = useState(null);
   const [decision, setDecision] = useState('keep');
   const [reason, setReason] = useState('');
   const [adjustment, setAdjustment] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  // Note: Backend doesn't have a dedicated anomalies endpoint
-  // This module uses local state for now
-  const [anomalies] = useState([]);
-  const [ledger] = useState([]);
-
+  // Use global state for anomalies (kept in sync with API)
+  const anomalies = state.anomalies;
   const cases = anomalies.filter((a) => tab === 'all' || a.status === tab);
+
+  // Fetch anomalies from API on mount
+  useEffect(() => {
+    async function fetchAnomalies() {
+      try {
+        const response = await api.anomalies.list();
+        const items = response?.items || response || [];
+
+        // Sync to global state
+        commit(
+          'Sync anomalies',
+          `Đồng bộ ${items.length} bất thường từ API`,
+          'affairs',
+          (next) => {
+            next.anomalies = items;
+          }
+        );
+      } catch (err) {
+        console.error('Failed to fetch anomalies:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAnomalies();
+  }, []);
 
   // Stats
   const openCount = anomalies.filter((a) => a.status === 'open').length;
@@ -25,13 +51,57 @@ export function Anomalies() {
 
   async function submit(e) {
     e.preventDefault();
+    if (!item) return;
+
+    const newStatus = decision === 'keep' ? 'keep' : decision; // keep, adjust, revoke
+    const finalStatus = 'resolved';
+
     await run(
-      () => {
-        // In production, this would call an API endpoint
-        // For now, just close the modal
+      async () => {
+        // Update global state
+        commit(
+          `Xử lý bất thường: ${item.title}`,
+          `${item.club} · Quyết định: ${decision === 'keep' ? 'Giữ nguyên' : decision === 'adjust' ? `Điều chỉnh ${adjustment}` : 'Thu hồi'}`,
+          'affairs',
+          (next) => {
+            const idx = next.anomalies.findIndex((a) => a.id === item.id);
+            if (idx !== -1) {
+              next.anomalies[idx] = {
+                ...next.anomalies[idx],
+                status: finalStatus,
+                decision: newStatus,
+                reason: reason.trim(),
+                resolvedAt: new Date().toISOString(),
+                adjustment: decision === 'adjust' ? Number(adjustment) : undefined,
+              };
+
+              // If adjusting or revoking, add ledger entry
+              if (decision !== 'keep') {
+                next.ledger = next.ledger || [];
+                next.ledger.unshift({
+                  id: `ledger-${Date.now()}`,
+                  studentId: next.anomalies[idx].student,
+                  amount: decision === 'revoke' ? -item.amount : Number(adjustment) - item.amount,
+                  source: `Điều chỉnh bất thường: ${item.title}`,
+                  rubricVersion: 1,
+                  caseId: item.id,
+                  season: 'FALL2026',
+                  type: 'reversal',
+                  at: new Date().toISOString(),
+                  actor: 'CTSV Admin',
+                  reason: reason.trim(),
+                });
+              }
+            }
+          }
+        );
+
         setItem(null);
+        setReason('');
+        setAdjustment(0);
+        setDecision('keep');
       },
-      'Đã lưu quyết định.',
+      'Đã lưu quyết định kiểm duyệt.',
     );
   }
 
@@ -75,7 +145,7 @@ export function Anomalies() {
           items={[
             { id: 'open', label: 'Cần xem xét', count: openCount },
             { id: 'resolved', label: 'Đã xử lý', count: resolvedCount },
-            { id: 'ledger', label: 'Sổ cái XP' },
+            { id: 'ledger', label: 'Sổ cái XP', count: state.ledger?.length || 0 },
           ]}
         />
 
@@ -103,8 +173,8 @@ export function Anomalies() {
                 </tr>
               </thead>
               <tbody>
-                {ledger.length > 0 ? (
-                  ledger.map((entry) => (
+                {(state.ledger && state.ledger.length > 0) ? (
+                  state.ledger.map((entry) => (
                     <tr key={entry.id}>
                       <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
                         <Badge tone={entry.type === 'award' ? 'green' : 'orange'}>
@@ -140,6 +210,11 @@ export function Anomalies() {
                 )}
               </tbody>
             </table>
+          </div>
+        ) : loading ? (
+          <div className="flex items-center justify-center py-12 text-[#9096a1]">
+            <div className="w-6 h-6 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-3" />
+            Đang tải dữ liệu...
           </div>
         ) : cases.length ? (
           /* Anomaly List */
@@ -204,7 +279,7 @@ export function Anomalies() {
                   <b className="font-medium">XP đang đối soát:</b> {item.amount} XP · Sinh viên: {item.student}
                 </p>
                 <small className="text-[11px] text-[#b5aa97]">
-                  Đây là trường hợp minh họa. Quyết định chỉ áp dụng cho bút toán được liên kết trong sổ cái.
+                  Quyết định sẽ được lưu vào nhật ký. Nếu điều chỉnh hoặc thu hồi sẽ tạo bút toán đảo trong sổ cái.
                 </small>
               </div>
 
@@ -262,7 +337,7 @@ export function Anomalies() {
                 <div className="space-y-4">
                   <h3 className="text-[13px] text-[#7a8799] font-semibold">Kết quả xử lý</h3>
                   <Badge tone="green">
-                    {item.decision === 'keep' ? 'Giữ nguyên XP' : item.decision === 'adjust' ? 'Đã điều chỉnh XP' : 'Đã thu hồi XP'}
+                    {item.decision === 'keep' ? 'Giữ nguyên XP' : item.decision === 'adjust' ? `Đã điều chỉnh còn ${item.adjustment} XP` : 'Đã thu hồi XP'}
                   </Badge>
                   <p className="text-[12px] text-[#717d8d] leading-relaxed">{item.reason}</p>
                 </div>
