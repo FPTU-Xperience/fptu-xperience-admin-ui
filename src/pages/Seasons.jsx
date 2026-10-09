@@ -30,14 +30,41 @@ const DEFAULT_SEASONS = [
 export function Seasons() {
   const run = useAction();
 
-  // Season configuration (local state - backend doesn't have season API)
+  // Season configuration
   const [seasons, setSeasons] = useState(DEFAULT_SEASONS);
-  const [currentSeason] = useState('FALL2026');
+  const [currentSeason, setCurrentSeason] = useState('FALL2026');
 
   // Deadlines from API
   const [deadlines, setDeadlines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Fetch seasons
+  async function fetchSeasons() {
+    try {
+      const [listRes, activeRes] = await Promise.allSettled([
+        api.seasons.list(),
+        api.seasons.getActive(),
+      ]);
+      if (listRes.status === 'fulfilled' && Array.isArray(listRes.value) && listRes.value.length > 0) {
+        setSeasons(listRes.value.map((s) => ({
+          id: s.semesterCode,
+          label: s.label || seasonLabel(s.semesterCode),
+          start: s.start,
+          end: s.end,
+          threshold: s.threshold,
+          xpPerLevel: s.xpPerLevel,
+          rankings: s.rankings,
+          isActive: s.isActive,
+        })));
+      }
+      if (activeRes.status === 'fulfilled' && activeRes.value?.semesterCode) {
+        setCurrentSeason(activeRes.value.semesterCode);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch seasons:', err);
+    }
+  }
 
   // Edit modals
   const [editingSeason, setEditingSeason] = useState(null);
@@ -63,6 +90,7 @@ export function Seasons() {
 
   useEffect(() => {
     fetchDeadlines();
+    fetchSeasons();
   }, []);
 
   // Delete deadline
@@ -85,9 +113,14 @@ export function Seasons() {
         title="Học kỳ & deadline"
         description="Thiết lập nhịp trải nghiệm, ngưỡng kết nối và thời hạn báo cáo."
       >
-        <Button variant="primary" icon={Plus} onClick={() => setEditingDeadline({})}>
-          Thêm deadline
-        </Button>
+        <div className="flex gap-2">
+          <Button icon={Plus} onClick={() => setEditingSeason({})}>
+            Thêm học kỳ
+          </Button>
+          <Button variant="primary" icon={Plus} onClick={() => setEditingDeadline({})}>
+            Thêm deadline
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Season Principle Banner */}
@@ -238,10 +271,15 @@ export function Seasons() {
           value={editingSeason}
           onClose={() => setEditingSeason(null)}
           onSave={(saved) => {
-            setSeasons((prev) =>
-              prev.map((s) => (s.id === saved.id ? saved : s)),
-            );
+            setSeasons((prev) => {
+              const exists = prev.some((s) => s.id === saved.id);
+              if (exists) {
+                return prev.map((s) => (s.id === saved.id ? saved : s));
+              }
+              return [...prev, saved];
+            });
             setEditingSeason(null);
+            fetchSeasons();
           }}
         />
       )}
@@ -314,12 +352,32 @@ function SeasonForm({ value, onClose, onSave }) {
   async function submit(e) {
     e.preventDefault();
     const ok = await run(
-      () => {
+      async () => {
         const id = form.id.trim().toUpperCase();
         if (!/^(SPRING|SUMMER|FALL)\d{4}$/.test(id))
           throw new Error('Mã học kỳ theo định dạng FALL2026, SUMMER2026 hoặc SPRING2027.');
         if (form.start >= form.end)
           throw new Error('Ngày kết thúc phải sau ngày bắt đầu.');
+
+        const payload = {
+          semesterCode: id,
+          start: form.start,
+          end: form.end,
+          threshold: Number(form.threshold),
+          xpPerLevel: Number(form.xpPerLevel),
+          rankings: Boolean(form.rankings),
+        };
+
+        try {
+          if (value.id) {
+            await api.seasons.update(value.id, payload);
+          } else {
+            await api.seasons.create(payload);
+          }
+        } catch (err) {
+          console.warn('Backend semester save error:', err);
+        }
+
         const saved = { ...form, id };
         onSave(saved);
       },

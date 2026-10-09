@@ -61,22 +61,18 @@ export function SystemSettings({ type }) {
   });
   const [loading, setLoading] = useState(false);
 
-  // Fetch stats from API
+  // Fetch stats or settings from API
   useEffect(() => {
     if (type === 'health') {
       async function fetchStats() {
         setLoading(true);
         try {
-          const [usersResponse, clubsResponse] = await Promise.all([
-            api.users.list({ page: 1, pageSize: 1 }).catch(() => ({ totalCount: 0 })),
-            api.clubs.list({ page: 1, pageSize: 1 }).catch(() => ({ totalCount: 0 })),
-          ]);
-
+          const res = await api.admin.health.stats();
           setStats({
-            accounts: usersResponse?.totalCount || 0,
-            ledger: 0, // Ledger doesn't have a direct count endpoint
-            audit: 0, // Audit doesn't have a direct count endpoint
-            clubs: clubsResponse?.totalCount || 0,
+            accounts: res?.accounts || 0,
+            ledger: res?.ledger || 0,
+            audit: res?.audit || 0,
+            clubs: res?.clubs || 0,
           });
         } catch (err) {
           console.error('Failed to fetch stats:', err);
@@ -85,6 +81,26 @@ export function SystemSettings({ type }) {
         }
       }
       fetchStats();
+    } else {
+      async function fetchSettings() {
+        try {
+          const s = await api.admin.settings.get();
+          if (s) {
+            setForm({
+              googleDomain: s.googleDomain || 'fpt.edu.vn',
+              timetableUrl: s.timetableUrl || '',
+              inAppNotifications: s.inAppNotifications ?? true,
+              emailNotifications: s.emailNotifications ?? true,
+              digest: s.digest || 'weekly',
+              rateLimit: s.rateLimit || 100,
+              retention: s.retention || 365,
+            });
+          }
+        } catch (err) {
+          console.error('Failed to fetch settings:', err);
+        }
+      }
+      fetchSettings();
     }
   }, [type]);
 
@@ -92,11 +108,9 @@ export function SystemSettings({ type }) {
     e.preventDefault();
     await run(
       async () => {
-        // In production, this would save to backend
-        // For now, just show success
-        console.log('Saving settings:', form);
+        await api.admin.settings.update(form);
       },
-      'Đã lưu cấu hình.',
+      'Đã lưu cấu hình nền tảng.',
     );
   }
 
@@ -140,7 +154,7 @@ export function SystemSettings({ type }) {
             />
             <StatCard
               label="Sự kiện nhật ký"
-              value="—"
+              value={loading ? '-' : stats.audit}
               icon={ScrollText}
               note="Các thay đổi đã ghi nhận"
             />

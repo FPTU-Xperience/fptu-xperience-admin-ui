@@ -303,9 +303,17 @@ export const api = {
     createRole: (name) => api.post('/api/roles', { name }),
     assignRole: (userId, roleId) => api.post(`/api/users/${userId}/roles`, { roleId }),
     removeRole: (userId, roleId) => api.delete(`/api/users/${userId}/roles/${roleId}`),
+    roleStats: (params) => api.get('/api/roles/stats', params),
   },
 
   // ---------------------------------------------------------------------------
+  // Roles
+  roles: {
+    list: () => api.get('/api/roles'),
+    stats: (params) => api.get('/api/roles/stats', params),
+    create: (name) => api.post('/api/roles', { name }),
+  },
+
   // Clubs
   // ---------------------------------------------------------------------------
   clubs: {
@@ -319,6 +327,11 @@ export const api = {
     update: (id, payload) => api.put(`/api/clubs/${id}`, payload),
     delete: (id) => api.delete(`/api/clubs/${id}`),
     join: (clubId, payload) => api.post(`/api/clubs/${clubId}/join`, payload),
+
+    categories: {
+      list: () => api.get('/api/clubs/categories'),
+      create: (payload) => api.post('/api/clubs/categories', payload),
+    },
 
     members: {
       list: (clubId, params) => api.get(`/api/clubs/${clubId}/members`, params),
@@ -444,6 +457,16 @@ export const api = {
   },
 
   // ---------------------------------------------------------------------------
+  // Seasons / Semesters
+  // ---------------------------------------------------------------------------
+  seasons: {
+    list: () => api.get('/api/v1/semesters'),
+    getActive: () => api.get('/api/v1/semesters/active'),
+    create: (payload) => api.post('/api/v1/semesters', payload),
+    update: (id, payload) => api.put(`/api/v1/semesters/${id}`, payload),
+  },
+
+  // ---------------------------------------------------------------------------
   // Finance
   // ---------------------------------------------------------------------------
   finance: {
@@ -546,6 +569,52 @@ export const api = {
     // Radar overview (6+1 pillars overview)
     radar: {
       overview: (params) => api.get('/api/v1/student-affairs/radar/overview', params),
+    },
+    // Bonus Matrix (Hệ số cộng điểm)
+    bonusMatrix: {
+      list: () => api.get('/api/bonus-matrix'),
+      create: (payload) => api.post('/api/bonus-matrix', payload),
+      update: (id, payload) => api.put(`/api/bonus-matrix/${id}`, payload),
+      delete: (id) => api.delete(`/api/bonus-matrix/${id}`),
+    },
+    // Quests & Campaigns (Nhiệm vụ & Chiến dịch)
+    quests: {
+      list: (params) => api.get('/api/v1/quests', params),
+      getById: (id) => api.get(`/api/v1/quests/${id}`),
+      create: (payload) => api.post('/api/v1/quests', payload),
+      update: (id, payload) => api.put(`/api/v1/quests/${id}`, payload),
+      updateStatus: (id, status) => api.patch(`/api/v1/quests/${id}/status`, { status }),
+      delete: (id) => api.delete(`/api/v1/quests/${id}`),
+      join: (id, payload) => api.post(`/api/v1/quests/${id}/join`, payload),
+      complete: (id, payload) => api.post(`/api/v1/quests/${id}/complete`, payload),
+      myQuests: () => api.get('/api/v1/quests/me'),
+    },
+    // Anomalies & XP Ledger (Kiểm duyệt bất thường & Sổ cái)
+    anomalies: {
+      list: (params) => api.get('/api/v1/student-affairs/anomalies', params),
+      stats: () => api.get('/api/v1/student-affairs/anomalies/stats'),
+      getById: (id) => api.get(`/api/v1/student-affairs/anomalies/${id}`),
+      resolve: (id, payload) => api.post(`/api/v1/student-affairs/anomalies/${id}/resolve`, payload),
+    },
+    ledger: {
+      list: (params) => api.get('/api/v1/student-affairs/ledger', params),
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // Admin & System Management
+  // ---------------------------------------------------------------------------
+  admin: {
+    settings: {
+      get: () => api.get('/api/v1/admin/settings'),
+      update: (payload) => api.put('/api/v1/admin/settings', payload),
+    },
+    health: {
+      stats: () => api.get('/api/v1/admin/health/stats'),
+    },
+    audit: {
+      list: (params) => api.get('/api/v1/admin/audit-events', params),
+      getById: (id) => api.get(`/api/v1/admin/audit-events/${id}`),
     },
   },
 }

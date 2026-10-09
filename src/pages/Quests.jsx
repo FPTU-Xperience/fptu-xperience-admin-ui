@@ -36,7 +36,7 @@ export function Quests() {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.reports.list({ page: 1, pageSize: 100 });
+      const response = await api.studentAffairs.quests.list();
       const data = Array.isArray(response) ? response : response?.items || [];
       // Filter to quests/campaigns or show all reports
       setQuests(data.map(mapQuestFromApi));
@@ -62,9 +62,7 @@ export function Quests() {
     const next = quest.status === 'published' ? 'paused' : 'published';
     await run(
       async () => {
-        if (next === 'published') {
-          await api.reports.submit(quest.id);
-        }
+        await api.studentAffairs.quests.updateStatus(quest.id, next);
         setQuests((prev) =>
           prev.map((q) =>
             q.id === quest.id ? { ...q, status: next } : q,
@@ -302,18 +300,30 @@ function QuestForm({ quest, season, onClose, onSave }) {
         try {
           const payload = {
             title: form.name,
+            name: form.name,
             description: form.description,
             period: season,
+            semesterCode: season,
+            kind: form.kind,
             reportType: form.kind,
+            category: form.category,
             tag: form.category,
+            scope: form.scope,
+            rewardXp: Number(form.reward) || 50,
+            reward: Number(form.reward) || 50,
+            targetParticipants: Number(form.target) || 100,
+            target: Number(form.target) || 100,
+            deadline: form.deadline,
             dueDate: form.deadline,
+            icon: form.icon || 'sparkles',
+            status: quest.id ? quest.status : 'draft',
           };
 
           let saved;
           if (quest.id) {
-            saved = await api.reports.update(quest.id, payload);
+            saved = await api.studentAffairs.quests.update(quest.id, payload);
           } else {
-            saved = await api.reports.create(payload);
+            saved = await api.studentAffairs.quests.create(payload);
           }
 
           const mapped = mapQuestFromApi(saved);

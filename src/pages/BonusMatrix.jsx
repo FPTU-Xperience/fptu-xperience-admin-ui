@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import api from '../services/api.js';
 import { Check, Plus, Trash2, X, GripVertical, SlidersHorizontal } from 'lucide-react';
 import { useAction } from '../hooks/useAction.js';
 import { Button, Field, Modal, Panel } from '../components/ui/index.js';
@@ -70,6 +71,26 @@ export function BonusMatrix() {
   const [saving, setSaving] = useState(false);
   const axisRef = useRef(null);
 
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await api.studentAffairs.bonusMatrix.list();
+        const list = Array.isArray(res) ? res : res?.items || [];
+        if (list.length > 0) {
+          setNodes(list.map(n => ({
+            id: String(n.id),
+            position: Number(n.position),
+            label: String(n.label || `Ngưỡng ${n.position}`),
+            multiplier: Number(n.multiplier)
+          })));
+        }
+      } catch (err) {
+        console.error('Failed to load bonus matrix nodes:', err);
+      }
+    }
+    load();
+  }, []);
+
   function handleMouseDown(e, nodeId) {
     e.preventDefault();
     setDragId(nodeId);
@@ -87,8 +108,20 @@ export function BonusMatrix() {
     );
   }
 
-  function handleMouseUp() {
+  async function handleMouseUp() {
     if (dragId) {
+      const node = nodes.find(n => n.id === dragId);
+      if (node && !node.id.startsWith('n')) {
+        try {
+          await api.studentAffairs.bonusMatrix.update(node.id, {
+            position: node.position,
+            label: node.label,
+            multiplier: node.multiplier
+          });
+        } catch (err) {
+          console.error('Failed to sync dragged position:', err);
+        }
+      }
       setDragId(null);
       setDragStart(null);
     }
@@ -102,12 +135,18 @@ export function BonusMatrix() {
     const multiplier = Number(form.multiplier.value);
 
     await run(
-      () => {
-        const newNode = {
-          id: `n${Date.now()}`,
+      async () => {
+        const payload = {
           position: clamp(snapToStep(position, AXIS_STEP), AXIS_MIN, AXIS_MAX),
           label: label || `Ngưỡng ${position}`,
           multiplier: clamp(multiplier, 0, 200),
+        };
+        const res = await api.studentAffairs.bonusMatrix.create(payload);
+        const newNode = {
+          id: String(res.id),
+          position: res.position,
+          label: res.label,
+          multiplier: res.multiplier,
         };
         setNodes((prev) => [...prev, newNode]);
         setAddOpen(false);
@@ -122,15 +161,21 @@ export function BonusMatrix() {
     const form = e.target;
     setSaving(true);
     await run(
-      () => {
+      async () => {
+        const payload = {
+          position: clamp(snapToStep(Number(form.position.value), AXIS_STEP), AXIS_MIN, AXIS_MAX),
+          label: form.label.value.trim() || editing.label,
+          multiplier: clamp(Number(form.multiplier.value), 0, 200),
+        };
+        const res = await api.studentAffairs.bonusMatrix.update(editing.id, payload);
         setNodes((prev) =>
           prev.map((n) =>
             n.id === editing.id
               ? {
                   ...n,
-                  position: clamp(snapToStep(Number(form.position.value), AXIS_STEP), AXIS_MIN, AXIS_MAX),
-                  label: form.label.value.trim() || n.label,
-                  multiplier: clamp(Number(form.multiplier.value), 0, 200),
+                  position: res.position,
+                  label: res.label,
+                  multiplier: res.multiplier,
                 }
               : n,
           ),
@@ -145,7 +190,8 @@ export function BonusMatrix() {
   async function deleteNode(nodeId) {
     if (nodes.length <= 1) return;
     await run(
-      () => {
+      async () => {
+        await api.studentAffairs.bonusMatrix.delete(nodeId);
         setNodes((prev) => prev.filter((n) => n.id !== nodeId));
         if (selected === nodeId) setSelected(null);
       },
