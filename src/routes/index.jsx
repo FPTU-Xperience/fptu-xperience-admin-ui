@@ -1,210 +1,72 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
-import { useWorkspace } from '../context/WorkspaceContext.jsx'
-import { navigationFor } from './navigation.js'
-import Dashboard from '../pages/Dashboard.jsx'
-import Accounts from '../pages/Accounts.jsx'
-import { Clubs } from '../pages/Clubs.jsx'
-import { Engagement } from '../pages/Engagement.jsx'
-import { BonusMatrix } from '../pages/BonusMatrix.jsx'
-import { DeclarationsQueue } from '../pages/DeclarationsQueue.jsx'
-import { Quests } from '../pages/Quests.jsx'
-import { Rubrics } from '../pages/Rubrics.jsx'
-import { Seasons } from '../pages/Seasons.jsx'
-import { Anomalies } from '../pages/Anomalies.jsx'
-import { Audit } from '../pages/Audit.jsx'
-import { RoleMatrix } from '../pages/RoleMatrix.jsx'
-import { SystemSettings } from '../pages/SystemSettings.jsx'
-import Login from '../pages/Login.jsx'
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
+import { affairsNav, adminNav } from './navigation.js';
+import { canAccessPath, defaultPathFor } from '../utils/access.js';
+import AppLayout from '../layouts/AppLayout.jsx';
+import Dashboard from '../pages/Dashboard.jsx';
+import Accounts from '../pages/Accounts.jsx';
+import { Clubs } from '../pages/Clubs.jsx';
+import { Engagement } from '../pages/Engagement.jsx';
+import { DeclarationsQueue } from '../pages/DeclarationsQueue.jsx';
+import { Quests } from '../pages/Quests.jsx';
+import { Rubrics } from '../pages/Rubrics.jsx';
+import { Seasons } from '../pages/Seasons.jsx';
+import { Anomalies } from '../pages/Anomalies.jsx';
+import { Audit } from '../pages/Audit.jsx';
+import { RoleMatrix } from '../pages/RoleMatrix.jsx';
+import { SystemSettings } from '../pages/SystemSettings.jsx';
+import Login from '../pages/Login.jsx';
+import { ClubReports } from '../pages/ClubReports.jsx';
+import { ClubReportDetail } from '../pages/ClubReportDetail.jsx';
+import { ClubRequests } from '../pages/ClubRequests.jsx';
+import { StudentRoster } from '../pages/StudentRoster.jsx';
+import { PendingOperations } from '../pages/PendingOperations.jsx';
+import { ExperienceReconciliation } from '../pages/ExperienceReconciliation.jsx';
 
-// Protected route wrapper that checks for admin role
-function AdminRoute({ children }) {
-  const { user } = useAuth()
-  const roles = user?.roles || []
-  const isAdmin = roles.includes('SYSTEM_ADMIN') || roles.includes('ADMIN')
-
-  // Only allow admin users for admin routes
-  if (!isAdmin) {
-    if (roles.includes('STUDENT_AFFAIRS_ADMIN')) {
-      return <Navigate to="/ctsv/overview" replace />
-    }
-    return <Navigate to="/login" replace />
-  }
-
-  return children
-}
-
-// Protected route for CTSV pages
-function CTSVRoute({ children }) {
-  const { user } = useAuth()
-  const roles = user?.roles || []
-  const isCTSV = roles.includes('STUDENT_AFFAIRS_ADMIN') || roles.includes('ADMIN') || roles.includes('SYSTEM_ADMIN')
-
-  // Only allow admin/CTSV users for CTSV routes
-  if (!isCTSV) {
-    // For now, redirect to login if not authenticated
-    // In the future, could show a "not authorized" page
-    return <Navigate to="/login" replace />
-  }
-
-  return children
-}
+const pages = {
+  '/ctsv/overview': <Dashboard />,
+  '/ctsv/clubs': <Clubs />,
+  '/ctsv/declarations': <DeclarationsQueue />,
+  '/ctsv/engagement': <Engagement />,
+  '/ctsv/quests': <Quests />,
+  '/ctsv/rubrics': <Rubrics />,
+  '/ctsv/seasons': <Seasons />,
+  '/ctsv/anomalies': <Anomalies />,
+  '/ctsv/reports': <ClubReports />,
+  '/ctsv/activity-approvals': <ClubReports activitiesOnly />,
+  '/ctsv/activity-dossiers': <PendingOperations operation="dossiers" />,
+  '/ctsv/club-requests': <ClubRequests />,
+  '/ctsv/student-roster': <StudentRoster />,
+  '/ctsv/rollover': <PendingOperations operation="rollover" />,
+  '/ctsv/leadership': <PendingOperations operation="leadership" />,
+  '/ctsv/club-bonuses': <PendingOperations operation="bonuses" />,
+  '/ctsv/global-activities': <PendingOperations operation="global" />,
+  '/ctsv/experience-audit': <ExperienceReconciliation />,
+  '/admin/accounts': <Accounts />,
+  '/admin/roles': <RoleMatrix />,
+  '/admin/integrations': <SystemSettings key="integrations" type="integrations" />,
+  '/admin/settings': <SystemSettings key="settings" type="settings" />,
+  '/admin/health': <SystemSettings key="health" type="health" />,
+  '/admin/audit': <Audit />,
+};
 
 export default function AppRoutes() {
-  const { user } = useAuth()
-  const { role } = useWorkspace()
-
-  // Determine if user is admin based on:
-  // 1. Session role switcher (for preview mode)
-  // 2. User's actual role from login
-  const userRoles = user?.roles || []
-  const isUserAdmin = userRoles.includes('SYSTEM_ADMIN') || userRoles.includes('ADMIN')
-  const isUserCTSV = userRoles.includes('STUDENT_AFFAIRS_ADMIN')
-
-  // Use workspace role (which includes session storage for preview mode)
-  const previewRole = role
-  const nav = navigationFor(previewRole === 'ADMIN')
-
-  // Determine default redirect based on user role
-  const getDefaultRedirect = () => {
-    if (isUserAdmin) {
-      return '/admin/accounts'
-    }
-    if (isUserCTSV) {
-      return '/ctsv/overview'
-    }
-    // Fallback to workspace role
-    return nav[0]?.path || '/ctsv/overview'
-  }
-
+  const { user } = useAuth();
+  if (!user) return <Login />;
+  const fallback = defaultPathFor(user);
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/login" element={<Login />} />
-
-      {/* CTSV Overview - accessible by all authenticated users */}
-      <Route
-        path="/ctsv/overview"
-        element={
-          <CTSVRoute>
-            <Dashboard />
-          </CTSVRoute>
-        }
-      />
-
-      {/* CTSV Pages - require admin/CTSV role */}
-      <Route
-        path="/ctsv/clubs"
-        element={
-          <CTSVRoute>
-            <Clubs />
-          </CTSVRoute>
-        }
-      />
-      <Route
-        path="/ctsv/declarations"
-        element={
-          <CTSVRoute>
-            <DeclarationsQueue />
-          </CTSVRoute>
-        }
-      />
-      <Route
-        path="/ctsv/engagement"
-        element={
-          <CTSVRoute>
-            <Engagement />
-          </CTSVRoute>
-        }
-      />
-      <Route
-        path="/ctsv/bonus-matrix"
-        element={
-          <CTSVRoute>
-            <BonusMatrix />
-          </CTSVRoute>
-        }
-      />
-      <Route
-        path="/ctsv/quests"
-        element={
-          <CTSVRoute>
-            <Quests />
-          </CTSVRoute>
-        }
-      />
-      <Route
-        path="/ctsv/rubrics"
-        element={
-          <CTSVRoute>
-            <Rubrics />
-          </CTSVRoute>
-        }
-      />
-      <Route
-        path="/ctsv/seasons"
-        element={
-          <CTSVRoute>
-            <Seasons />
-          </CTSVRoute>
-        }
-      />
-      <Route
-        path="/ctsv/anomalies"
-        element={
-          <CTSVRoute>
-            <Anomalies />
-          </CTSVRoute>
-        }
-      />
-      <Route
-        path="/ctsv/reports"
-        element={
-          <CTSVRoute>
-            <Engagement reports />
-          </CTSVRoute>
-        }
-      />
-
-      {/* Admin Pages - require ADMIN role */}
-      <Route
-        path="/admin/accounts"
-        element={
-          <AdminRoute>
-            <Accounts />
-          </AdminRoute>
-        }
-      />
-      <Route
-        path="/admin/roles"
-        element={
-          <AdminRoute>
-            <RoleMatrix />
-          </AdminRoute>
-        }
-      />
-      {['integrations', 'settings', 'health'].map((type) => (
-        <Route
-          key={type}
-          path={`/admin/${type}`}
-          element={
-            <AdminRoute>
-              <SystemSettings key={type} type={type} />
-            </AdminRoute>
-          }
-        />
-      ))}
-      <Route
-        path="/admin/audit"
-        element={
-          <AdminRoute>
-            <Audit />
-          </AdminRoute>
-        }
-      />
-
-      {/* Default redirect based on user role */}
-      <Route path="*" element={<Navigate to={getDefaultRedirect()} replace />} />
-    </Routes>
-  )
+    <AppLayout>
+      <Routes>
+        <Route path="/ctsv/reports/:reportId" element={canAccessPath(user, '/ctsv/reports') ? <ClubReportDetail /> : <Navigate to={fallback} replace />} />
+        {[...affairsNav, ...adminNav].map(({ path }) => (
+          <Route
+            key={path}
+            path={path}
+            element={canAccessPath(user, path) ? pages[path] : <Navigate to={fallback} replace />}
+          />
+        ))}
+        <Route path="*" element={<Navigate to={fallback} replace />} />
+      </Routes>
+    </AppLayout>
+  );
 }

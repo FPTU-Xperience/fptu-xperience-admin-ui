@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, ShieldCheck, Users } from 'lucide-react';
 import api from '../services/api.js';
+import VerificationAssignmentsPanel from '../components/VerificationAssignmentsPanel.jsx';
 import { ROLES } from '../utils/format.js';
 import { PageHeader, Panel, StatCard } from '../components/ui/index.js';
 
@@ -123,6 +124,7 @@ export function RoleMatrix() {
       </Panel>
 
       {/* Info Line */}
+      <VerificationAssignmentsPanel />
       <div className="flex items-center gap-[8px] text-[11px] text-[#717d8d] my-[20px] leading-relaxed">
         <ShieldCheck size={17} />
         <span>Hai không gian Admin và CTSV được tách trong bản thiết kế. Quyền thực tế cần được kiểm tra tại backend khi tích hợp.</span>

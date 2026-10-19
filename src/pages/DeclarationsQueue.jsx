@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ExternalLink, FileCheck2, ShieldAlert, ShieldCheck, X } from 'lucide-react';
 import api from '../services/api.js';
+import { mapDeclaration, declarationReview } from '../utils/declaration-contract.js';
 import { date } from '../utils/format.js';
 import { useAction } from '../hooks/useAction.js';
 import { Badge, Button, Empty, Field, Modal, PageHeader, Panel, StatCard, Tabs } from '../components/ui/index.js';
@@ -44,27 +45,35 @@ export function DeclarationsQueue() {
   const [reviewNote, setReviewNote] = useState('');
   const [reviewDecision, setReviewDecision] = useState('APPROVED');
   const [submitting, setSubmitting] = useState(false);
+  const [reviewAttributes, setReviewAttributes] = useState(null);
+  const [page, setPage] = useState(1), [totalPages, setTotalPages] = useState(1);
+  const requestVersion = useRef(0);
 
   async function fetchData() {
+    const ticket = ++requestVersion.current;
     setLoading(true);
     setError(null);
     try {
-      const params = {};
-      if (tab !== 'ALL') params.status = tab;
+      const params = { page, pageSize: 20 };
+      if (tab !== 'ALL') params.status = { SUBMITTED: 'Submitted', APPROVED: 'Approved', REJECTED: 'Rejected', NEED_CLARIFICATION: 'RevisionRequested' }[tab];
       const res = await api.studentAffairs.declarations.list(params);
-      setDeclarations(Array.isArray(res) ? res : res?.items || []);
+      if (ticket !== requestVersion.current) return;
+      setDeclarations((Array.isArray(res) ? res : res?.items || []).map(mapDeclaration));
+      setTotalPages(res?.totalPages || 1);
     } catch (err) {
+      if (ticket !== requestVersion.current) return;
       console.error('Failed to fetch declarations:', err);
       setError(err.message || 'Không thể tải danh sách hồ sơ');
       setDeclarations([]);
     } finally {
-      setLoading(false);
+      if (ticket === requestVersion.current) setLoading(false);
     }
   }
 
   useEffect(() => {
     fetchData();
-  }, [tab]);
+    return () => { requestVersion.current++; };
+  }, [tab, page]);
 
   // Stats
   const pendingCount = declarations.filter((d) => d.status === 'SUBMITTED').length;
@@ -91,10 +100,8 @@ export function DeclarationsQueue() {
     setSubmitting(true);
     const ok = await run(
       async () => {
-        await api.studentAffairs.declarations.review(review.id, {
-          decision: reviewDecision,
-          reviewNote: reviewNote.trim(),
-        });
+        await api.studentAffairs.declarations.review(review.id,
+          declarationReview(review, reviewDecision, reviewNote.trim(), reviewAttributes));
         setReview(null);
         setReviewNote('');
         setReviewDecision('APPROVED');
@@ -108,6 +115,7 @@ export function DeclarationsQueue() {
 
   function openReview(d) {
     setReview(d);
+    setReviewAttributes(d.proposedAttributes ? structuredClone(d.proposedAttributes) : null);
     setReviewNote('');
     setReviewDecision('APPROVED');
   }
@@ -133,21 +141,21 @@ export function DeclarationsQueue() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <StatCard
-          label="Chờ duyệt"
+          label="Chờ duyệt (trang này)"
           value={pendingCount}
           icon={ShieldAlert}
           note="Hồ sơ tự khai báo"
           tone="orange"
         />
         <StatCard
-          label="Đã duyệt"
+          label="Đã duyệt (trang này)"
           value={approvedCount}
           icon={ShieldCheck}
           note="Điểm được ghi nhận"
           tone="green"
         />
         <StatCard
-          label="Từ chối / Cần làm rõ"
+          label="Từ chối / Cần làm rõ (trang này)"
           value={rejectedCount}
           icon={FileCheck2}
           note="Cần bổ sung minh chứng"
@@ -161,7 +169,7 @@ export function DeclarationsQueue() {
           <div className="flex flex-wrap items-center gap-2 mb-[16px]">
             <Tabs
               active={tab}
-              onChange={(t) => { setTab(t); setQuery(''); }}
+              onChange={(t) => { setTab(t); setQuery(''); setPage(1); }}
               items={[
                 { id: 'SUBMITTED', label: 'Chờ duyệt', count: pendingCount },
                 { id: 'APPROVED', label: 'Đã duyệt', count: approvedCount },
@@ -299,6 +307,10 @@ export function DeclarationsQueue() {
       </Panel>
 
       {/* Review Modal */}
+      <nav aria-label="Trang hồ sơ" className="flex gap-3 mb-5">
+        <Button disabled={loading || page <= 1} onClick={() => setPage((value) => value - 1)}>Trước</Button><span>Trang {page}/{totalPages}</span>
+        <Button disabled={loading || page >= totalPages} onClick={() => setPage((value) => value + 1)}>Sau</Button>
+      </nav>
       {review && (
         <Modal
           title={review.studentName || 'Hồ sơ tự khai'}
@@ -355,6 +367,30 @@ export function DeclarationsQueue() {
               )}
 
               {/* Review form — only for SUBMITTED */}
+              {review.evidenceRefs?.map((id, index) => <Button type="button" key={id} onClick={() => run(() => api.downloadBlob(`/api/contributions/evidence/${encodeURIComponent(id)}/download`, `evidence-${id}`))}>Tải minh chứng riêng tư {index + 1}</Button>)}
+              {review.version && reviewAttributes && <fieldset className="mb-4" disabled={submitting || review.status !== 'SUBMITTED'}>
+                <legend>Thuộc tính xác minh</legend>
+                {Object.entries({ tier: ['T1', 'T2', 'T3', 'T4', 'T5'],
+                  role: ['Participant', 'Contributor', 'Product', 'Organizer', 'Leader'],
+                  scale: ['Club', 'Campus', 'FptEducation', 'National', 'International'],
+                  result: ['None', 'Finalist', 'Prize', 'RealWorldOutput'] }).map(([field, values]) => (
+                  <Field key={field} label={{ tier: 'Mức công sức', role: 'Vai trò đóng góp', scale: 'Quy mô', result: 'Kết quả' }[field]}>
+                    <select value={reviewAttributes[field]} onChange={(event) => setReviewAttributes((current) => ({ ...current, [field]: event.target.value }))}>
+                      {values.map((value) => <option key={value}>{value}</option>)}
+                    </select>
+                  </Field>
+                ))}
+                {reviewAttributes.pillarWeights.map((weight, index) => <div key={index} className="flex gap-2">
+                  <Field label="Trụ cột"><select value={weight.pillar} onChange={(event) => setReviewAttributes((current) => ({ ...current,
+                    pillarWeights: current.pillarWeights.map((item, i) => i === index ? { ...item, pillar: event.target.value } : item) }))}>
+                    {['Academic', 'Research', 'Global', 'CultureSports', 'Community', 'Entrepreneurship', 'RealWorldWork'].map((pillar) => <option key={pillar}>{pillar}</option>)}
+                  </select></Field>
+                  <Field label="Tỷ trọng"><input type="number" min="0.0001" max="1" step="0.0001" required value={weight.weight}
+                    onChange={(event) => setReviewAttributes((current) => ({ ...current,
+                      pillarWeights: current.pillarWeights.map((item, i) => i === index ? { ...item, weight: Number(event.target.value) } : item) }))} /></Field>
+                </div>)}
+                <p>Kiểm tra từng thuộc tính và minh chứng; tổng tỷ trọng phải bằng 1. Điểm cuối do máy chủ tính.</p>
+              </fieldset>}
               {review.status === 'SUBMITTED' ? (
                 <>
                   <Field label="Quyết định" className="mb-[18px]">
@@ -373,7 +409,7 @@ export function DeclarationsQueue() {
                       required
                       rows={3}
                       minLength={10}
-                      maxLength={1500}
+                      maxLength={1000}
                       value={reviewNote}
                       onChange={(e) => setReviewNote(e.target.value)}
                       placeholder="Mô tả kết quả kiểm tra minh chứng, cơ sở quyết định…"
@@ -387,7 +423,7 @@ export function DeclarationsQueue() {
                         : 'border border-[#e4ebf3] bg-[#f4f7fb] text-[#70869e]'
                   }`}>
                     {reviewDecision === 'APPROVED'
-                      ? `Điểm ${typeof review.awardedScore === 'number' ? review.awardedScore : review.suggestedScore || 0} sẽ được ghi nhận vào hồ sơ sinh viên.`
+                      ? 'Máy chủ kiểm tra quyền xác minh, phiên bản và chính sách trước khi ghi điểm.'
                       : reviewDecision === 'REJECTED'
                         ? 'Hồ sơ sẽ bị từ chối, sinh viên có thể nộp lại với minh chứng bổ sung.'
                         : 'Sinh viên sẽ nhận được thông báo yêu cầu làm rõ cùng nhận xét của bạn.'}
@@ -430,7 +466,7 @@ export function DeclarationsQueue() {
                     busy={submitting}
                     disabled={submitting || reviewNote.trim().length < 10}
                   >
-                    Phê duyệt
+                    {reviewDecision === 'APPROVED' ? 'Phê duyệt' : reviewDecision === 'REJECTED' ? 'Từ chối hồ sơ' : 'Yêu cầu bổ sung'}
                   </Button>
                 </>
               )}

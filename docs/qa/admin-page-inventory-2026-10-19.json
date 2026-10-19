@@ -1,0 +1,11 @@
+{
+  "navigationPages": 24,
+  "registeredPages": 24,
+  "reportDetailRoute": true,
+  "missing": [],
+  "orphan": [],
+  "backendOperationChecks": 15,
+  "unsupported": [],
+  "unresolvedBackendReceiverDeclarations": 0,
+  "removedFeatureSourceReferences": []
+}

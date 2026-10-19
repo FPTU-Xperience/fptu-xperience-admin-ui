@@ -1,3 +1,4 @@
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
 import { useEffect, useState } from 'react';
 import {
   Check,
@@ -16,11 +17,9 @@ import { date, seasonLabel } from '../utils/format.js';
 import { useAction } from '../hooks/useAction.js';
 import { Badge, Button, Empty, Field, Modal, PageHeader, Tabs } from '../components/ui/index.js';
 
-const DEFAULT_SEASON = 'FALL2026';
-
 export function Quests() {
   const run = useAction();
-  const [season] = useState(DEFAULT_SEASON);
+  const { season } = useWorkspace();
 
   // Data state
   const [quests, setQuests] = useState([]);
@@ -55,7 +54,7 @@ export function Quests() {
 
   // Filter by season and tab
   const filtered = quests.filter(
-    (q) => q.season === season && (tab === 'all' || q.status === tab),
+    (q) => (!season || q.season === season) && (tab === 'all' || q.status === tab),
   );
 
   async function changeStatus(quest) {
@@ -63,11 +62,7 @@ export function Quests() {
     await run(
       async () => {
         await api.studentAffairs.quests.updateStatus(quest.id, next);
-        setQuests((prev) =>
-          prev.map((q) =>
-            q.id === quest.id ? { ...q, status: next } : q,
-          ),
-        );
+        setQuests((prev) => prev.map((q) => (q.id === quest.id ? { ...q, status: next } : q)));
       },
       next === 'published' ? 'Đã công bố nhiệm vụ.' : 'Đã tạm dừng nhiệm vụ.',
     );
@@ -80,7 +75,7 @@ export function Quests() {
         title="Nhiệm vụ & chiến dịch"
         description="Tạo động lực để sinh viên chủ động khám phá, đóng góp và kết nối."
       >
-        <Button variant="primary" icon={Plus} onClick={() => setEdit({})}>
+        <Button variant="primary" icon={Plus} disabled={!season} onClick={() => setEdit({})}>
           Tạo nhiệm vụ
         </Button>
       </PageHeader>
@@ -88,9 +83,15 @@ export function Quests() {
       {/* Quest Hero Banner */}
       <div className="flex items-center justify-between bg-gradient-to-br from-[#f2f0fa] to-[#faf7fb] border border-[#ebe6f1] text-[#b6a6cf] p-[30px_35px] rounded-[10px] mb-[22px]">
         <div>
-          <div className="text-[9px] sm:text-[10px] tracking-[1px] font-semibold mb-[10px]">TỪ MỘT NHIỆM VỤ NHỎ</div>
-          <h2 className="text-[17px] sm:text-[21px] text-[#74618d] font-semibold mb-[10px]">Đến những thay đổi có ý nghĩa.</h2>
-          <p className="text-[11px] text-[#a296b0]">Nhiệm vụ toàn trường giúp sinh viên tìm thấy một lý do để bắt đầu.</p>
+          <div className="text-[9px] sm:text-[10px] tracking-[1px] font-semibold mb-[10px]">
+            TỪ MỘT NHIỆM VỤ NHỎ
+          </div>
+          <h2 className="text-[17px] sm:text-[21px] text-[#74618d] font-semibold mb-[10px]">
+            Đến những thay đổi có ý nghĩa.
+          </h2>
+          <p className="text-[11px] text-[#a296b0]">
+            Nhiệm vụ toàn trường giúp sinh viên tìm thấy một lý do để bắt đầu.
+          </p>
         </div>
         <Target size={85} strokeWidth={1} className="shrink-0 ml-[15px] hidden sm:block" />
       </div>
@@ -113,7 +114,11 @@ export function Quests() {
           onChange={setTab}
           items={[
             { id: 'all', label: 'Tất cả', count: filtered.length },
-            { id: 'published', label: 'Đã công bố', count: quests.filter((q) => q.status === 'published').length },
+            {
+              id: 'published',
+              label: 'Đã công bố',
+              count: quests.filter((q) => q.status === 'published').length,
+            },
             { id: 'draft', label: 'Bản nháp' },
             { id: 'paused', label: 'Tạm dừng' },
           ]}
@@ -139,17 +144,29 @@ export function Quests() {
             const pct = Math.min((q.joined / q.target) * 100, 100);
 
             return (
-              <article key={q.id} className="bg-white border border-[#e9ebee] rounded-[11px] overflow-hidden">
+              <article
+                key={q.id}
+                className="bg-white border border-[#e9ebee] rounded-[11px] overflow-hidden"
+              >
                 {/* Quest Art */}
-                <div className={`relative h-[150px] ${art.bg} ${art.text} flex items-center justify-center overflow-hidden`}>
+                <div
+                  className={`relative h-[150px] ${art.bg} ${art.text} flex items-center justify-center overflow-hidden`}
+                >
                   {/* Decorative circles */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="absolute w-[170px] h-[170px] rounded-full border border-current opacity-[0.15]" />
                     <div className="absolute w-[230px] h-[230px] rounded-full border border-current opacity-[0.15]" />
                   </div>
                   <Icon size={54} strokeWidth={1.3} />
-                  <Badge tone={q.status === 'published' ? 'green' : 'neutral'} className="absolute top-[15px] right-[15px] bg-white/60">
-                    {q.status === 'published' ? 'Đã công bố' : q.status === 'draft' ? 'Bản nháp' : 'Tạm dừng'}
+                  <Badge
+                    tone={q.status === 'published' ? 'green' : 'neutral'}
+                    className="absolute top-[15px] right-[15px] bg-white/60"
+                  >
+                    {q.status === 'published'
+                      ? 'Đã công bố'
+                      : q.status === 'draft'
+                        ? 'Bản nháp'
+                        : 'Tạm dừng'}
                   </Badge>
                   <span className="absolute bottom-[13px] left-[17px] bg-white rounded-[5px] flex items-center gap-[5px] px-[8px] py-[5px] text-[10px] font-semibold text-[#a68a63]">
                     <Sparkles size={14} />
@@ -163,7 +180,9 @@ export function Quests() {
                     {q.category} · {q.kind}
                   </div>
                   <h2 className="text-[15px] font-semibold text-[#4a5462] mb-[12px]">{q.name}</h2>
-                  <p className="text-[11px] text-[#717d8d] mb-[18px] min-h-[52px]">{q.description || 'Chưa có mô tả'}</p>
+                  <p className="text-[11px] text-[#717d8d] mb-[18px] min-h-[52px]">
+                    {q.description || 'Chưa có mô tả'}
+                  </p>
 
                   <div className="flex items-center gap-[8px] text-[11px] text-[#717d8d] mb-[10px]">
                     <UsersRound size={15} />
@@ -176,13 +195,20 @@ export function Quests() {
 
                   {/* Progress */}
                   <div className="flex justify-between text-[10px] text-[#abb1b9] mb-[10px]">
-                    <span>{q.joined} / {q.target} lượt đăng ký</span>
+                    <span>
+                      {q.joined} / {q.target} lượt đăng ký
+                    </span>
                     <b className="font-medium text-[#c98e67]">{Math.round(pct)}%</b>
                   </div>
                   <div className="w-full h-[5px] bg-[#f1f2f4] rounded-[6px] overflow-hidden mb-[9px]">
-                    <i className="block h-full bg-[#ed9c6a] rounded-[6px]" style={{ width: `${pct}%` }} />
+                    <i
+                      className="block h-full bg-[#ed9c6a] rounded-[6px]"
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
-                  <p className="text-[10px] text-[#a4aab2] mb-[20px]">{q.completed} lượt hoàn thành đã xác thực</p>
+                  <p className="text-[10px] text-[#a4aab2] mb-[20px]">
+                    {q.completed} lượt hoàn thành đã xác thực
+                  </p>
 
                   {/* Actions */}
                   <div className="flex gap-[9px] mt-5">
@@ -204,7 +230,10 @@ export function Quests() {
           })}
         </div>
       ) : (
-        <Empty title="Chưa có nhiệm vụ trong nhóm này" description="Tạo nhiệm vụ đầu tiên cho học kỳ đang xem." />
+        <Empty
+          title="Chưa có nhiệm vụ trong nhóm này"
+          description="Tạo nhiệm vụ đầu tiên cho học kỳ đang xem."
+        />
       )}
 
       {edit && (
@@ -263,7 +292,7 @@ function mapQuestFromApi(report) {
     reward: safeNumber(report.reward || report.xpReward || report.xp, 0),
     target: safeNumber(report.target || report.targetParticipantCount || report.joined, 0),
     deadline: safeString(report.dueDate || report.deadline || report.activityDate, ''),
-    season: safeString(report.period || report.season, DEFAULT_SEASON),
+    season: safeString(report.period || report.semesterCode || report.season, ''),
     icon: 'sparkles',
     status: status,
     joined: safeNumber(report.joined, 0),
@@ -294,46 +323,43 @@ function QuestForm({ quest, season, onClose, onSave }) {
 
   async function submit(e) {
     e.preventDefault();
-    await run(
-      async () => {
-        setSaving(true);
-        try {
-          const payload = {
-            title: form.name,
-            name: form.name,
-            description: form.description,
-            period: season,
-            semesterCode: season,
-            kind: form.kind,
-            reportType: form.kind,
-            category: form.category,
-            tag: form.category,
-            scope: form.scope,
-            rewardXp: Number(form.reward) || 50,
-            reward: Number(form.reward) || 50,
-            targetParticipants: Number(form.target) || 100,
-            target: Number(form.target) || 100,
-            deadline: form.deadline,
-            dueDate: form.deadline,
-            icon: form.icon || 'sparkles',
-            status: quest.id ? quest.status : 'draft',
-          };
+    await run(async () => {
+      setSaving(true);
+      try {
+        const payload = {
+          title: form.name,
+          name: form.name,
+          description: form.description,
+          period: season,
+          semesterCode: season,
+          kind: form.kind,
+          reportType: form.kind,
+          category: form.category,
+          tag: form.category,
+          scope: form.scope,
+          rewardXp: Number(form.reward) || 50,
+          reward: Number(form.reward) || 50,
+          targetParticipants: Number(form.target) || 100,
+          target: Number(form.target) || 100,
+          deadline: form.deadline,
+          dueDate: form.deadline,
+          icon: form.icon || 'sparkles',
+          status: quest.id ? quest.status : 'draft',
+        };
 
-          let saved;
-          if (quest.id) {
-            saved = await api.studentAffairs.quests.update(quest.id, payload);
-          } else {
-            saved = await api.studentAffairs.quests.create(payload);
-          }
-
-          const mapped = mapQuestFromApi(saved);
-          onSave(mapped);
-        } finally {
-          setSaving(false);
+        let saved;
+        if (quest.id) {
+          saved = await api.studentAffairs.quests.update(quest.id, payload);
+        } else {
+          saved = await api.studentAffairs.quests.create(payload);
         }
-      },
-      'Đã lưu nhiệm vụ. Bạn có thể công bố từ danh sách.',
-    );
+
+        const mapped = mapQuestFromApi(saved);
+        onSave(mapped);
+      } finally {
+        setSaving(false);
+      }
+    }, 'Đã lưu nhiệm vụ. Bạn có thể công bố từ danh sách.');
   }
 
   return (
@@ -378,15 +404,13 @@ function QuestForm({ quest, season, onClose, onSave }) {
             <input required type="number" min={1} max={10000} step={1} {...bind('target')} />
           </Field>
           <Field label="Hạn hoàn thành *" className="sm:col-span-2">
-            <input
-              required
-              type="date"
-              {...bind('deadline')}
-            />
+            <input required type="date" {...bind('deadline')} />
           </Field>
         </div>
         <div className="sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px]">
-          <Button type="button" onClick={onClose} disabled={saving}>Hủy</Button>
+          <Button type="button" onClick={onClose} disabled={saving}>
+            Hủy
+          </Button>
           <Button type="submit" variant="primary" icon={Check} disabled={saving}>
             {saving ? 'Đang lưu...' : 'Lưu nhiệm vụ'}
           </Button>

@@ -13,7 +13,12 @@ import {
   Target,
   Users,
   UsersRound,
-  Sparkles
+  ArrowRightLeft,
+  ClipboardList,
+  Coins,
+  FileText,
+  School,
+  UserRoundCog,
 } from 'lucide-react';
 
 export const affairsNav = [
@@ -23,10 +28,18 @@ export const affairsNav = [
     icon: LayoutDashboard,
     group: 'KHÔNG GIAN LÀM VIỆC',
   },
+  { path: '/ctsv/reports', label: 'Báo cáo từ CLB', icon: FileChartColumn },
+  { path: '/ctsv/activity-approvals', label: 'Phê duyệt hoạt động', icon: FileCheck2 },
+  { path: '/ctsv/activity-dossiers', label: 'Action & quyết toán XP', icon: ClipboardList },
   { path: '/ctsv/declarations', label: 'Duyệt hồ sơ tự khai', icon: FileCheck2 },
   { path: '/ctsv/clubs', label: 'Quản lý câu lạc bộ', icon: UsersRound },
+  { path: '/ctsv/club-requests', label: 'Hồ sơ quản trị CLB', icon: FileText },
+  { path: '/ctsv/global-activities', label: 'Hoạt động cấp trường', icon: School },
+  { path: '/ctsv/student-roster', label: 'Sinh viên theo học kỳ', icon: Users },
+  { path: '/ctsv/rollover', label: 'Chuyển học kỳ', icon: ArrowRightLeft },
+  { path: '/ctsv/leadership', label: 'Kế nhiệm & khôi phục CLB', icon: UserRoundCog },
+  { path: '/ctsv/club-bonuses', label: 'Ngân sách điểm CLB', icon: Coins },
   { path: '/ctsv/engagement', label: 'Gắn kết sinh viên', icon: Activity },
-  { path: '/ctsv/bonus-matrix', label: 'Hệ số cộng điểm', icon: Sparkles },
   { path: '/ctsv/quests', label: 'Nhiệm vụ & chiến dịch', icon: Target },
   {
     path: '/ctsv/rubrics',
@@ -36,7 +49,7 @@ export const affairsNav = [
   },
   { path: '/ctsv/seasons', label: 'Học kỳ & mùa giải', icon: CalendarDays },
   { path: '/ctsv/anomalies', label: 'Kiểm duyệt bất thường', icon: ShieldAlert },
-  { path: '/ctsv/reports', label: 'Báo cáo & phân tích', icon: FileChartColumn },
+  { path: '/ctsv/experience-audit', label: 'Đối soát trải nghiệm', icon: ScrollText },
 ];
 
 export const adminNav = [

@@ -1,8 +1,10 @@
+import { useWorkspace } from '../../context/WorkspaceContext.jsx';
 import { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 import { IconButton } from './Button.jsx';
 
 export function Modal({ title, description, children, onClose, wide = false }) {
+  const { toast, dismissToast } = useWorkspace() || {};
   const ref = useRef();
   const titleId = useId();
   useEffect(() => {
@@ -52,6 +54,15 @@ export function Modal({ title, description, children, onClose, wide = false }) {
           onClick={onClose}
         />
       </div>
+      {toast?.type === 'error' && (
+        <div
+          role="alert"
+          className="mx-5 mt-4 flex items-start justify-between gap-3 rounded-lg border border-red-text bg-surface p-3 text-sm text-red-text"
+        >
+          <p>{toast.message}</p>
+          <IconButton icon={X} label="Đóng thông báo lỗi" onClick={dismissToast} />
+        </div>
+      )}
       {children}
     </dialog>
   );

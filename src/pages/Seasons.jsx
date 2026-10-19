@@ -1,3 +1,5 @@
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
+import { mapSemesterOptions } from '../utils/semesters.js';
 import { useEffect, useState } from 'react';
 import { CalendarDays, Check, Pencil, Plus, Trash2 } from 'lucide-react';
 import api from '../services/api.js';
@@ -5,34 +7,16 @@ import { date, seasonLabel } from '../utils/format.js';
 import { useAction } from '../hooks/useAction.js';
 import { Badge, Button, Empty, Field, Modal, PageHeader, Panel } from '../components/ui/index.js';
 
-// Default seasons configuration
-const DEFAULT_SEASONS = [
-  {
-    id: 'FALL2026',
-    label: 'Fall 2026',
-    start: '2026-08-15',
-    end: '2026-12-31',
-    threshold: 200,
-    xpPerLevel: 100,
-    rankings: true,
-  },
-  {
-    id: 'SUMMER2026',
-    label: 'Summer 2026',
-    start: '2026-05-15',
-    end: '2026-08-14',
-    threshold: 150,
-    xpPerLevel: 80,
-    rankings: true,
-  },
-];
-
 export function Seasons() {
   const run = useAction();
 
+  const { retrySemesters } = useWorkspace();
+  const [seasonStatus, setSeasonStatus] = useState('loading');
+  const [seasonError, setSeasonError] = useState('');
+
   // Season configuration
-  const [seasons, setSeasons] = useState(DEFAULT_SEASONS);
-  const [currentSeason, setCurrentSeason] = useState('FALL2026');
+  const [seasons, setSeasons] = useState([]);
+  const [currentSeason, setCurrentSeason] = useState('');
 
   // Deadlines from API
   const [deadlines, setDeadlines] = useState([]);
@@ -41,28 +25,24 @@ export function Seasons() {
 
   // Fetch seasons
   async function fetchSeasons() {
+    setSeasonStatus('loading');
+    setSeasonError('');
     try {
-      const [listRes, activeRes] = await Promise.allSettled([
+      const [list, active] = await Promise.allSettled([
         api.seasons.list(),
         api.seasons.getActive(),
       ]);
-      if (listRes.status === 'fulfilled' && Array.isArray(listRes.value) && listRes.value.length > 0) {
-        setSeasons(listRes.value.map((s) => ({
-          id: s.semesterCode,
-          label: s.label || seasonLabel(s.semesterCode),
-          start: s.start,
-          end: s.end,
-          threshold: s.threshold,
-          xpPerLevel: s.xpPerLevel,
-          rankings: s.rankings,
-          isActive: s.isActive,
-        })));
-      }
-      if (activeRes.status === 'fulfilled' && activeRes.value?.semesterCode) {
-        setCurrentSeason(activeRes.value.semesterCode);
-      }
-    } catch (err) {
-      console.warn('Failed to fetch seasons:', err);
+      if (list.status === 'rejected') throw list.reason;
+      const options = mapSemesterOptions(list.value);
+      setSeasons(options);
+      setCurrentSeason(
+        active.value?.semesterCode || options.find((item) => item.isActive)?.id || '',
+      );
+      setSeasonStatus(options.length ? 'ready' : 'empty');
+    } catch (error) {
+      setSeasons([]);
+      setSeasonStatus('error');
+      setSeasonError(error.message || 'Không thể tải học kỳ.');
     }
   }
 
@@ -96,14 +76,11 @@ export function Seasons() {
   // Delete deadline
   async function handleDeleteDeadline() {
     if (!deletingDeadline) return;
-    await run(
-      async () => {
-        await api.deadlines.delete(deletingDeadline.period);
-        setDeadlines((prev) => prev.filter((d) => d.period !== deletingDeadline.period));
-        setDeletingDeadline(null);
-      },
-      'Đã xóa deadline.',
-    );
+    await run(async () => {
+      await api.deadlines.delete(deletingDeadline.period);
+      setDeadlines((prev) => prev.filter((d) => d.period !== deletingDeadline.period));
+      setDeletingDeadline(null);
+    }, 'Đã xóa deadline.');
   }
 
   return (
@@ -131,11 +108,26 @@ export function Seasons() {
             Tiến bộ theo mùa. Giá trị theo năm tháng.
           </h2>
           <p className="text-[11px] text-[#95a9b2] leading-relaxed">
-            XP cạnh tranh và xếp hạng được tính riêng mỗi học kỳ. Hồ sơ đóng góp và lịch sử xác thực được giữ lâu dài.
+            XP cạnh tranh và xếp hạng được tính riêng mỗi học kỳ. Hồ sơ đóng góp và lịch sử xác thực
+            được giữ lâu dài.
           </p>
         </div>
       </div>
 
+      {seasonStatus === 'loading' && (
+        <p role="status" className="mb-4 text-muted">
+          Đang tải học kỳ…
+        </p>
+      )}
+      {seasonStatus === 'error' && (
+        <div role="alert" className="mb-4 flex flex-wrap gap-3 text-red-text">
+          <p>{seasonError}</p>
+          <Button onClick={fetchSeasons}>Thử lại</Button>
+        </div>
+      )}
+      {seasonStatus === 'empty' && (
+        <Empty title="Chưa có học kỳ" description="Thêm học kỳ đầu tiên để bắt đầu cấu hình." />
+      )}
       {/* Season Grid */}
       <div className="grid sm:grid-cols-2 gap-[23px] mb-8">
         {seasons.map((s) => (
@@ -151,7 +143,9 @@ export function Seasons() {
             </div>
 
             {/* Info */}
-            <h2 className="text-[21px] font-semibold text-[#4a5462] mb-[9px]">{seasonLabel(s.id)}</h2>
+            <h2 className="text-[21px] font-semibold text-[#4a5462] mb-[9px]">
+              {seasonLabel(s.id)}
+            </h2>
             <p className="text-[11px] text-[#717d8d] mb-[23px]">
               {date(s.start)} — {date(s.end)}
             </p>
@@ -168,11 +162,17 @@ export function Seasons() {
               </div>
               <div className="flex justify-between text-[12px]">
                 <dt className="text-[#8795a6]">Hiển thị xếp hạng</dt>
-                <dd className="font-medium text-[#768598]">{s.rankings ? 'Bật' : 'Tắt · Ưu tiên tiến bộ cá nhân'}</dd>
+                <dd className="font-medium text-[#768598]">
+                  {s.rankings ? 'Bật' : 'Tắt · Ưu tiên tiến bộ cá nhân'}
+                </dd>
               </div>
             </dl>
 
-            <Button icon={Pencil} onClick={() => setEditingSeason(s)} className="w-full justify-center">
+            <Button
+              icon={Pencil}
+              onClick={() => setEditingSeason(s)}
+              className="w-full justify-center"
+            >
               Chỉnh sửa cấu hình
             </Button>
           </Panel>
@@ -180,10 +180,7 @@ export function Seasons() {
       </div>
 
       {/* Deadlines Section */}
-      <Panel
-        title="Deadline báo cáo"
-        description="Thời hạn nộp báo cáo hoạt động cho từng học kỳ"
-      >
+      <Panel title="Deadline báo cáo" description="Thời hạn nộp báo cáo hoạt động cho từng học kỳ">
         {error && (
           <div className="px-5 py-3 mb-4 p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px]">
             <span className="mr-2">⚠️</span>
@@ -271,6 +268,7 @@ export function Seasons() {
           value={editingSeason}
           onClose={() => setEditingSeason(null)}
           onSave={(saved) => {
+            retrySemesters();
             setSeasons((prev) => {
               const exists = prev.some((s) => s.id === saved.id);
               if (exists) {
@@ -290,6 +288,7 @@ export function Seasons() {
           deadline={editingDeadline}
           onClose={() => setEditingDeadline(null)}
           onSave={(saved) => {
+            retrySemesters();
             if (editingDeadline.period) {
               setDeadlines((prev) => prev.map((d) => (d.period === saved.period ? saved : d)));
             } else {
@@ -351,38 +350,27 @@ function SeasonForm({ value, onClose, onSave }) {
 
   async function submit(e) {
     e.preventDefault();
-    const ok = await run(
-      async () => {
-        const id = form.id.trim().toUpperCase();
-        if (!/^(SPRING|SUMMER|FALL)\d{4}$/.test(id))
-          throw new Error('Mã học kỳ theo định dạng FALL2026, SUMMER2026 hoặc SPRING2027.');
-        if (form.start >= form.end)
-          throw new Error('Ngày kết thúc phải sau ngày bắt đầu.');
+    const ok = await run(async () => {
+      const id = form.id.trim().toUpperCase();
+      if (!/^(SPRING|SUMMER|FALL)\d{4}$/.test(id))
+        throw new Error('Mã học kỳ theo định dạng FALL2026, SUMMER2026 hoặc SPRING2027.');
+      if (form.start >= form.end) throw new Error('Ngày kết thúc phải sau ngày bắt đầu.');
 
-        const payload = {
-          semesterCode: id,
-          start: form.start,
-          end: form.end,
-          threshold: Number(form.threshold),
-          xpPerLevel: Number(form.xpPerLevel),
-          rankings: Boolean(form.rankings),
-        };
+      const payload = {
+        semesterCode: id,
+        start: form.start,
+        end: form.end,
+        threshold: Number(form.threshold),
+        xpPerLevel: Number(form.xpPerLevel),
+        rankings: Boolean(form.rankings),
+      };
 
-        try {
-          if (value.id) {
-            await api.seasons.update(value.id, payload);
-          } else {
-            await api.seasons.create(payload);
-          }
-        } catch (err) {
-          console.warn('Backend semester save error:', err);
-        }
+      if (value.id) await api.seasons.update(value.id, payload);
+      else await api.seasons.create(payload);
 
-        const saved = { ...form, id };
-        onSave(saved);
-      },
-      'Đã lưu cấu hình học kỳ.',
-    );
+      const saved = { ...form, id };
+      onSave(saved);
+    }, 'Đã lưu cấu hình học kỳ.');
   }
 
   return (
@@ -445,12 +433,17 @@ function SeasonForm({ value, onClose, onSave }) {
             Cho phép hiển thị xếp hạng theo học kỳ
           </label>
           <div className="sm:col-span-2 p-[14px] border border-[#e4ebf3] bg-[#f4f7fb] text-[#70869e] rounded-[7px] text-[11px] leading-[1.8]">
-            Mở học kỳ mới tạo phạm vi XP mới; hồ sơ đóng góp trọn đời và sổ cái hiện tại vẫn được giữ nguyên.
+            Mở học kỳ mới tạo phạm vi XP mới; hồ sơ đóng góp trọn đời và sổ cái hiện tại vẫn được
+            giữ nguyên.
           </div>
         </div>
         <div className="sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px]">
-          <Button type="button" onClick={onClose}>Hủy</Button>
-          <Button type="submit" variant="primary" icon={Check}>Lưu học kỳ</Button>
+          <Button type="button" onClick={onClose}>
+            Hủy
+          </Button>
+          <Button type="submit" variant="primary" icon={Check}>
+            Lưu học kỳ
+          </Button>
         </div>
       </form>
     </Modal>
@@ -468,42 +461,36 @@ function DeadlineForm({ deadline, onClose, onSave }) {
 
   async function submit(e) {
     e.preventDefault();
-    await run(
-      async () => {
-        setSaving(true);
-        try {
-          const payload = {
-            period: form.period,
-            dueDate: form.dueDate,
-            type: form.type,
-          };
-          if (deadline.period) {
-            // Update
-            await api.deadlines.update(deadline.period, payload);
-          } else {
-            // Create
-            await api.deadlines.create(payload);
-          }
-          const saved = {
-            period: form.period,
-            dueDate: form.dueDate,
-            type: form.type,
-            isPast: new Date(form.dueDate) < new Date(),
-          };
-          onSave(saved);
-        } finally {
-          setSaving(false);
+    await run(async () => {
+      setSaving(true);
+      try {
+        const payload = {
+          period: form.period,
+          dueDate: form.dueDate,
+          type: form.type,
+        };
+        if (deadline.period) {
+          // Update
+          await api.deadlines.update(deadline.period, payload);
+        } else {
+          // Create
+          await api.deadlines.create(payload);
         }
-      },
-      'Đã lưu deadline.',
-    );
+        const saved = {
+          period: form.period,
+          dueDate: form.dueDate,
+          type: form.type,
+          isPast: new Date(form.dueDate) < new Date(),
+        };
+        onSave(saved);
+      } finally {
+        setSaving(false);
+      }
+    }, 'Đã lưu deadline.');
   }
 
   return (
-    <Modal
-      title={deadline.period ? 'Chỉnh sửa deadline' : 'Thêm deadline mới'}
-      onClose={onClose}
-    >
+    <Modal title={deadline.period ? 'Chỉnh sửa deadline' : 'Thêm deadline mới'} onClose={onClose}>
       <form onSubmit={submit}>
         <div className="px-[26px] py-6 grid sm:grid-cols-1 gap-y-[21px]">
           <Field label="Mã học kỳ / Kỳ báo cáo *" hint="Ví dụ: FALL2026, 2026-01">
@@ -524,10 +511,7 @@ function DeadlineForm({ deadline, onClose, onSave }) {
             />
           </Field>
           <Field label="Loại deadline">
-            <select
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-            >
+            <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
               <option value="monthly">Hàng tháng</option>
               <option value="quarterly">Hàng quý</option>
               <option value="semester">Học kỳ</option>
@@ -536,7 +520,9 @@ function DeadlineForm({ deadline, onClose, onSave }) {
           </Field>
         </div>
         <div className="sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px]">
-          <Button type="button" onClick={onClose} disabled={saving}>Hủy</Button>
+          <Button type="button" onClick={onClose} disabled={saving}>
+            Hủy
+          </Button>
           <Button type="submit" variant="primary" icon={Check} disabled={saving}>
             {saving ? 'Đang lưu...' : 'Lưu deadline'}
           </Button>

@@ -1,5 +1,7 @@
 # Đối chiếu đặc tả và tích hợp backend
 
+> Tài liệu đối chiếu lịch sử của giai đoạn bản mẫu. Code đã có xác thực và nhiều API-backed pages; xem [ADMIN_UI_BASELINE.md](ADMIN_UI_BASELINE.md) cho trạng thái source audit mới nhất (2026-10-15). Các endpoint đề xuất bên dưới không được coi là đã kiểm chứng trên deployment.
+
 ## Nguồn và thứ tự ưu tiên
 
 1. Yêu cầu trực tiếp: thiết kế actor CTSV và Admin; Admin quản lý toàn bộ tài khoản, thêm, xóa và thêm hàng loạt qua Excel.
@@ -20,29 +22,29 @@ Bản giao diện ưu tiên mô hình trong Word theo yêu cầu. Không ghép c
 
 Đã kiểm tra mã trong `AuthService/Endpoints/UserEndpoints.cs`, `AuthService/Services/ActorAccountPolicy.cs`, `Shared/Auth/AuthConstants.cs` và danh sách API.
 
-| Phạm vi | Backend hiện có | Công việc khi tích hợp |
-| --- | --- | --- |
-| Danh sách, thêm, sửa tài khoản | `GET/POST /api/users`, `PUT /api/users/{id}` | Thay thao tác localStorage bằng request và ánh xạ dữ liệu |
-| Khóa/mở khóa | `PATCH /api/users/{id}/lock`, `/unlock` | Hiển thị lỗi API và tải lại dòng sau thành công |
-| Xóa tài khoản | Chưa có trong `UserEndpoints` đã đọc | Bổ sung quy tắc xóa, tham chiếu đóng góp, thu hồi phiên và audit |
-| Nhập Excel | Chưa có endpoint batch | Nên có preview/commit với kiểm tra trùng phía máy chủ và kết quả từng dòng |
-| Vai trò CTSV | Có hằng `STUDENT_AFFAIRS_ADMIN`; chính sách tạo/đăng nhập hiện chỉ nhận ADMIN, CLUB_MANAGER, CLUB_MEMBER | Điều chỉnh allow-list, dữ liệu role và chính sách đăng nhập để có actor CTSV độc lập |
-| CLB và hồ sơ thành lập | API danh mục và `/api/clubs/applications/{id}/approve` hoặc `/reject` | Đổi khóa mẫu sang ID thật, tải chi tiết đầy đủ, kiểm tra quyền trên máy chủ |
-| XP, rubric, season, quest, engagement, anomaly | Chưa thấy các dịch vụ tương ứng trong mã đã kiểm tra | Bổ sung các hợp đồng API của nền tảng Xperience |
-| KPI/báo cáo tài chính cũ | Có trong ClubReportHub | Không dùng các chỉ số cũ thay cho XP và gắn kết theo đặc tả mới |
+| Phạm vi                                        | Backend hiện có                                                                                          | Công việc khi tích hợp                                                               |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Danh sách, thêm, sửa tài khoản                 | `GET/POST /api/users`, `PUT /api/users/{id}`                                                             | Thay thao tác localStorage bằng request và ánh xạ dữ liệu                            |
+| Khóa/mở khóa                                   | `PATCH /api/users/{id}/lock`, `/unlock`                                                                  | Hiển thị lỗi API và tải lại dòng sau thành công                                      |
+| Xóa tài khoản                                  | Chưa có trong `UserEndpoints` đã đọc                                                                     | Bổ sung quy tắc xóa, tham chiếu đóng góp, thu hồi phiên và audit                     |
+| Nhập Excel                                     | Chưa có endpoint batch                                                                                   | Nên có preview/commit với kiểm tra trùng phía máy chủ và kết quả từng dòng           |
+| Vai trò CTSV                                   | Có hằng `STUDENT_AFFAIRS_ADMIN`; chính sách tạo/đăng nhập hiện chỉ nhận ADMIN, CLUB_MANAGER, CLUB_MEMBER | Điều chỉnh allow-list, dữ liệu role và chính sách đăng nhập để có actor CTSV độc lập |
+| CLB và hồ sơ thành lập                         | API danh mục và `/api/clubs/applications/{id}/approve` hoặc `/reject`                                    | Đổi khóa mẫu sang ID thật, tải chi tiết đầy đủ, kiểm tra quyền trên máy chủ          |
+| XP, rubric, season, quest, engagement, anomaly | Chưa thấy các dịch vụ tương ứng trong mã đã kiểm tra                                                     | Bổ sung các hợp đồng API của nền tảng Xperience                                      |
+| KPI/báo cáo tài chính cũ                       | Có trong ClubReportHub                                                                                   | Không dùng các chỉ số cũ thay cho XP và gắn kết theo đặc tả mới                      |
 
 ## Ánh xạ tài khoản
 
-| Bản giao diện | AuthService hiện tại |
-| --- | --- |
-| `id` | `id` |
-| `username` | `username` |
-| `fullName` | `fullName` |
-| `email` | `email` |
-| `role` | `roles[0]` |
-| `status: active` | `isActive: true, isLocked: false` |
-| `status: locked` | `isLocked: true` |
-| `joinedAt` | Cần bổ sung trường ngày tạo để hiển thị chính xác |
+| Bản giao diện    | AuthService hiện tại                              |
+| ---------------- | ------------------------------------------------- |
+| `id`             | `id`                                              |
+| `username`       | `username`                                        |
+| `fullName`       | `fullName`                                        |
+| `email`          | `email`                                           |
+| `role`           | `roles[0]`                                        |
+| `status: active` | `isActive: true, isLocked: false`                 |
+| `status: locked` | `isLocked: true`                                  |
+| `joinedAt`       | Cần bổ sung trường ngày tạo để hiển thị chính xác |
 
 Backend còn có `isActive`; khi tích hợp cần bổ sung trạng thái ngừng hoạt động nếu muốn hiển thị riêng với khóa tài khoản. Không ánh xạ việc xóa thành khóa một cách âm thầm.
 

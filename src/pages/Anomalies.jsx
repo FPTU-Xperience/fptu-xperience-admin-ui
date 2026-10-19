@@ -1,13 +1,23 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api.js';
 import { ChevronRight, CircleAlert, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { useAction } from '../hooks/useAction.js';
-import { useWorkspace } from '../context/WorkspaceContext.jsx';
-import { Badge, Button, Empty, Field, Modal, PageHeader, Panel, StatCard, Tabs } from '../components/ui/index.js';
+import {
+  Badge,
+  Button,
+  Empty,
+  Field,
+  Modal,
+  PageHeader,
+  Panel,
+  StatCard,
+  Tabs,
+} from '../components/ui/index.js';
 
 export function Anomalies() {
-  const run = useAction();
-  const { state, commit } = useWorkspace();
+  const [anomalies, setAnomalies] = useState([]);
+  const [ledger, setLedger] = useState([]);
+  const [error, setError] = useState('');
+  const [version, setVersion] = useState(0);
   const [tab, setTab] = useState('open');
   const [item, setItem] = useState(null);
   const [decision, setDecision] = useState('keep');
@@ -15,94 +25,44 @@ export function Anomalies() {
   const [adjustment, setAdjustment] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Use global state for anomalies (kept in sync with API)
-  const anomalies = state.anomalies;
   const cases = anomalies.filter((a) => tab === 'all' || a.status === tab);
 
   // Fetch anomalies from API on mount
   useEffect(() => {
-    async function fetchAnomalies() {
-      try {
-        const response = await api.anomalies.list();
-        const items = response?.items || response || [];
-
-        // Sync to global state
-        commit(
-          'Sync anomalies',
-          `Đồng bộ ${items.length} bất thường từ API`,
-          'affairs',
-          (next) => {
-            next.anomalies = items;
-          }
-        );
-      } catch (err) {
-        console.error('Failed to fetch anomalies:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAnomalies();
-  }, []);
+    let active = true;
+    setLoading(true);
+    setError('');
+    Promise.all([api.studentAffairs.anomalies.list(), api.studentAffairs.ledger.list()])
+      .then(([response, ledgerResponse]) => {
+        if (!active) return;
+        setLedger(Array.isArray(ledgerResponse) ? ledgerResponse : ledgerResponse?.items || []);
+        const items = Array.isArray(response) ? response : response?.items || [];
+        setAnomalies(items.map((item) => ({ ...item, status: String(item.status).toLowerCase() })));
+      })
+      .catch((err) => {
+        if (active) {
+          setAnomalies([]);
+          setError(err.message || 'Không thể tải bất thường.');
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [version]);
 
   // Stats
   const openCount = anomalies.filter((a) => a.status === 'open').length;
-  const highSeverityCount = anomalies.filter((a) => a.status === 'open' && a.severity === 'high').length;
+  const highSeverityCount = anomalies.filter(
+    (a) => a.status === 'open' && a.severity === 'high',
+  ).length;
   const resolvedCount = anomalies.filter((a) => a.status === 'resolved').length;
 
-  async function submit(e) {
-    e.preventDefault();
-    if (!item) return;
-
-    const newStatus = decision === 'keep' ? 'keep' : decision; // keep, adjust, revoke
-    const finalStatus = 'resolved';
-
-    await run(
-      async () => {
-        // Update global state
-        commit(
-          `Xử lý bất thường: ${item.title}`,
-          `${item.club} · Quyết định: ${decision === 'keep' ? 'Giữ nguyên' : decision === 'adjust' ? `Điều chỉnh ${adjustment}` : 'Thu hồi'}`,
-          'affairs',
-          (next) => {
-            const idx = next.anomalies.findIndex((a) => a.id === item.id);
-            if (idx !== -1) {
-              next.anomalies[idx] = {
-                ...next.anomalies[idx],
-                status: finalStatus,
-                decision: newStatus,
-                reason: reason.trim(),
-                resolvedAt: new Date().toISOString(),
-                adjustment: decision === 'adjust' ? Number(adjustment) : undefined,
-              };
-
-              // If adjusting or revoking, add ledger entry
-              if (decision !== 'keep') {
-                next.ledger = next.ledger || [];
-                next.ledger.unshift({
-                  id: `ledger-${Date.now()}`,
-                  studentId: next.anomalies[idx].student,
-                  amount: decision === 'revoke' ? -item.amount : Number(adjustment) - item.amount,
-                  source: `Điều chỉnh bất thường: ${item.title}`,
-                  rubricVersion: 1,
-                  caseId: item.id,
-                  season: 'FALL2026',
-                  type: 'reversal',
-                  at: new Date().toISOString(),
-                  actor: 'CTSV Admin',
-                  reason: reason.trim(),
-                });
-              }
-            }
-          }
-        );
-
-        setItem(null);
-        setReason('');
-        setAdjustment(0);
-        setDecision('keep');
-      },
-      'Đã lưu quyết định kiểm duyệt.',
-    );
+  function submit(event) {
+    event.preventDefault();
+    // A local ledger must never impersonate a server-side moderation decision.
   }
 
   return (
@@ -113,6 +73,15 @@ export function Anomalies() {
         description="Kiểm tra minh chứng, ghi nhận quyết định và bảo vệ tính toàn vẹn của XP."
       />
 
+      <p className="mb-4 text-sm text-muted">
+        Chế độ chỉ xem. Chức năng lưu quyết định đang chờ kết nối máy chủ.
+      </p>
+      {error && (
+        <div role="alert" className="mb-4 flex flex-wrap gap-3 text-red-text">
+          <p>{error}</p>
+          <Button onClick={() => setVersion((value) => value + 1)}>Thử lại</Button>
+        </div>
+      )}
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <StatCard
@@ -145,7 +114,7 @@ export function Anomalies() {
           items={[
             { id: 'open', label: 'Cần xem xét', count: openCount },
             { id: 'resolved', label: 'Đã xử lý', count: resolvedCount },
-            { id: 'ledger', label: 'Sổ cái XP', count: state.ledger?.length || 0 },
+            { id: 'ledger', label: 'Sổ cái XP', count: ledger?.length || 0 },
           ]}
         />
 
@@ -173,8 +142,8 @@ export function Anomalies() {
                 </tr>
               </thead>
               <tbody>
-                {(state.ledger && state.ledger.length > 0) ? (
-                  state.ledger.map((entry) => (
+                {ledger && ledger.length > 0 ? (
+                  ledger.map((entry) => (
                     <tr key={entry.id}>
                       <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
                         <Badge tone={entry.type === 'award' ? 'green' : 'orange'}>
@@ -186,12 +155,17 @@ export function Anomalies() {
                       </td>
                       <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89]">
                         {entry.source}
-                        <span className="block text-[10px] text-[#a5acb5] mt-[5px] leading-[1.6]">{entry.actor}</span>
+                        <span className="block text-[10px] text-[#a5acb5] mt-[5px] leading-[1.6]">
+                          {entry.actor}
+                        </span>
                       </td>
-                      <td className={`px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] font-medium ${
-                        entry.amount < 0 ? 'text-[#d27332]' : 'text-[#358b6c]'
-                      }`}>
-                        {entry.amount > 0 ? '+' : ''}{entry.amount}
+                      <td
+                        className={`px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] font-medium ${
+                          entry.amount < 0 ? 'text-[#d27332]' : 'text-[#358b6c]'
+                        }`}
+                      >
+                        {entry.amount > 0 ? '+' : ''}
+                        {entry.amount}
                       </td>
                       <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89]">
                         v{entry.rubricVersion || 1}
@@ -220,10 +194,17 @@ export function Anomalies() {
           /* Anomaly List */
           <div className="px-[23px]">
             {cases.map((a) => (
-              <div key={a.id} className="flex items-center gap-[15px] py-[24px] border-b border-[#e9ebee] last:border-b-0">
-                <span className={`w-[43px] h-[43px] rounded-[12px] grid place-items-center shrink-0 ${
-                  a.severity === 'high' ? 'bg-[#fff0ef] text-[#d89b94]' : 'bg-[#fff5e8] text-[#d9ab73]'
-                }`}>
+              <div
+                key={a.id}
+                className="flex items-center gap-[15px] py-[24px] border-b border-[#e9ebee] last:border-b-0"
+              >
+                <span
+                  className={`w-[43px] h-[43px] rounded-[12px] grid place-items-center shrink-0 ${
+                    a.severity === 'high'
+                      ? 'bg-[#fff0ef] text-[#d89b94]'
+                      : 'bg-[#fff5e8] text-[#d9ab73]'
+                  }`}
+                >
                   <ShieldAlert size={23} />
                 </span>
                 <div className="flex-1 min-w-0">
@@ -233,13 +214,20 @@ export function Anomalies() {
                       {a.severity === 'high' ? 'Mức cao' : 'Cần kiểm tra'}
                     </Badge>
                   </div>
-                  <p className="text-[11px] text-[#717d8d] mb-[5px]">{a.club} · {a.count} lượt ghi nhận liên quan</p>
+                  <p className="text-[11px] text-[#717d8d] mb-[5px]">
+                    {a.club} · {a.count} lượt ghi nhận liên quan
+                  </p>
                   <small className="text-[10px] text-[#b1b6c0]">
                     {a.time} · {a.amount} XP cần đối soát
                   </small>
                 </div>
                 <Button
-                  onClick={() => { setItem(a); setReason(a.reason || ''); setDecision('keep'); setAdjustment(0); }}
+                  onClick={() => {
+                    setItem(a);
+                    setReason(a.reason || '');
+                    setDecision('keep');
+                    setAdjustment(0);
+                  }}
                   className="shrink-0"
                 >
                   {a.status === 'open' ? 'Xem xét' : 'Xem quyết định'} <ChevronRight size={15} />
@@ -258,7 +246,9 @@ export function Anomalies() {
       {/* Info Line */}
       <div className="flex items-center gap-[8px] text-[11px] text-[#717d8d] my-[20px] leading-relaxed">
         <ShieldCheck size={17} />
-        <span>Sổ cái chỉ ghi thêm: điều chỉnh hoặc thu hồi tạo bút toán đảo, giữ nguyên dữ liệu gốc.</span>
+        <span>
+          Sổ cái chỉ ghi thêm: điều chỉnh hoặc thu hồi tạo bút toán đảo, giữ nguyên dữ liệu gốc.
+        </span>
       </div>
 
       {/* Detail Modal */}
@@ -273,13 +263,19 @@ export function Anomalies() {
             <div className="px-[26px] py-6">
               {/* Evidence Box */}
               <div className="p-[20px] bg-[#fbf8f2] border border-[#eee8da] rounded-[9px] mb-[23px]">
-                <h3 className="text-[13px] text-[#a9987b] font-semibold mb-[12px]">Dữ liệu cần xác minh</h3>
-                <p className="text-[12px] text-[#a49885] leading-relaxed mb-[12px]">{item.evidence}</p>
+                <h3 className="text-[13px] text-[#a9987b] font-semibold mb-[12px]">
+                  Dữ liệu cần xác minh
+                </h3>
                 <p className="text-[12px] text-[#a49885] leading-relaxed mb-[12px]">
-                  <b className="font-medium">XP đang đối soát:</b> {item.amount} XP · Sinh viên: {item.student}
+                  {item.evidence}
+                </p>
+                <p className="text-[12px] text-[#a49885] leading-relaxed mb-[12px]">
+                  <b className="font-medium">XP đang đối soát:</b> {item.amount} XP · Sinh viên:{' '}
+                  {item.student}
                 </p>
                 <small className="text-[11px] text-[#b5aa97]">
-                  Quyết định sẽ được lưu vào nhật ký. Nếu điều chỉnh hoặc thu hồi sẽ tạo bút toán đảo trong sổ cái.
+                  Quyết định sẽ được lưu vào nhật ký. Nếu điều chỉnh hoặc thu hồi sẽ tạo bút toán
+                  đảo trong sổ cái.
                 </small>
               </div>
 
@@ -337,7 +333,11 @@ export function Anomalies() {
                 <div className="space-y-4">
                   <h3 className="text-[13px] text-[#7a8799] font-semibold">Kết quả xử lý</h3>
                   <Badge tone="green">
-                    {item.decision === 'keep' ? 'Giữ nguyên XP' : item.decision === 'adjust' ? `Đã điều chỉnh còn ${item.adjustment} XP` : 'Đã thu hồi XP'}
+                    {item.decision === 'keep'
+                      ? 'Giữ nguyên XP'
+                      : item.decision === 'adjust'
+                        ? `Đã điều chỉnh còn ${item.adjustment} XP`
+                        : 'Đã thu hồi XP'}
                   </Badge>
                   <p className="text-[12px] text-[#717d8d] leading-relaxed">{item.reason}</p>
                 </div>
@@ -346,9 +346,11 @@ export function Anomalies() {
 
             {/* Footer */}
             <div className="sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px]">
-              <Button type="button" onClick={() => setItem(null)}>Đóng</Button>
+              <Button type="button" onClick={() => setItem(null)}>
+                Đóng
+              </Button>
               {item.status === 'open' && (
-                <Button type="submit" variant="primary" icon={ShieldCheck}>
+                <Button disabled type="submit" variant="primary" icon={ShieldCheck}>
                   Xác nhận quyết định
                 </Button>
               )}

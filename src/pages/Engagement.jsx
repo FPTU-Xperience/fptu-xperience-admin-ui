@@ -1,3 +1,4 @@
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -33,7 +34,6 @@ import {
   StatCard,
 } from '../components/ui/index.js';
 
-const DEFAULT_SEASON = 'FALL2026';
 const DEFAULT_THRESHOLD = 200;
 
 export function Engagement({ reports = false }) {
@@ -41,7 +41,12 @@ export function Engagement({ reports = false }) {
   const [params] = useSearchParams();
 
   // Season context
-  const [season] = useState(params.get('season') || DEFAULT_SEASON);
+  const { season, setSeason, state: workspaceState } = useWorkspace();
+  useEffect(() => {
+    const requested = params.get('season');
+    if (requested && workspaceState.seasons.some((item) => item.id === requested))
+      setSeason(requested);
+  }, [params, workspaceState.seasons, setSeason]);
   const threshold = DEFAULT_THRESHOLD;
 
   // Data state
@@ -68,14 +73,12 @@ export function Engagement({ reports = false }) {
     setError(null);
     try {
       const [usersResponse, clubsResponse] = await Promise.all([
-        api.users.list({ page: 1, pageSize: 500 }).catch(() => []),
-        api.clubs.list({ page: 1, pageSize: 100 }).catch(() => []),
+        api.users.list({ page: 1, pageSize: 500 }),
+        api.clubs.list({ page: 1, pageSize: 100 }),
       ]);
 
       // Filter to only CLUB_MEMBER
-      const users = Array.isArray(usersResponse)
-        ? usersResponse
-        : usersResponse?.items || [];
+      const users = Array.isArray(usersResponse) ? usersResponse : usersResponse?.items || [];
       const clubMembers = users.filter((u) => {
         const roles = Array.isArray(u.roles) ? u.roles : [u.role].filter(Boolean);
         return roles.includes('CLUB_MEMBER') || u.role === 'CLUB_MEMBER';
@@ -95,9 +98,7 @@ export function Engagement({ reports = false }) {
       );
 
       // Map clubs
-      const clubsData = Array.isArray(clubsResponse)
-        ? clubsResponse
-        : clubsResponse?.items || [];
+      const clubsData = Array.isArray(clubsResponse) ? clubsResponse : clubsResponse?.items || [];
       setClubs(
         clubsData.map((c) => ({
           id: String(c.id),
@@ -249,13 +250,21 @@ export function Engagement({ reports = false }) {
               const active = all.filter((s) => s.clubIds?.length > 0).length;
               const ratio = all.length ? Math.round((active / all.length) * 100) : 0;
               return (
-                <div key={m} className="flex items-center gap-[18px] mt-5 text-[11px] text-[#8d96a3]">
+                <div
+                  key={m}
+                  className="flex items-center gap-[18px] mt-5 text-[11px] text-[#8d96a3]"
+                >
                   <span className="w-[175px] shrink-0">{m}</span>
                   <div className="flex-1 h-[8px] bg-[#f1f2f4] rounded-[6px] overflow-hidden">
-                    <i className="block h-full bg-[#ed9c6a] rounded-[6px]" style={{ width: `${ratio}%` }} />
+                    <i
+                      className="block h-full bg-[#ed9c6a] rounded-[6px]"
+                      style={{ width: `${ratio}%` }}
+                    />
                   </div>
                   <b className="w-[35px] text-right font-medium text-[#bd8c69]">{ratio}%</b>
-                  <small className="w-[65px] text-right text-[11px]">{active}/{all.length} SV</small>
+                  <small className="w-[65px] text-right text-[11px]">
+                    {active}/{all.length} SV
+                  </small>
                 </div>
               );
             })}
@@ -273,7 +282,9 @@ export function Engagement({ reports = false }) {
               {loading ? '...' : filtered.length}
             </span>
           </h2>
-          <span className="text-[11px] text-[#818794] hidden sm:inline">Thay đổi bộ lọc để chọn phạm vi</span>
+          <span className="text-[11px] text-[#818794] hidden sm:inline">
+            Thay đổi bộ lọc để chọn phạm vi
+          </span>
         </div>
 
         {/* Toolbar */}
@@ -355,14 +366,20 @@ export function Engagement({ reports = false }) {
                         <div className="flex items-center gap-[11px]">
                           <Avatar name={s.fullName} />
                           <div>
-                            <strong className="block text-[11px] font-medium text-[#4a5462]">{s.fullName}</strong>
-                            <small className="block text-[9.5px] text-[#b4b9c1] mt-[3px]">{s.username}</small>
+                            <strong className="block text-[11px] font-medium text-[#4a5462]">
+                              {s.fullName}
+                            </strong>
+                            <small className="block text-[9.5px] text-[#b4b9c1] mt-[3px]">
+                              {s.username}
+                            </small>
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89]">
                         {s.major || 'Chưa cập nhật'}
-                        <span className="block text-[10px] text-[#a5acb5] mt-[5px] leading-[1.6]">{s.cohort || 'Chưa cập nhật'}</span>
+                        <span className="block text-[10px] text-[#a5acb5] mt-[5px] leading-[1.6]">
+                          {s.cohort || 'Chưa cập nhật'}
+                        </span>
                       </td>
                       <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89]">
                         {hasClub ? (
@@ -413,20 +430,22 @@ export function Engagement({ reports = false }) {
             {/* Student Club Card */}
             <div className="bg-[#fff6ec] rounded-[9px] p-[25px] flex flex-col items-center gap-[9px] text-[#da9156] mb-[20px]">
               <UsersRound size={25} />
-              <strong className="text-[27px] font-semibold">
-                {detail.clubIds?.length || 0}
-              </strong>
+              <strong className="text-[27px] font-semibold">{detail.clubIds?.length || 0}</strong>
               <span className="text-[11px] text-[#bd9b7e]">Câu lạc bộ đã tham gia</span>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4 text-[11px] mb-[20px]">
               <div className="pb-[20px] border-b border-[#e9ebee]">
                 <dt className="text-[10px] text-[#a8b2bf] mb-[10px]">Ngành học</dt>
-                <dd className="text-[12px] text-[#808d9e] font-medium">{detail.major || 'Chưa cập nhật'}</dd>
+                <dd className="text-[12px] text-[#808d9e] font-medium">
+                  {detail.major || 'Chưa cập nhật'}
+                </dd>
               </div>
               <div className="pb-[20px] border-b border-[#e9ebee]">
                 <dt className="text-[10px] text-[#a8b2bf] mb-[10px]">Khóa</dt>
-                <dd className="text-[12px] text-[#808d9e] font-medium">{detail.cohort || 'Chưa cập nhật'}</dd>
+                <dd className="text-[12px] text-[#808d9e] font-medium">
+                  {detail.cohort || 'Chưa cập nhật'}
+                </dd>
               </div>
             </div>
 
@@ -451,10 +470,7 @@ export function Engagement({ reports = false }) {
                   <ResponsiveContainer width="100%" height={280}>
                     <RadarChart data={radarData.chart || radarData.data || []}>
                       <PolarGrid stroke="#e9ebee" />
-                      <PolarAngleAxis
-                        dataKey="name"
-                        tick={{ fontSize: 11, fill: '#718094' }}
-                      />
+                      <PolarAngleAxis dataKey="name" tick={{ fontSize: 11, fill: '#718094' }} />
                       <Radar
                         name="Mức độ bão hòa"
                         dataKey="value"
@@ -471,12 +487,24 @@ export function Engagement({ reports = false }) {
                 {radarData.stats && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-[12px] mb-[16px]">
                     {[
-                      { label: 'Chỉ số đa dạng (D)', value: radarData.stats.diversityIndex || radarData.stats.D },
-                      { label: 'Độ đều Shannon (J)', value: radarData.stats.evenness || radarData.stats.J },
-                      { label: 'Hệ số đòn bẩy (M)', value: radarData.stats.leverage || radarData.stats.M },
+                      {
+                        label: 'Chỉ số đa dạng (D)',
+                        value: radarData.stats.diversityIndex || radarData.stats.D,
+                      },
+                      {
+                        label: 'Độ đều Shannon (J)',
+                        value: radarData.stats.evenness || radarData.stats.J,
+                      },
+                      {
+                        label: 'Hệ số đòn bẩy (M)',
+                        value: radarData.stats.leverage || radarData.stats.M,
+                      },
                       { label: 'ERI', value: radarData.stats.eri || radarData.stats.ERI },
                     ].map((stat) => (
-                      <div key={stat.label} className="bg-[#f4f7fb] rounded-[8px] p-[13px] text-center">
+                      <div
+                        key={stat.label}
+                        className="bg-[#f4f7fb] rounded-[8px] p-[13px] text-center"
+                      >
                         <p className="text-[9px] text-[#adb3bc] mb-[6px]">{stat.label}</p>
                         <p className="text-[18px] font-semibold text-[#4a5462]">
                           {typeof stat.value === 'number' ? stat.value.toFixed(2) : '—'}
@@ -489,15 +517,9 @@ export function Engagement({ reports = false }) {
                 {/* Tier & Title */}
                 {(radarData.tier || radarData.title || radarData.rank) && (
                   <div className="flex flex-wrap gap-[10px]">
-                    {radarData.tier && (
-                      <Badge tone="orange">Hạng {radarData.tier}</Badge>
-                    )}
-                    {radarData.title && (
-                      <Badge tone="green">{radarData.title}</Badge>
-                    )}
-                    {radarData.rank && (
-                      <Badge tone="blue">Top {radarData.rank}</Badge>
-                    )}
+                    {radarData.tier && <Badge tone="orange">Hạng {radarData.tier}</Badge>}
+                    {radarData.title && <Badge tone="green">{radarData.title}</Badge>}
+                    {radarData.rank && <Badge tone="blue">Top {radarData.rank}</Badge>}
                   </div>
                 )}
               </>
@@ -505,7 +527,9 @@ export function Engagement({ reports = false }) {
 
             {/* Club list */}
             <div className="mt-[20px] pt-[20px] border-t border-[#e9ebee]">
-              <h4 className="text-[11px] text-[#7a8799] font-semibold mb-[10px]">Câu lạc bộ tham gia</h4>
+              <h4 className="text-[11px] text-[#7a8799] font-semibold mb-[10px]">
+                Câu lạc bộ tham gia
+              </h4>
               <p className="text-[12px] text-[#808d9e]">
                 {detail.clubIds
                   ?.map((id) => clubs.find((c) => c.id === id)?.name)
@@ -516,7 +540,10 @@ export function Engagement({ reports = false }) {
           </div>
           <div className="sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px]">
             <Button onClick={() => setDetail(null)}>Đóng</Button>
-            <Link to="/ctsv/quests" className="inline-flex items-center justify-center gap-[8px] rounded-[7px] min-h-[36px] px-[13px] py-[9px] bg-[#ed641c] border border-[#ed641c] text-white text-[11px] font-semibold shadow-[0_2px_3px_#c9631815] hover:bg-[#cb4c0e] hover:border-[#cb4c0e]">
+            <Link
+              to="/ctsv/quests"
+              className="inline-flex items-center justify-center gap-[8px] rounded-[7px] min-h-[36px] px-[13px] py-[9px] bg-[#ed641c] border border-[#ed641c] text-white text-[11px] font-semibold shadow-[0_2px_3px_#c9631815] hover:bg-[#cb4c0e] hover:border-[#cb4c0e]"
+            >
               Xem nhiệm vụ phù hợp <ArrowRight size={15} />
             </Link>
           </div>

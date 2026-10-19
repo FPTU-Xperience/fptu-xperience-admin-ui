@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import api from '../services/api.js'
+import { isAdmin, isCTSV, isAdminUser } from '../utils/access.js';
+import { createContext, useContext, useEffect, useState } from 'react';
+import api from '../services/api.js';
 
-const AuthContext = createContext(null)
+const AuthContext = createContext(null);
 
 // Roles for the application (matching backend)
 export const ROLES = {
@@ -11,7 +12,7 @@ export const ROLES = {
   CLUB_MANAGER: 'CLUB_MANAGER',
   TREASURER: 'TREASURER',
   CLUB_MEMBER: 'CLUB_MEMBER',
-}
+};
 
 export const ROLE_LABELS = {
   [ROLES.SYSTEM_ADMIN]: 'Quản trị hệ thống',
@@ -20,22 +21,9 @@ export const ROLE_LABELS = {
   [ROLES.CLUB_MANAGER]: 'Chủ nhiệm CLB',
   [ROLES.TREASURER]: 'Thủ quỹ',
   [ROLES.CLUB_MEMBER]: 'Thành viên CLB',
-}
+};
 
-// Check if user has admin role (ADMIN or SYSTEM_ADMIN)
-export function isAdmin(user) {
-  return user?.roles?.some(r => r === ROLES.ADMIN || r === ROLES.SYSTEM_ADMIN)
-}
-
-// Check if user has CTSV role
-export function isCTSV(user) {
-  return user?.roles?.some(r => r === ROLES.STUDENT_AFFAIRS_ADMIN)
-}
-
-// Check if user has any admin role (admin or ctsv)
-export function isAdminUser(user) {
-  return isAdmin(user) || isCTSV(user)
-}
+export { isAdmin, isCTSV, isAdminUser } from '../utils/access.js';
 
 // Campus options for the selector
 export const CAMPUS_OPTIONS = [
@@ -45,60 +33,60 @@ export const CAMPUS_OPTIONS = [
   { code: 'DAN', name: 'Đà Nẵng', shortName: 'Đà Nẵng' },
   { code: 'CAN', name: 'Cần Thơ', shortName: 'Cần Thơ' },
   { code: 'QNH', name: 'Quy Nhơn', shortName: 'Quy Nhơn' },
-]
+];
 
 // Get campus code from user object or token
 export function getCampusFromUser(user) {
   // First try to get from user object directly
-  if (user?.campusCode) return user.campusCode
+  if (user?.campusCode) return user.campusCode;
 
   // Try to decode from JWT token
-  const token = localStorage.getItem('accessToken')
+  const token = localStorage.getItem('accessToken');
   if (token) {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      return payload.campusCode || payload.campus || null
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.campusCode || payload.campus || null;
     } catch {
-      return null
+      return null;
     }
   }
-  return null
+  return null;
 }
 
 // Get campus name from code
 export function getCampusName(campusCode) {
-  const campus = CAMPUS_OPTIONS.find(c => c.code === campusCode)
-  return campus?.name || campusCode || 'Không xác định'
+  const campus = CAMPUS_OPTIONS.find((c) => c.code === campusCode);
+  return campus?.name || campusCode || 'Không xác định';
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Check if user is logged in on mount
   useEffect(() => {
-    const token = api.getAccessToken()
+    const token = api.getAccessToken();
     if (token) {
-      loadCurrentUser()
+      loadCurrentUser();
     } else {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [])
+  }, []);
 
   async function loadCurrentUser() {
     try {
       // Try to get user info from backend
-      const userData = await api.auth.me()
-      setUser(userData)
-      setError(null)
+      const userData = await api.auth.me();
+      setUser(userData);
+      setError(null);
     } catch (err) {
-      console.error('Failed to load current user:', err)
+      console.error('Failed to load current user:', err);
       // Token might be expired, clear it
-      api.clearTokens()
-      setUser(null)
+      api.clearTokens();
+      setUser(null);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -107,44 +95,46 @@ export function AuthProvider({ children }) {
    * @param {string} googleCredential - Google ID token from Google Identity Services
    */
   async function googleLogin(googleCredential) {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
     try {
-      const response = await api.auth.google(googleCredential)
+      const response = await api.auth.google(googleCredential);
 
       // Handle response format from backend
       // Backend returns: { accessToken, user, refreshToken, ... }
-      const token = response?.accessToken || response?.token
-      const refreshToken = response?.refreshToken
-      let userData = response?.user || response?.actor
+      const token = response?.accessToken || response?.token;
+      const refreshToken = response?.refreshToken;
+      let userData = response?.user || response?.actor;
 
       if (!token) {
-        throw new Error('Invalid login response - no token received')
+        throw new Error('Invalid login response - no token received');
       }
 
-      api.setToken(token)
+      api.setToken(token);
       if (refreshToken) {
-        api.setRefreshToken(refreshToken)
+        api.setRefreshToken(refreshToken);
       }
 
       // Fetch user info
       try {
-        userData = await api.auth.me()
+        userData = await api.auth.me();
       } catch {
         // If me endpoint fails, use data from login response
         if (!userData) {
-          userData = { roles: [ROLES.CLUB_MEMBER] }
+          throw new Error('Không thể xác minh quyền của tài khoản. Vui lòng đăng nhập lại.');
         }
       }
 
-      setUser(userData)
-      return userData
+      setUser(userData);
+      return userData;
     } catch (err) {
-      const message = err.message || 'Đăng nhập Google thất bại'
-      setError(message)
-      throw new Error(message)
+      api.clearTokens();
+      setUser(null);
+      const message = err.message || 'Đăng nhập Google thất bại';
+      setError(message);
+      throw new Error(message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -153,93 +143,99 @@ export function AuthProvider({ children }) {
    * @param {string} email - Email of the account to login as
    */
   async function devLogin(email) {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
     try {
-      const response = await api.auth.devLogin(email)
+      const response = await api.auth.devLogin(email);
 
       // Handle response format from backend
       // Backend returns: { accessToken, user, refreshToken, expiresAtUtc, ... }
-      const token = response?.accessToken || response?.token
-      const refreshToken = response?.refreshToken
-      let userData = response?.user || response?.actor
+      const token = response?.accessToken || response?.token;
+      const refreshToken = response?.refreshToken;
+      let userData = response?.user || response?.actor;
 
       if (!token) {
-        throw new Error('Invalid login response - no token received')
+        throw new Error('Invalid login response - no token received');
       }
 
-      api.setToken(token)
+      api.setToken(token);
       if (refreshToken) {
-        api.setRefreshToken(refreshToken)
+        api.setRefreshToken(refreshToken);
       }
 
       // Fetch user info from appropriate me endpoint based on role
       try {
-        const roles = userData?.roles || []
+        const roles = userData?.roles || [];
         if (roles.includes(ROLES.SYSTEM_ADMIN) || roles.includes(ROLES.ADMIN)) {
-          userData = await api.auth.adminMe()
+          userData = await api.auth.adminMe();
         } else if (roles.includes(ROLES.STUDENT_AFFAIRS_ADMIN)) {
-          userData = await api.auth.ctsvMe()
+          userData = await api.auth.ctsvMe();
         } else {
-          userData = await api.auth.me()
+          userData = await api.auth.me();
         }
       } catch {
         // If me endpoint fails, use data from login response
         if (!userData) {
-          userData = { roles: [ROLES.ADMIN] }
+          throw new Error('Không thể xác minh quyền của tài khoản. Vui lòng đăng nhập lại.');
         }
       }
 
       // Store user in localStorage for Login page redirect logic
       try {
-        localStorage.setItem('fptu-auth-user', JSON.stringify(userData))
-      } catch { /* Ignore */ }
+        localStorage.setItem('fptu-auth-user', JSON.stringify(userData));
+      } catch {
+        /* Ignore */
+      }
 
-      setUser(userData)
+      setUser(userData);
 
       // Dispatch custom event to notify WorkspaceContext to update role
-      window.dispatchEvent(new Event('fptu-auth-changed'))
+      window.dispatchEvent(new Event('fptu-auth-changed'));
 
-      return userData
+      return userData;
     } catch (err) {
-      const message = err.message || 'Dev login thất bại'
-      setError(message)
-      throw new Error(message)
+      api.clearTokens();
+      setUser(null);
+      const message = err.message || 'Dev login thất bại';
+      setError(message);
+      throw new Error(message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
   async function logout() {
     // Clear user state immediately to prevent layout showing
-    setUser(null)
-    setIsLoading(false)
+    setUser(null);
+    setIsLoading(false);
 
     try {
-      const refreshToken = api.getRefreshToken()
+      const refreshToken = api.getRefreshToken();
       if (refreshToken) {
-        await api.auth.logout(refreshToken)
+        await api.auth.logout(refreshToken);
       }
     } catch (err) {
-      console.error('Logout API error:', err)
+      console.error('Logout API error:', err);
     } finally {
-      api.clearTokens()
+      api.clearTokens();
       try {
-        localStorage.removeItem('fptu-auth-user')
-      } catch { /* Ignore */ }
+        localStorage.removeItem('fptu-auth-user');
+      } catch {
+        /* Ignore */
+      }
     }
   }
 
   function hasRole(role) {
-    if (!user?.roles) return false
+    if (!user?.roles) return false;
     if (Array.isArray(role)) {
-      return role.some(r => user.roles.includes(r))
+      return role.some((r) => user.roles.includes(r));
     }
-    return user.roles.includes(role)
+    return user.roles.includes(role);
   }
 
   function hasAnyRole(roles) {
-    return hasRole(roles)
+    return hasRole(roles);
   }
 
   const value = {
@@ -264,21 +260,17 @@ export function AuthProvider({ children }) {
     clearError: () => setError(null),
     // Direct API access
     api,
-  }
+  };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context
+  return context;
 }
 
-export default AuthContext
+export default AuthContext;

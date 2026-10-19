@@ -1,35 +1,40 @@
 import { CalendarDays } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext.jsx';
-import { seasonLabel } from '../utils/format.js';
 
 export default function ContextBar({ admin, season, onSeasonChange }) {
-  const { state } = useWorkspace();
-
+  const { state, semesterStatus, retrySemesters } = useWorkspace();
+  if (admin) return null;
   return (
-    <div className="flex items-center justify-between mb-[23px] min-h-[25px] text-[10.5px] text-[#999da5] gap-[8px]">
-      <span className="flex items-center gap-[7px]">
-        <span className="w-[5px] h-[5px] bg-[#c6a47e] rounded-full" />
-        Bản thiết kế tương tác · Dữ liệu minh họa
-      </span>
-
-      {!admin ? (
-        <label className="flex items-center gap-[8px] text-[11px] text-[#767e8c]">
-          <CalendarDays size={15} />
+    <div className="flex min-w-0 max-w-[160px] sm:max-w-[200px] items-center gap-2 text-xs text-muted">
+      {semesterStatus === 'error' ? (
+        <div role="status" className="flex flex-wrap items-center gap-2">
+          Không thể tải học kỳ.
+          <button type="button" className="underline" onClick={retrySemesters}>
+            Thử lại
+          </button>
+        </div>
+      ) : (
+        <label className="inline-flex items-center gap-2 min-w-0">
+          <CalendarDays size={15} className="shrink-0" aria-hidden="true" />
           <select
             aria-label="Học kỳ đang xem"
             value={season}
-            onChange={(e) => onSeasonChange(e.target.value)}
-            className="border-0 bg-transparent h-[26px] text-[11px] text-[#646e7b] p-0 pl-0"
+            onChange={(event) => onSeasonChange(event.target.value)}
+            disabled={semesterStatus !== 'ready'}
+            className="min-w-0 max-w-full border-0 bg-transparent text-xs"
           >
-            {state.seasons.map((s) => (
-              <option key={s.id} value={s.id}>
-                Học kỳ {seasonLabel(s.id)}
+            {!state.seasons.length && (
+              <option value="">
+                {semesterStatus === 'loading' ? 'Đang tải học kỳ…' : 'Chưa có học kỳ'}
+              </option>
+            )}
+            {state.seasons.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
               </option>
             ))}
           </select>
         </label>
-      ) : (
-        <span className="text-[10px]">Tài khoản và thay đổi được lưu trên trình duyệt</span>
       )}
     </div>
   );

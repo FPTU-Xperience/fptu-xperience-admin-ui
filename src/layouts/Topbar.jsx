@@ -1,31 +1,28 @@
 import { Bell, ChevronRight, Command, Menu, Search } from 'lucide-react';
 import { IconButton } from '../components/ui/index.js';
+import ContextBar from './ContextBar.jsx';
 
-export default function Topbar({
-  admin,
-  current,
-  pending,
-  anomalies,
-  onOpenMenu,
-  onOpenSearch,
-  onOpenNotifications,
-}) {
+export default function Topbar({ admin, current, season, onSeasonChange, onOpenMenu, onOpenSearch, onOpenNotifications }) {
   return (
-    <header className="h-[66px] flex justify-between items-center px-[32px] bg-white border-b border-[#e9ebee]">
+    <header className="min-h-[66px] min-w-0 flex justify-between items-center gap-3 px-4 sm:px-6 lg:px-8 bg-white border-b border-[#e9ebee]">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-[13px] text-[11px] text-[#999ea7]">
-        <span className="sm:hidden">
+      <div className="min-w-0 flex-1 flex items-center gap-2 text-[11px] text-[#999ea7]">
+        <span className="lg:hidden">
           <IconButton icon={Menu} label="Mở điều hướng" onClick={onOpenMenu} />
         </span>
-        <span className="hidden sm:block">{admin ? 'Quản trị hệ thống' : 'Công tác sinh viên'}</span>
-        <ChevronRight size={14} className="text-[#b8bdc5]" />
-        <strong className="font-medium text-[#4c5461]">{current?.label}</strong>
+        <span className="hidden sm:block">
+          {admin ? 'Quản trị hệ thống' : 'Công tác sinh viên'}
+        </span>
+        <ChevronRight size={14} className="hidden sm:block shrink-0 text-[#b8bdc5]" />
+        <strong className="hidden sm:block truncate font-medium text-[#4c5461]">{current?.label}</strong>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-[18px]">
+      <div className="shrink-0 flex items-center gap-3 sm:gap-[18px]">
+        <ContextBar admin={admin} season={season} onSeasonChange={onSeasonChange} />
         {/* Quick search */}
         <button
+          aria-label="Tìm nhanh"
           onClick={onOpenSearch}
           className="flex items-center gap-[8px] text-[11px] text-[#a2a6ae] bg-transparent border-0 cursor-pointer"
         >
@@ -45,9 +42,6 @@ export default function Topbar({
           onClick={onOpenNotifications}
         >
           <Bell size={19} />
-          {pending + anomalies > 0 && !admin && (
-            <i className="absolute right-[6px] top-[1px] w-[5px] h-[5px] bg-[#ed641c] rounded-full shadow-[0_0_0_2px_white]" />
-          )}
         </button>
 
         {/* Campus */}

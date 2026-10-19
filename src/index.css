@@ -1,4 +1,45 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+@layer components {
+  .operation-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
+    background: #fff;
+    color: #cb4c0e;
+    font-size: 12px;
+  }
+  .operation-link:hover { background: #fff2e9; }
+  .operation-notice {
+    padding: 18px 20px;
+    border: 1px solid #e6dfd1;
+    border-radius: 9px;
+    background: #fffcf5;
+    color: #665a40;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  .operation-report-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 20px;
+    overflow-wrap: anywhere;
+  }
+  a.operation-report-row:hover { background: #fcfaf8; }
+  .operation-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+  .operation-table th, .operation-table td { padding: 14px 18px; border-bottom: 1px solid var(--color-border); }
+  .operation-table th { background: #f8f9fb; color: #63738a; font-weight: 500; white-space: nowrap; }
+  .operation-definition { display: grid; gap: 14px; font-size: 12px; }
+  .operation-definition > div { display: flex; justify-content: space-between; gap: 16px; }
+  .operation-definition dt { color: #818794; }
+  .operation-definition dd { overflow-wrap: anywhere; min-width: 0; }
+}
 
 /* ============================================
    TAILWIND V4 THEME - Custom Design Tokens
@@ -39,161 +80,198 @@
   --shadow-panel: 0 8px 40px #1730231a;
 
   /* Font Family */
-  --font-family-sans: 'Be Vietnam Pro', 'Segoe UI', sans-serif;
+  --font-sans: 'Be Vietnam Pro', 'Segoe UI', sans-serif;
+  --breakpoint-3xl: 93.75rem;
 }
 
 /* ============================================
    BASE STYLES
    ============================================ */
 
-:root {
-  font-family: 'Be Vietnam Pro', 'Segoe UI', sans-serif;
-  color: #29303c;
-  background: #f8f9fb;
-  font-size: 13px;
-  font-synthesis: none;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-width: 360px;
-}
-
-/* Form elements */
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-button,
-a,
-input,
-select,
-textarea {
-  -webkit-tap-highlight-color: transparent;
-}
-
-button {
-  cursor: pointer;
-  color: inherit;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-/* Typography */
-h1, h2, h3, p {
-  margin: 0;
-}
-
-h2 {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.4px;
-}
-
-h3 {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-p {
-  line-height: 1.7;
-}
-
-/* Focus states */
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid #ed641c60;
-  outline-offset: 3px;
-}
-
-/* Form elements base */
-input,
-select {
-  border: 1px solid #e1e4e9;
-  background: #fff;
-  border-radius: 7px;
-  color: #26303d;
-  min-width: 0;
-  height: 39px;
-  padding: 0 12px;
-}
-
-textarea {
-  padding: 11px 12px;
-  resize: vertical;
-  line-height: 1.6;
-  border: 1px solid #e1e4e9;
-  background: #fff;
-  border-radius: 7px;
-  color: #26303d;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #979ca6;
-}
-
-input[type="checkbox"] {
-  accent-color: #ed641c;
-  width: 15px;
-  height: 15px;
-  cursor: pointer;
-}
-
-select {
-  padding-right: 25px;
-  cursor: pointer;
-}
-
-svg {
-  flex-shrink: 0;
-}
-
-/* Screen reader only */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Responsive - 1500px+ */
-@media (min-width: 1500px) {
+@layer base {
   :root {
-    font-size: 14px;
+    font-family: var(--font-sans);
+    color: #29303c;
+    background: #f8f9fb;
+    font-size: 13px;
+    font-synthesis: none;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-width: 0;
+  }
+
+  /* Form elements */
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button {
+    cursor: pointer;
+    color: inherit;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Typography */
+  h1,
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.4px;
+  }
+
+  h3 {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  p {
+    line-height: 1.7;
+  }
+
+  /* Focus states */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 3px solid #ed641c60;
+    outline-offset: 3px;
+  }
+
+  /* Form elements base */
+  input,
+  select {
+    border: 1px solid #e1e4e9;
+    background: #fff;
+    border-radius: 7px;
+    color: #26303d;
+    min-width: 0;
+    height: 39px;
+    padding: 0 12px;
+  }
+
+  textarea {
+    padding: 11px 12px;
+    resize: vertical;
+    line-height: 1.6;
+    border: 1px solid #e1e4e9;
+    background: #fff;
+    border-radius: 7px;
+    color: #26303d;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #979ca6;
+  }
+
+  input[type='checkbox'] {
+    accent-color: #ed641c;
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+  }
+
+  select {
+    padding-right: 25px;
+    cursor: pointer;
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+
+  /* Screen reader only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Responsive - 1500px+ */
+  @media (min-width: 1500px) {
+    :root {
+      font-size: 14px;
+    }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *:before,
+    *:after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *:before,
-  *:after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+/* Hallmark · genre: modern-minimal · existing FPT orange / Be Vietnam Pro system.
+ * Shared admin shell: navigation + task workspace. Pre-emit critique: P4 H4 E4 S5 R5 V3. */
+html,
+body {
+  overflow-x: clip;
+}
+h1,
+h2,
+h3 {
+  font-style: normal;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+button:active:not(:disabled) {
+  filter: brightness(0.97);
+}
+.app-sidebar {
+  transform: translateX(-100%);
+  visibility: hidden;
+}
+.app-sidebar.is-open {
+  transform: translateX(0);
+  visibility: visible;
+}
+@media (min-width: 1024px) {
+  .app-sidebar {
+    transform: none;
+    visibility: visible;
   }
 }

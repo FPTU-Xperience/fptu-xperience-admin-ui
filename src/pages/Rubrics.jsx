@@ -1,26 +1,72 @@
+import { useWorkspace } from '../context/WorkspaceContext.jsx';
 import { useEffect, useState } from 'react';
-import { Check, History, Lock, Pencil, Plus, Scale, ShieldCheck, SlidersHorizontal, Unlock } from 'lucide-react';
+import {
+  Check,
+  History,
+  Lock,
+  Pencil,
+  Plus,
+  Scale,
+  ShieldCheck,
+  SlidersHorizontal,
+  Unlock,
+} from 'lucide-react';
 import api from '../services/api.js';
+import ExperiencePolicyPanel from '../components/ExperiencePolicyPanel.jsx';
 import { date } from '../utils/format.js';
 import { useAction } from '../hooks/useAction.js';
-import { Badge, Button, Empty, Field, IconButton, Modal, PageHeader, Panel } from '../components/ui/index.js';
+import {
+  Badge,
+  Button,
+  Empty,
+  Field,
+  IconButton,
+  Modal,
+  PageHeader,
+  Panel,
+} from '../components/ui/index.js';
 
 const CAPABILITIES = [
-  { key: 'ACAD', label: 'Học thuật', desc: 'Điểm tích lũy từ hoạt động học thuật', color: '#5b8dd9' },
-  { key: 'PROF', label: 'Kỹ năng nghề nghiệp', desc: 'Điểm từ workshop, khóa học kỹ năng', color: '#7c6fcd' },
-  { key: 'COMM', label: 'Cộng đồng', desc: 'Điểm từ hoạt động tình nguyện, cộng đồng', color: '#3fa87b' },
+  {
+    key: 'ACAD',
+    label: 'Học thuật',
+    desc: 'Điểm tích lũy từ hoạt động học thuật',
+    color: '#5b8dd9',
+  },
+  {
+    key: 'PROF',
+    label: 'Kỹ năng nghề nghiệp',
+    desc: 'Điểm từ workshop, khóa học kỹ năng',
+    color: '#7c6fcd',
+  },
+  {
+    key: 'COMM',
+    label: 'Cộng đồng',
+    desc: 'Điểm từ hoạt động tình nguyện, cộng đồng',
+    color: '#3fa87b',
+  },
   { key: 'PHYS', label: 'Thể chất', desc: 'Điểm từ thể thao, sức khỏe', color: '#d97b3e' },
-  { key: 'GLOB', label: 'Công dân toàn cầu', desc: 'Điểm từ giao lưu quốc tế, ngoại ngữ', color: '#c85fa8' },
-  { key: 'ETHI', label: 'Đạo đức & Kỹ năng sống', desc: 'Điểm từ hoạt động đạo đức, kỹ năng sống', color: '#8a6f3f' },
+  {
+    key: 'GLOB',
+    label: 'Công dân toàn cầu',
+    desc: 'Điểm từ giao lưu quốc tế, ngoại ngữ',
+    color: '#c85fa8',
+  },
+  {
+    key: 'ETHI',
+    label: 'Đạo đức & Kỹ năng sống',
+    desc: 'Điểm từ hoạt động đạo đức, kỹ năng sống',
+    color: '#8a6f3f',
+  },
 ];
 
-function buildDefaultBenchmark() {
+function buildDefaultBenchmark(semesterCode = '') {
   return {
     id: null,
-    semesterCode: 'FALL2026',
-    capabilities: CAPABILITIES.map((c) => ({
+    semesterCode,
+    capabilities: CAPABILITIES.map((c, index) => ({
       key: c.key,
-      weight: Math.round(100 / CAPABILITIES.length),
+      weight: Math.floor(100 / CAPABILITIES.length) + (index < 100 % CAPABILITIES.length ? 1 : 0),
     })),
     bonusCap: 500,
     status: 'draft',
@@ -34,6 +80,7 @@ function computeTotal(weights) {
 
 export function Rubrics() {
   const run = useAction();
+  const { season } = useWorkspace();
 
   const [benchmark, setBenchmark] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -52,12 +99,12 @@ export function Rubrics() {
       if (data && data.id) {
         setBenchmark(data);
       } else {
-        setBenchmark({ ...buildDefaultBenchmark(), status: 'draft' });
+        setBenchmark(null);
       }
     } catch (err) {
       console.error('Failed to fetch benchmark:', err);
-      // Fallback: show default
-      setBenchmark({ ...buildDefaultBenchmark(), status: 'draft' });
+      setError(err.message || 'Không thể tải Benchmark.');
+      setBenchmark(null);
     } finally {
       setLoading(false);
     }
@@ -67,14 +114,14 @@ export function Rubrics() {
     fetchBenchmark();
   }, []);
 
-  function startEdit() {
+  function startEdit(value = benchmark) {
     setForm({
-      semesterCode: benchmark.semesterCode || 'FALL2026',
-      capabilities: benchmark.capabilities
-        ? benchmark.capabilities.map((c) => ({ key: c.key, weight: Number(c.weight || 0) }))
-        : CAPABILITIES.map((c) => ({ key: c.key, weight: Math.round(100 / CAPABILITIES.length) })),
-      bonusCap: Number(benchmark.bonusCap || 500),
-      effectiveDate: benchmark.effectiveDate || new Date().toISOString().split('T')[0],
+      semesterCode: value.semesterCode || season,
+      capabilities: value.capabilities
+        ? value.capabilities.map((c) => ({ key: c.key, weight: Number(c.weight || 0) }))
+        : buildDefaultBenchmark(season).capabilities,
+      bonusCap: Number(value.bonusCap || 500),
+      effectiveDate: value.effectiveDate || new Date().toISOString().split('T')[0],
     });
     setEditing(true);
   }
@@ -82,7 +129,9 @@ export function Rubrics() {
   function updateCap(key, value) {
     setForm((f) => ({
       ...f,
-      capabilities: f.capabilities.map((c) => (c.key === key ? { ...c, weight: Number(value) } : c)),
+      capabilities: f.capabilities.map((c) =>
+        c.key === key ? { ...c, weight: Number(value) } : c,
+      ),
     }));
   }
 
@@ -90,51 +139,53 @@ export function Rubrics() {
     e.preventDefault();
     const total = computeTotal(form.capabilities);
     if (Math.abs(total - 100) > 0.01) {
-      run(() => { throw new Error('Tổng trọng số phải bằng 100%.'); });
+      run(() => {
+        throw new Error('Tổng trọng số phải bằng 100%.');
+      });
       return;
     }
     setSaving(true);
-    const ok = await run(
-      async () => {
-        const payload = {
-          semesterCode: form.semesterCode,
-          capabilities: form.capabilities.map((c) => ({ key: c.key, weight: c.weight })),
-          bonusCap: Number(form.bonusCap),
-          effectiveDate: form.effectiveDate,
-        };
-        let saved;
-        if (benchmark.id) {
-          saved = await api.studentAffairs.benchmarks.update(benchmark.id, payload);
-        } else {
-          saved = await api.studentAffairs.benchmarks.create(payload);
-        }
-        setBenchmark(saved);
-        setEditing(false);
-        setForm(null);
-      },
-      'Đã lưu cấu hình Benchmark.',
-    );
+    const ok = await run(async () => {
+      const payload = {
+        semesterCode: form.semesterCode,
+        capabilities: form.capabilities.map((c) => ({ key: c.key, weight: c.weight })),
+        bonusCap: Number(form.bonusCap),
+        effectiveDate: form.effectiveDate,
+      };
+      let saved;
+      if (benchmark.id) {
+        saved = await api.studentAffairs.benchmarks.update(benchmark.id, payload);
+      } else {
+        saved = await api.studentAffairs.benchmarks.create(payload);
+      }
+      setBenchmark(saved);
+      setEditing(false);
+      setForm(null);
+    }, 'Đã lưu cấu hình Benchmark.');
     setSaving(false);
     if (!ok) setForm(null);
   }
 
   async function lock() {
     if (!benchmark.id) {
-      run(() => { throw new Error('Lưu Benchmark trước khi khóa.'); });
+      run(() => {
+        throw new Error('Lưu Benchmark trước khi khóa.');
+      });
       return;
     }
     setLocking(true);
-    const ok = await run(
-      async () => {
-        const saved = await api.studentAffairs.benchmarks.lock(benchmark.id);
-        setBenchmark(saved);
-      },
-      'Đã khóa bất biến cấu hình Benchmark.',
-    );
+    const ok = await run(async () => {
+      const saved = await api.studentAffairs.benchmarks.lock(benchmark.id);
+      setBenchmark(saved);
+    }, 'Đã khóa bất biến cấu hình Benchmark.');
     setLocking(false);
   }
 
-  const totalWeight = form ? computeTotal(form.capabilities) : benchmark ? computeTotal(benchmark.capabilities || []) : 0;
+  const totalWeight = form
+    ? computeTotal(form.capabilities)
+    : benchmark
+      ? computeTotal(benchmark.capabilities || [])
+      : 0;
   const isLocked = benchmark?.status === 'LOCKED' || benchmark?.isLocked;
 
   return (
@@ -150,7 +201,9 @@ export function Rubrics() {
         <div className="mb-4 p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px]">
           <span className="mr-2">⚠️</span>
           {error}
-          <button className="ml-2 underline hover:no-underline" onClick={fetchBenchmark}>Thử lại</button>
+          <button className="ml-2 underline hover:no-underline" onClick={fetchBenchmark}>
+            Thử lại
+          </button>
         </div>
       )}
 
@@ -170,7 +223,12 @@ export function Rubrics() {
             className="mt-5 mx-auto"
             variant="primary"
             icon={Plus}
-            onClick={() => { setBenchmark({ ...buildDefaultBenchmark(), status: 'draft' }); startEdit(); }}
+            disabled={Boolean(error) || !season}
+            onClick={() => {
+              const draft = buildDefaultBenchmark(season);
+              setBenchmark(draft);
+              startEdit(draft);
+            }}
           >
             Tạo Benchmark mới
           </Button>
@@ -183,9 +241,12 @@ export function Rubrics() {
               <Scale size={23} />
             </span>
             <div>
-              <h3 className="text-[13px] text-[#9a8c70] font-semibold">6 Chiều năng lực + Trần điểm thưởng</h3>
+              <h3 className="text-[13px] text-[#9a8c70] font-semibold">
+                6 Chiều năng lực + Trần điểm thưởng
+              </h3>
               <p className="text-[11px] text-[#ada38e] mt-[5px] leading-relaxed">
-                Mỗi chiều có trọng số riêng. Tổng trọng số phải bằng 100%. Sau khi khóa, cấu hình không thể sửa.
+                Mỗi chiều có trọng số riêng. Tổng trọng số phải bằng 100%. Sau khi khóa, cấu hình
+                không thể sửa.
               </p>
             </div>
           </div>
@@ -225,7 +286,9 @@ export function Rubrics() {
               <div className="grid sm:grid-cols-2 gap-[16px]">
                 {CAPABILITIES.map((cap) => {
                   const capData = (benchmark.capabilities || []).find((c) => c.key === cap.key);
-                  const weight = capData ? Number(capData.weight) : Math.round(100 / CAPABILITIES.length);
+                  const weight = capData
+                    ? Number(capData.weight)
+                    : Math.round(100 / CAPABILITIES.length);
                   const isEditing = editing && form && !isLocked;
                   return (
                     <div
@@ -239,7 +302,9 @@ export function Rubrics() {
                             style={{ background: cap.color }}
                           />
                           <div>
-                            <strong className="block text-[12px] font-semibold text-[#4a5462]">{cap.label}</strong>
+                            <strong className="block text-[12px] font-semibold text-[#4a5462]">
+                              {cap.label}
+                            </strong>
                             <small className="block text-[10px] text-[#adb3bc]">{cap.desc}</small>
                           </div>
                         </div>
@@ -292,14 +357,17 @@ export function Rubrics() {
                         min={0}
                         max={10000}
                         value={form.bonusCap}
-                        onChange={(e) => setForm((f) => ({ ...f, bonusCap: Number(e.target.value) }))}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, bonusCap: Number(e.target.value) }))
+                        }
                         className="w-[90px] h-[32px] text-center text-[13px] font-semibold border border-[#e1e4e9] rounded-[7px]"
                       />
                       <span className="text-[12px] text-[#8795a6]">XP</span>
                     </div>
                   ) : (
                     <span className="text-[17px] font-bold text-[#7c6fcd]">
-                      {benchmark.bonusCap || 0} <span className="text-[12px] font-normal text-[#8795a6]">XP</span>
+                      {benchmark.bonusCap || 0}{' '}
+                      <span className="text-[12px] font-normal text-[#8795a6]">XP</span>
                     </span>
                   )}
                 </div>
@@ -329,10 +397,16 @@ export function Rubrics() {
                   </div>
                 ) : (
                   <>
-                    <Button icon={Lock} variant="secondary" busy={locking} onClick={lock} disabled={!benchmark.id}>
+                    <Button
+                      icon={Lock}
+                      variant="secondary"
+                      busy={locking}
+                      onClick={lock}
+                      disabled={!benchmark.id}
+                    >
                       Khóa bất biến
                     </Button>
-                    <Button icon={Pencil} variant="primary" onClick={startEdit}>
+                    <Button icon={Pencil} variant="primary" onClick={() => startEdit()}>
                       Chỉnh sửa
                     </Button>
                   </>
@@ -344,7 +418,10 @@ export function Rubrics() {
           {/* Info */}
           <div className="flex items-center gap-[8px] text-[11px] text-[#717d8d] leading-relaxed">
             <ShieldCheck size={17} />
-            <span>Thay đổi trọng số tạo phiên bản mới. Sau khi khóa, cấu hình không thể sửa để đảm bảo tính toàn vẹn điểm.</span>
+            <span>
+              Thay đổi trọng số tạo phiên bản mới. Sau khi khóa, cấu hình không thể sửa để đảm bảo
+              tính toàn vẹn điểm.
+            </span>
           </div>
         </>
       )}
@@ -355,7 +432,10 @@ export function Rubrics() {
           title="Chỉnh sửa Benchmark"
           description={`Cấu hình cho học kỳ ${form.semesterCode}. Tổng trọng số phải bằng 100%.`}
           wide
-          onClose={() => { setEditing(false); setForm(null); }}
+          onClose={() => {
+            setEditing(false);
+            setForm(null);
+          }}
         >
           <form onSubmit={save}>
             <div className="px-[26px] py-6">
@@ -417,7 +497,9 @@ export function Rubrics() {
               {/* Total */}
               <div className="flex items-center justify-between mt-[20px] pt-[16px] border-t border-[#e9ebee]">
                 <span className="text-[12px] text-[#718094]">Tổng trọng số</span>
-                <Badge tone={Math.abs(computeTotal(form.capabilities) - 100) < 0.01 ? 'green' : 'red'}>
+                <Badge
+                  tone={Math.abs(computeTotal(form.capabilities) - 100) < 0.01 ? 'green' : 'red'}
+                >
                   {computeTotal(form.capabilities)}% / 100%
                 </Badge>
               </div>
@@ -439,12 +521,21 @@ export function Rubrics() {
               </div>
 
               <div className="p-[14px] border border-[#e4ebf3] bg-[#f4f7fb] text-[#70869e] rounded-[7px] text-[11px] leading-[1.8] mt-[17px]">
-                Mỗi chiều năng lực có trọng số đại diện cho tỷ trọng điểm. Tổng = 100%. Khóa Benchmark để cố định cấu hình.
+                Mỗi chiều năng lực có trọng số đại diện cho tỷ trọng điểm. Tổng = 100%. Khóa
+                Benchmark để cố định cấu hình.
               </div>
             </div>
 
             <div className="sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px]">
-              <Button type="button" onClick={() => { setEditing(false); setForm(null); }}>Hủy</Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setEditing(false);
+                  setForm(null);
+                }}
+              >
+                Hủy
+              </Button>
               <Button
                 type="submit"
                 variant="primary"
@@ -460,6 +551,7 @@ export function Rubrics() {
       )}
 
       {/* History Modal */}
+      <ExperiencePolicyPanel benchmarkId={benchmark?.id} onChanged={fetchBenchmark} />
       {history && (
         <Modal
           title={`Lịch sử Benchmark · ${history.semesterCode}`}
@@ -469,7 +561,9 @@ export function Rubrics() {
           <div className="px-[26px] py-6">
             <div className="flex items-center gap-[12px] mb-5">
               <Badge tone="orange">{history.status || 'draft'}</Badge>
-              <span className="text-[12px] text-[#717d8d]">Phiên bản hiện tại · {date(history.effectiveDate || history.createdAt)}</span>
+              <span className="text-[12px] text-[#717d8d]">
+                Phiên bản hiện tại · {date(history.effectiveDate || history.createdAt)}
+              </span>
             </div>
             <p className="text-[11px] text-[#818794] py-[15px] border-t border-[#e9ebee]">
               Chưa có phiên bản cũ để đối soát.

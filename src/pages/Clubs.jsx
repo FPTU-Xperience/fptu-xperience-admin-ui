@@ -15,7 +15,6 @@ import {
 import api from '../services/api.js';
 import { date, normalize } from '../utils/format.js';
 import { useAction } from '../hooks/useAction.js';
-import { useWorkspace } from '../context/WorkspaceContext.jsx';
 import {
   Badge,
   Button,
@@ -30,22 +29,20 @@ import {
 } from '../components/ui/index.js';
 
 // Default club types from backend
-const DEFAULT_TYPES = ['Công nghệ', 'Nghệ thuật', 'Thể thao', 'Tình nguyện', 'Học thuật', 'Kinh doanh'];
 
 export function Clubs() {
   const run = useAction();
-  const { state, commit } = useWorkspace();
   const [params] = useSearchParams();
 
-  // State - applications from global state, clubs from API
+  // Server-backed list state.
   const [clubs, setClubs] = useState([]);
   const [localApplications, setLocalApplications] = useState([]);
-  const [types, setTypes] = useState(DEFAULT_TYPES);
+  const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Derived from global state (keeps NotificationsModal in sync)
-  const applications = state.applications;
+  // The API response is the single source for the list and counters.
+  const applications = localApplications;
 
   // UI State
   const [tab, setTab] = useState(params.get('tab') || 'registry');
@@ -69,8 +66,19 @@ export function Clubs() {
         api.clubs.categories.list(),
       ]);
 
-      const clubsData = clubsResponse.status === 'fulfilled' ? (clubsResponse.value?.items || clubsResponse.value || []) : [];
-      const appsData = appsResponse.status === 'fulfilled' ? (appsResponse.value?.items || appsResponse.value || []) : [];
+      const failure = [clubsResponse, appsResponse, categoriesResponse].find(
+        (item) => item.status === 'rejected',
+      );
+      if (failure) throw failure.reason;
+
+      const clubsData =
+        clubsResponse.status === 'fulfilled'
+          ? clubsResponse.value?.items || clubsResponse.value || []
+          : [];
+      const appsData =
+        appsResponse.status === 'fulfilled'
+          ? appsResponse.value?.items || appsResponse.value || []
+          : [];
 
       const mappedClubs = mapClubsFromApi(clubsData);
       const mappedApps = mapApplicationsFromApi(appsData);
@@ -80,20 +88,8 @@ export function Clubs() {
 
       if (categoriesResponse.status === 'fulfilled') {
         const catList = Array.isArray(categoriesResponse.value) ? categoriesResponse.value : [];
-        if (catList.length > 0) {
-          setTypes(catList.map((c) => c.name || c.code));
-        }
+        setTypes(catList.map((c) => c.name || c.code));
       }
-
-      // Sync applications to global state for NotificationsModal
-      commit(
-        'Sync applications',
-        `Đồng bộ ${mappedApps.length} đơn từ API`,
-        'affairs',
-        (next) => {
-          next.applications = mappedApps;
-        }
-      );
     } catch (err) {
       console.error('Failed to fetch clubs:', err);
       setError(err.message || 'Không thể tải danh sách câu lạc bộ');
@@ -141,31 +137,13 @@ export function Clubs() {
           await api.clubs.applications.reject(review.id, payload);
         }
 
-        // Update both global and local state
-        commit(
-          approved ? 'Phê duyệt đơn CLB' : 'Từ chối đơn CLB',
-          `${review.name} · ${note.trim().slice(0, 50)}`,
-          'affairs',
-          (next) => {
-            const idx = next.applications.findIndex((a) => a.id === review.id);
-            if (idx !== -1) {
-              next.applications[idx] = {
-                ...next.applications[idx],
-                status: approved ? 'approved' : 'rejected',
-                note: note.trim(),
-                reviewedAt: new Date().toISOString(),
-              };
-            }
-          }
-        );
-
         // Also update local state for the table
         setLocalApplications((prev) =>
           prev.map((a) =>
             a.id === review.id
               ? { ...a, status: approved ? 'approved' : 'rejected', note: note.trim() }
-              : a
-          )
+              : a,
+          ),
         );
       },
       approved ? 'Đã phê duyệt đơn thành lập CLB.' : 'Đã từ chối đơn thành lập CLB.',
@@ -187,17 +165,14 @@ export function Clubs() {
       });
       return;
     }
-    const ok = await run(
-      async () => {
-        try {
-          await api.clubs.categories.create({ name });
-        } catch (err) {
-          console.warn('Failed to save category to backend:', err);
-        }
-        setTypes((prev) => [...prev, name]);
-      },
-      'Đã thêm loại CLB mới.',
-    );
+    const ok = await run(async () => {
+      try {
+        await api.clubs.categories.create({ name });
+      } catch (err) {
+        console.warn('Failed to save category to backend:', err);
+      }
+      setTypes((prev) => [...prev, name]);
+    }, 'Đã thêm loại CLB mới.');
     if (ok) setTypeName('');
   }
 
@@ -208,8 +183,12 @@ export function Clubs() {
         title="Quản lý câu lạc bộ"
         description="Nuôi dưỡng những cộng đồng tạo nên bản sắc FPTU."
       >
-        <Button icon={Settings2} onClick={() => setTypesOpen(true)}>Loại câu lạc bộ</Button>
-        <Button variant="primary" icon={Plus} onClick={() => setEdit({})}>Thêm câu lạc bộ</Button>
+        <Button icon={Settings2} onClick={() => setTypesOpen(true)}>
+          Loại câu lạc bộ
+        </Button>
+        <Button variant="primary" icon={Plus} onClick={() => setEdit({})}>
+          Thêm câu lạc bộ
+        </Button>
       </PageHeader>
 
       {/* Stats Grid - 3 columns */}
@@ -314,18 +293,25 @@ export function Clubs() {
                       <i className="w-[3px] h-[3px] bg-[#ccc] rounded-full" />
                       {club.code}
                     </span>
-                    <p className="text-[11.5px] text-[#717d8d] my-[13px] min-h-[34px]">{club.description}</p>
+                    <p className="text-[11.5px] text-[#717d8d] my-[13px] min-h-[34px]">
+                      {club.description}
+                    </p>
                     <div className="flex justify-between text-[10px] items-center gap-[8px] mb-[13px] text-[#929da9]">
                       <span className="flex items-center gap-[6px]">
                         <UsersRound size={15} />
                         {club.memberCount || 0} thành viên
                       </span>
-                      <span className={(club.health || 0) < 50 ? 'text-[#d27332]' : 'text-[#358b6c]'}>
+                      <span
+                        className={(club.health || 0) < 50 ? 'text-[#d27332]' : 'text-[#358b6c]'}
+                      >
                         {club.health || 0}/100 gắn kết
                       </span>
                     </div>
                     <div className="w-full h-[5px] bg-[#f1f2f4] rounded-[6px] overflow-hidden">
-                      <i className="block h-full rounded-[6px]" style={{ width: `${club.health || 0}%`, background: club.color }} />
+                      <i
+                        className="block h-full rounded-[6px]"
+                        style={{ width: `${club.health || 0}%`, background: club.color }}
+                      />
                     </div>
                   </div>
                   <button
@@ -374,7 +360,9 @@ export function Clubs() {
                   {localApplications.map((a) => (
                     <tr key={a.id}>
                       <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
-                        <strong className="block text-[12px] font-medium text-[#4a5462]">{a.name}</strong>
+                        <strong className="block text-[12px] font-medium text-[#4a5462]">
+                          {a.name}
+                        </strong>
                         <span className="block text-[10px] text-[#a5acb5] mt-[5px] leading-[1.6]">
                           {a.category} · {a.members} thành viên sáng lập
                         </span>
@@ -388,15 +376,29 @@ export function Clubs() {
                       <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
                         <Badge
                           tone={
-                            a.status === 'pending' ? 'orange' : a.status === 'approved' ? 'green' : 'red'
+                            a.status === 'pending'
+                              ? 'orange'
+                              : a.status === 'approved'
+                                ? 'green'
+                                : 'red'
                           }
                         >
-                          {a.status === 'pending' ? 'Chờ phê duyệt' : a.status === 'approved' ? 'Đã duyệt' : 'Từ chối'}
+                          {a.status === 'pending'
+                            ? 'Chờ phê duyệt'
+                            : a.status === 'approved'
+                              ? 'Đã duyệt'
+                              : 'Từ chối'}
                         </Badge>
                       </td>
                       <td className="px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0">
-                        <Button onClick={() => { setReview(a); setNote(''); }}>
-                          {a.status === 'pending' ? 'Xem xét' : 'Chi tiết'} <ChevronRight size={14} />
+                        <Button
+                          onClick={() => {
+                            setReview(a);
+                            setNote('');
+                          }}
+                        >
+                          {a.status === 'pending' ? 'Xem xét' : 'Chi tiết'}{' '}
+                          <ChevronRight size={14} />
                         </Button>
                       </td>
                     </tr>
@@ -416,19 +418,27 @@ export function Clubs() {
           onClose={() => setDetail(null)}
         >
           <div className="px-[26px] py-6">
-            <p className="text-[12px] text-[#717d8d] leading-[1.9] mb-[22px]">{detail.description}</p>
+            <p className="text-[12px] text-[#717d8d] leading-[1.9] mb-[22px]">
+              {detail.description}
+            </p>
             <dl className="grid grid-cols-2 gap-4 text-[11px]">
               <div className="pb-[20px] border-b border-[#e9ebee]">
                 <dt className="text-[10px] text-[#a8b2bf] mb-[10px]">Chủ nhiệm</dt>
-                <dd className="text-[12px] text-[#808d9e] font-medium">{detail.leader || 'Chưa bổ nhiệm'}</dd>
+                <dd className="text-[12px] text-[#808d9e] font-medium">
+                  {detail.leader || 'Chưa bổ nhiệm'}
+                </dd>
               </div>
               <div className="pb-[20px] border-b border-[#e9ebee]">
                 <dt className="text-[10px] text-[#a8b2bf] mb-[10px]">Email liên hệ</dt>
-                <dd className="text-[12px] text-[#808d9e] font-medium">{detail.email || 'Chưa cập nhật'}</dd>
+                <dd className="text-[12px] text-[#808d9e] font-medium">
+                  {detail.email || 'Chưa cập nhật'}
+                </dd>
               </div>
               <div className="pb-[20px] border-b border-[#e9ebee]">
                 <dt className="text-[10px] text-[#a8b2bf] mb-[10px]">Thành viên</dt>
-                <dd className="text-[12px] text-[#808d9e] font-medium">{detail.memberCount || 0}</dd>
+                <dd className="text-[12px] text-[#808d9e] font-medium">
+                  {detail.memberCount || 0}
+                </dd>
               </div>
               <div className="pb-[20px] border-b border-[#e9ebee]">
                 <dt className="text-[10px] text-[#a8b2bf] mb-[10px]">Chỉ số gắn kết</dt>
@@ -436,7 +446,9 @@ export function Clubs() {
               </div>
               <div className="pb-[20px] border-b border-[#e9ebee]">
                 <dt className="text-[10px] text-[#a8b2bf] mb-[10px]">Trạng thái</dt>
-                <dd className="text-[12px] text-[#808d9e] font-medium">{detail.status === 'active' ? 'Đang hoạt động' : 'Tạm dừng'}</dd>
+                <dd className="text-[12px] text-[#808d9e] font-medium">
+                  {detail.status === 'active' ? 'Đang hoạt động' : 'Tạm dừng'}
+                </dd>
               </div>
             </dl>
           </div>
@@ -445,7 +457,10 @@ export function Clubs() {
             <Button
               variant="primary"
               icon={Pencil}
-              onClick={() => { setEdit(detail); setDetail(null); }}
+              onClick={() => {
+                setEdit(detail);
+                setDetail(null);
+              }}
             >
               Chỉnh sửa thông tin
             </Button>
@@ -481,11 +496,17 @@ export function Clubs() {
             <div className="flex gap-[40px] pb-[20px] border-b border-[#e9ebee] mb-[22px]">
               <div>
                 <small className="text-[10px] text-[#a8b2bf] block mb-[10px]">NGƯỜI ĐỀ XUẤT</small>
-                <strong className="text-[12px] text-[#808d9e] font-medium">{review.applicant}</strong>
+                <strong className="text-[12px] text-[#808d9e] font-medium">
+                  {review.applicant}
+                </strong>
               </div>
               <div>
-                <small className="text-[10px] text-[#a8b2bf] block mb-[10px]">THÀNH VIÊN SÁNG LẬP</small>
-                <strong className="text-[12px] text-[#808d9e] font-medium">{review.members} sinh viên</strong>
+                <small className="text-[10px] text-[#a8b2bf] block mb-[10px]">
+                  THÀNH VIÊN SÁNG LẬP
+                </small>
+                <strong className="text-[12px] text-[#808d9e] font-medium">
+                  {review.members} sinh viên
+                </strong>
               </div>
             </div>
             <h3 className="text-[13px] text-[#7a8799] mb-[9px]">Mục đích hoạt động</h3>
@@ -505,7 +526,9 @@ export function Clubs() {
               </Field>
             ) : (
               <div className="p-[14px] border border-[#e4ebf3] bg-[#f4f7fb] text-[#70869e] rounded-[7px] text-[11px] leading-[1.8]">
-                <b className="font-semibold">{review.status === 'approved' ? 'Đã phê duyệt' : 'Đã từ chối'}</b>
+                <b className="font-semibold">
+                  {review.status === 'approved' ? 'Đã phê duyệt' : 'Đã từ chối'}
+                </b>
                 <p className="mt-[3px]">{review.note}</p>
               </div>
             )}
@@ -514,8 +537,12 @@ export function Clubs() {
             <Button onClick={() => setReview(null)}>Đóng</Button>
             {review.status === 'pending' && (
               <>
-                <Button variant="danger-soft" icon={X} onClick={() => decide(false)}>Từ chối</Button>
-                <Button variant="primary" icon={Check} onClick={() => decide(true)}>Phê duyệt thành lập</Button>
+                <Button variant="danger-soft" icon={X} onClick={() => decide(false)}>
+                  Từ chối
+                </Button>
+                <Button variant="primary" icon={Check} onClick={() => decide(true)}>
+                  Phê duyệt thành lập
+                </Button>
               </>
             )}
           </div>
@@ -532,7 +559,10 @@ export function Clubs() {
           <div className="px-[26px] py-6">
             <div className="divide-y divide-[#e9ebee]">
               {types.map((type) => (
-                <div key={type} className="flex items-center justify-between py-[13px] text-[12px] text-[#8795a6]">
+                <div
+                  key={type}
+                  className="flex items-center justify-between py-[13px] text-[12px] text-[#8795a6]"
+                >
                   <span>{type}</span>
                   <Badge>{clubs.filter((c) => c.category === type).length} CLB</Badge>
                 </div>
@@ -548,7 +578,9 @@ export function Clubs() {
                 placeholder="Tên loại câu lạc bộ mới"
                 className="flex-1 h-[39px] px-[12px] border border-[#e1e4e9] rounded-[7px] text-[12px]"
               />
-              <Button type="submit" variant="primary" icon={Plus}>Thêm loại</Button>
+              <Button type="submit" variant="primary" icon={Plus}>
+                Thêm loại
+              </Button>
             </form>
           </div>
         </Modal>
@@ -637,34 +669,31 @@ function ClubForm({ club, types, onClose, onSave }) {
 
   async function submit(e) {
     e.preventDefault();
-    const ok = await run(
-      async () => {
-        setSaving(true);
-        try {
-          let saved;
-          const payload = {
-            name: form.name.trim(),
-            code: form.code.trim(),
-            category: form.category,
-            description: form.description || '',
-            contactEmail: form.email || form.contactEmail || '',
-            contactPhone: form.phone || form.contactPhone || '',
-            isActive: form.status === 'active',
-          };
+    const ok = await run(async () => {
+      setSaving(true);
+      try {
+        let saved;
+        const payload = {
+          name: form.name.trim(),
+          code: form.code.trim(),
+          category: form.category,
+          description: form.description || '',
+          contactEmail: form.email || form.contactEmail || '',
+          contactPhone: form.phone || form.contactPhone || '',
+          isActive: form.status === 'active',
+        };
 
-          if (club.id) {
-            saved = await api.clubs.update(club.id, payload);
-          } else {
-            saved = await api.clubs.create(payload);
-          }
-          const mapped = mapClubsFromApi([saved])[0];
-          onSave(mapped);
-        } finally {
-          setSaving(false);
+        if (club.id) {
+          saved = await api.clubs.update(club.id, payload);
+        } else {
+          saved = await api.clubs.create(payload);
         }
-      },
-      'Đã lưu thông tin câu lạc bộ.',
-    );
+        const mapped = mapClubsFromApi([saved])[0];
+        onSave(mapped);
+      } finally {
+        setSaving(false);
+      }
+    }, 'Đã lưu thông tin câu lạc bộ.');
     if (ok) onClose();
   }
 
@@ -705,7 +734,9 @@ function ClubForm({ club, types, onClose, onSave }) {
           </Field>
         </div>
         <div className="sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px]">
-          <Button type="button" onClick={onClose} disabled={saving}>Hủy</Button>
+          <Button type="button" onClick={onClose} disabled={saving}>
+            Hủy
+          </Button>
           <Button type="submit" variant="primary" icon={Check} disabled={saving}>
             {saving ? 'Đang lưu...' : 'Lưu câu lạc bộ'}
           </Button>

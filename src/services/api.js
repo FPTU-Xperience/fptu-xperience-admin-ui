@@ -207,6 +207,12 @@ async function request(path, options = {}) {
 // API EXPORTS
 // =============================================================================
 
+export async function workflowRequest(path, method, body) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify({ path, method, body })));
+  const key = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return request(path, { method, body, headers: { 'Idempotency-Key': `workflow:${key}` } });
+}
+
 export const api = {
   baseURL: BASE_URL,
 
@@ -362,14 +368,14 @@ export const api = {
 
     disbandRequests: {
       list: (params) => api.get('/api/clubs/disband-requests', params),
-      approve: (id) => api.post(`/api/clubs/disband-requests/${id}/approve`),
-      reject: (id) => api.post(`/api/clubs/disband-requests/${id}/reject`),
+      approve: (id, payload) => api.post(`/api/clubs/disband-requests/${id}/approve`, payload),
+      reject: (id, payload) => api.post(`/api/clubs/disband-requests/${id}/reject`, payload),
     },
 
     transferRequests: {
       list: (params) => api.get('/api/clubs/transfer-requests', params),
-      approve: (id) => api.post(`/api/clubs/transfer-requests/${id}/approve`),
-      reject: (id) => api.post(`/api/clubs/transfer-requests/${id}/reject`),
+      approve: (id, payload) => api.post(`/api/clubs/transfer-requests/${id}/approve`, payload),
+      reject: (id, payload) => api.post(`/api/clubs/transfer-requests/${id}/reject`, payload),
     },
   },
 
@@ -550,8 +556,14 @@ export const api = {
     // Declarations queue
     declarations: {
       list: (params) => api.get('/api/v1/student-affairs/declarations', params),
-      review: (id, payload) =>
-        api.post(`/api/v1/student-affairs/declarations/${id}/review`, payload),
+      review: async (id, payload) => {
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(payload)));
+        const fingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+        return request(`/api/v1/student-affairs/declarations/${id}/review`, {
+          method: 'POST', body: payload,
+          headers: { 'Idempotency-Key': `declaration:${id}:${fingerprint}` },
+        });
+      },
     },
     // Benchmark (6+1 chiều)
     benchmarks: {
@@ -564,18 +576,13 @@ export const api = {
     // Student radar
     students: {
       radar: (id, params) =>
-        api.get(`/api/v1/student-affairs/students/${id}/radar`, params),
+        api.get(`/api/v1/student-affairs/students/${id}/radar`, {
+          ...params, semester: params?.semester || params?.semesterCode,
+        }),
     },
     // Radar overview (6+1 pillars overview)
     radar: {
       overview: (params) => api.get('/api/v1/student-affairs/radar/overview', params),
-    },
-    // Bonus Matrix (Hệ số cộng điểm)
-    bonusMatrix: {
-      list: () => api.get('/api/bonus-matrix'),
-      create: (payload) => api.post('/api/bonus-matrix', payload),
-      update: (id, payload) => api.put(`/api/bonus-matrix/${id}`, payload),
-      delete: (id) => api.delete(`/api/bonus-matrix/${id}`),
     },
     // Quests & Campaigns (Nhiệm vụ & Chiến dịch)
     quests: {
