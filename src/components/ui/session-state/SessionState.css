@@ -1,0 +1,35 @@
+@reference '../../../index.css';
+
+@layer components {
+  .session-state-content {
+    @apply min-h-screen grid place-items-center bg-surface text-muted;
+  }
+
+  .session-state-content-2 {
+    @apply flex items-center gap-3;
+  }
+
+  .session-state-loader-circle {
+    @apply animate-spin;
+  }
+
+  .session-state-main {
+    @apply min-h-screen grid place-items-center bg-surface p-6;
+  }
+
+  .session-state-section {
+    @apply max-w-md text-center space-y-4;
+  }
+
+  .session-state-shield-alert {
+    @apply mx-auto text-accent;
+  }
+
+  .session-state-title {
+    @apply text-2xl font-semibold;
+  }
+
+  .session-state-description {
+    @apply text-muted;
+  }
+}

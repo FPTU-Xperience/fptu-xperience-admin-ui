@@ -1,0 +1,35 @@
+@reference '../../../index.css';
+
+@layer components {
+  .badge-root {
+    @apply inline-flex items-center gap-[5px] rounded-sm px-[7px] py-1 text-[10px] 3xl:text-[11px] font-medium whitespace-nowrap leading-[1.5];
+  }
+
+  .badge-neutral {
+    @apply bg-[#f2f3f5] text-[#788290];
+  }
+
+  .badge-orange {
+    @apply bg-[#fff0e5] text-[#b16b36];
+  }
+
+  .badge-green {
+    @apply bg-[#edf8f2] text-green;
+  }
+
+  .badge-blue {
+    @apply bg-[#eef4fd] text-[#4d78a6];
+  }
+
+  .badge-purple {
+    @apply bg-[#f4eefb] text-[#8763aa];
+  }
+
+  .badge-red {
+    @apply bg-[#fff0ee] text-[#d06b63];
+  }
+
+  .badge-dot {
+    @apply w-1 h-1 rounded-full bg-current;
+  }
+}

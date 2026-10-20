@@ -67,7 +67,7 @@ Route được xác nhận qua [routes/index.jsx](../src/routes/index.jsx) và [
 
 **Yêu cầu:** FR-028–029. SA import danh sách đang học, preview additions/omissions/identifiers, lỗi từng dòng; phân biệt import mới và carry-forward.
 
-**Bằng chứng:** [Seasons](../src/pages/Seasons.jsx) chỉ metadata/deadlines; [Accounts importRows](../src/pages/Accounts.jsx#L714) gọi `api.users.create` từng dòng; [API seasons](../src/services/api.js#L468) chỉ list/active/create/update. Không thấy màn hay request roster/carry-forward trong Admin.
+**Bằng chứng:** [Seasons](../src/pages/seasons/Seasons.jsx) chỉ metadata/deadlines; [Accounts importRows](../src/pages/accounts/Accounts.jsx#L714) gọi `api.users.create` từng dòng; [API seasons](../src/services/api.js#L468) chỉ list/active/create/update. Không thấy màn hay request roster/carry-forward trong Admin.
 
 **Ảnh hưởng ClubHub:** không có dữ liệu authoritative để hiển thị active/inactive, xác định quyền học kỳ hoặc tìm người kế nhiệm còn đang học. Excel tạo account không thay thế roster.
 
@@ -103,17 +103,17 @@ Không kết luận “ClubHub không có duyệt báo cáo”: generic report c
 
 ### A05 — Mô hình policy/categories khác nhau giữa Admin và ClubHub · P1
 
-**Bằng chứng:** [Rubrics CAPABILITIES](../src/pages/Rubrics.jsx#L29) có `ACAD, PROF, COMM, PHYS, GLOB, ETHI`; lưu weight tổng 100% và `bonusCap`. ClubHub [ExperienceAttributesForm](../../fptu-xperience-clubhub-ui/src/components/v2/experience/ExperienceAttributesForm.jsx) dùng `Academic, Research, Global, CultureSports, Community, Entrepreneurship, RealWorldWork`. Ngay trong Admin, form review declaration dùng bộ canonical 7 trụ, còn bảng label tự khai vẫn dùng 6 code cũ.
+**Bằng chứng:** [Rubrics CAPABILITIES](../src/pages/rubrics/Rubrics.jsx#L29) có `ACAD, PROF, COMM, PHYS, GLOB, ETHI`; lưu weight tổng 100% và `bonusCap`. ClubHub [ExperienceAttributesForm](../../fptu-xperience-clubhub-ui/src/components/v2/experience/ExperienceAttributesForm.jsx) dùng `Academic, Research, Global, CultureSports, Community, Entrepreneurship, RealWorldWork`. Ngay trong Admin, form review declaration dùng bộ canonical 7 trụ, còn bảng label tự khai vẫn dùng 6 code cũ.
 
 **Yêu cầu:** FR-042–047: coefficient chuyển raw→credited khác tham số saturation; +1 là RealWorldWork riêng với positive T7, không phải generic bonus cap. Policy có hiệu lực theo kỳ và không sửa credit cũ.
 
-**Đã có:** [ExperiencePolicyPanel](../src/components/ExperiencePolicyPanel.jsx) đọc policy/versions, mở draft và approve snapshot; không được ghi nhận là “chưa có versioning”. Tuy nhiên chỉ xác nhận P01–P06/basis/environment/scope/effectiveAt, không phải editor đầy đủ cho bộ tham số target.
+**Đã có:** [ExperiencePolicyPanel](../src/components/experience-policy-panel/ExperiencePolicyPanel.jsx) đọc policy/versions, mở draft và approve snapshot; không được ghi nhận là “chưa có versioning”. Tuy nhiên chỉ xác nhận P01–P06/basis/environment/scope/effectiveAt, không phải editor đầy đủ cho bộ tham số target.
 
 **TODO:** một taxonomy và contract mapping canonical; tách editor coefficients, tau và T7; hiển thị snapshot đầy đủ trước approve; raw/credited/provenance rõ trên cả hai app. Không tự chốt hệ số hoặc công thức còn O-01/O-02/O-11. Sai khác công thức +1 ở source BE đã được nêu riêng trong audit FE–BE, không được sửa bằng đổi label UI.
 
 ### A06 — Học kỳ chọn ở header không điều khiển đồng nhất dữ liệu · P1
 
-**Bằng chứng:** [DeclarationsQueue](../src/pages/DeclarationsQueue.jsx#L52) chỉ gửi page/pageSize/status; không đọc Workspace season. [Rubrics](../src/pages/Rubrics.jsx#L94) gọi global `getActive()` một lần và không refetch theo `season`. [Anomalies](../src/pages/Anomalies.jsx#L35) list anomalies/ledger không semester. [Engagement](../src/pages/Engagement.jsx#L76) tải directory một lần; chỉ radar chi tiết dùng season.
+**Bằng chứng:** [DeclarationsQueue](../src/pages/declarations-queue/DeclarationsQueue.jsx#L52) chỉ gửi page/pageSize/status; không đọc Workspace season. [Rubrics](../src/pages/rubrics/Rubrics.jsx#L94) gọi global `getActive()` một lần và không refetch theo `season`. [Anomalies](../src/pages/anomalies/Anomalies.jsx#L35) list anomalies/ledger không semester. [Engagement](../src/pages/engagement/Engagement.jsx#L76) tải directory một lần; chỉ radar chi tiết dùng season.
 
 ClubHub [workspace-semester-data](../../fptu-xperience-clubhub-ui/src/pages/v2/club-workspace-page/workspace-semester-data.js) có DEV `FA2026` và alias `FALL2026`, query activities theo khoảng ngày, reports theo reportPeriod; [ExperiencePanel](../../fptu-xperience-clubhub-ui/src/pages/v2/profile-page/ExperiencePanel.jsx#L33) cho nhập semesterId bằng text. Admin catalog dùng semesterCode như FALL2026. Đây là rủi ro context chưa thống nhất, không khẳng định mọi request đều đang sai mã vì catalog BE có thể cung cấp mapping.
 
@@ -121,7 +121,7 @@ ClubHub [workspace-semester-data](../../fptu-xperience-clubhub-ui/src/pages/v2/c
 
 ### A07 — System Admin đang được trình bày như có SA decision rights · P1
 
-**Bằng chứng:** [canAccessPath/workspaceRoleFor](../src/utils/access.js#L8) cho ADMIN vào `/ctsv/*` và chuyển workspace role thành STUDENT_AFFAIRS_ADMIN; [Sidebar](../src/layouts/Sidebar.jsx) có chuyển không gian. [RoleMatrix](../src/pages/RoleMatrix.jsx) lại mô tả quyền SA tách Admin. ClubHub [reportDetailAccess](../../fptu-xperience-clubhub-ui/src/pages/v2/report-detail-page/report-detail-data.js#L8) cũng cho `ADMIN` vào reviewer/finalReview; [affairs-access](../../fptu-xperience-clubhub-ui/src/pages/v2/affairs-access.js) cho Admin quan sát SA là hợp lý nếu chỉ đọc.
+**Bằng chứng:** [canAccessPath/workspaceRoleFor](../src/utils/access.js#L8) cho ADMIN vào `/ctsv/*` và chuyển workspace role thành STUDENT_AFFAIRS_ADMIN; [Sidebar](../src/components/common/sidebar/Sidebar.jsx) có chuyển không gian. [RoleMatrix](../src/pages/role-matrix/RoleMatrix.jsx) lại mô tả quyền SA tách Admin. ClubHub [reportDetailAccess](../../fptu-xperience-clubhub-ui/src/pages/v2/report-detail-page/report-detail-data.js#L8) cũng cho `ADMIN` vào reviewer/finalReview; [affairs-access](../../fptu-xperience-clubhub-ui/src/pages/v2/affairs-access.js) cho Admin quan sát SA là hợp lý nếu chỉ đọc.
 
 **Yêu cầu:** Admin không tự kế thừa quyền quyết định SA. Đây là lệch guard/presentation đã xác nhận; chưa kết luận BE cho phép vượt quyền.
 
@@ -129,7 +129,7 @@ ClubHub [workspace-semester-data](../../fptu-xperience-clubhub-ui/src/pages/v2/c
 
 ### A08 — Tự khai ngoài CLB có các bước API, nhưng referral và final raw còn thiếu · P0
 
-**Match một phần:** ClubHub [ExternalDeclarationForm](../../fptu-xperience-clubhub-ui/src/components/v2/experience/ExternalDeclarationForm.jsx#L31) gửi ngoài CLB, category và evidence; Admin [DeclarationsQueue](../src/pages/DeclarationsQueue.jsx#L103) review versioned với private evidence; không bắt sinh viên nhập proposed points.
+**Match một phần:** ClubHub [ExternalDeclarationForm](../../fptu-xperience-clubhub-ui/src/components/v2/experience/ExternalDeclarationForm.jsx#L31) gửi ngoài CLB, category và evidence; Admin [DeclarationsQueue](../src/pages/declarations-queue/DeclarationsQueue.jsx#L103) review versioned với private evidence; không bắt sinh viên nhập proposed points.
 
 **Thiếu:** không thấy form declaration trong CLB với membership/referral BOD → SA, optional recommended raw và SA chỉnh final category/raw. [ClubContributionSubmission](../../fptu-xperience-clubhub-ui/src/components/v2/experience/ClubContributionSubmission.jsx) là đóng góp theo activity session; [VerificationQueue](../../fptu-xperience-clubhub-ui/src/components/v2/experience/VerificationQueue.jsx) là assigned contribution verification. Hai thứ này không tự đáp ứng referral declaration.
 
@@ -145,37 +145,37 @@ Admin approval gửi `verifiedAttributes`, chưa có finalRawAmount; “điểm 
 
 ### A10 — Thành lập CLB match một phần; closure/transfer chưa có UI đối ứng · P1
 
-Admin [Clubs](../src/pages/Clubs.jsx#L124) approve/reject establishment bằng API thật. ClubHub legacy `/clubs` có [ClubsPage](../../fptu-xperience-clubhub-ui/src/pages/ClubsPage.jsx#L546) submit/update và review/revision; production V2 không thấy entrypoint tương đương cho đơn thành lập. Cần phân biệt legacy còn route với journey V2 đang dùng.
+Admin [Clubs](../src/pages/clubs/Clubs.jsx#L124) approve/reject establishment bằng API thật. ClubHub legacy `/clubs` có [ClubsPage](../../fptu-xperience-clubhub-ui/src/pages/ClubsPage.jsx#L546) submit/update và review/revision; production V2 không thấy entrypoint tương đương cho đơn thành lập. Cần phân biệt legacy còn route với journey V2 đang dùng.
 
 Admin service đã khai báo [disbandRequests/transferRequests](../src/services/api.js#L369), nhưng không tìm thấy consumer trong pages/components. Vì vậy không ghi “không có API client”; phần thiếu là UI queue/detail/decision và liên kết phía người nộp. Closure/ordinary transfer khác emergency nomination A02; chốt states O-06.
 
 ### A11 — Đối soát/điều chỉnh bị chia thành hai flow chưa đồng nhất · P2
 
-Admin [Anomalies submit](../src/pages/Anomalies.jsx#L63) là no-op; nút save disabled. ClubHub [ContributionDetails](../../fptu-xperience-clubhub-ui/src/components/v2/experience/ContributionDetails.jsx#L205) có CORRECT/REVOKE và effect history với version/idempotency. Đây là điều chỉnh một contribution được cấp quyền, không phải tự động resolve anomaly case.
+Admin [Anomalies submit](../src/pages/anomalies/Anomalies.jsx#L63) là no-op; nút save disabled. ClubHub [ContributionDetails](../../fptu-xperience-clubhub-ui/src/components/v2/experience/ContributionDetails.jsx#L205) có CORRECT/REVOKE và effect history với version/idempotency. Đây là điều chỉnh một contribution được cấp quyền, không phải tự động resolve anomaly case.
 
 **TODO:** quyết định rõ anomaly triage có cần writer riêng hay deep link sang correction; preserve source/reversal/reason/actor; refresh case và ledger sau kết quả server, xử lý conflict/retry. Không dựng ledger giả trong browser.
 
 ### A12 — Số liệu gắn kết và tổng quan có thể gây hiểu sai · P1
 
-[Engagement](../src/pages/Engagement.jsx#L129): `high` và `low` cùng dùng `hasClub`; lowEngagementCount = mọi sinh viên có CLB. Nội dung lại nói “dưới ngưỡng XP của học kỳ”. Data chỉ lấy role CLUB_MEMBER từ `/api/users` trang đầu 500, không phải roster active của kỳ. [Dashboard](../src/pages/Dashboard.jsx#L125) cũng đếm từ giới hạn 500 users/100 clubs/50 applications.
+[Engagement](../src/pages/engagement/Engagement.jsx#L129): `high` và `low` cùng dùng `hasClub`; lowEngagementCount = mọi sinh viên có CLB. Nội dung lại nói “dưới ngưỡng XP của học kỳ”. Data chỉ lấy role CLUB_MEMBER từ `/api/users` trang đầu 500, không phải roster active của kỳ. [Dashboard](../src/pages/dashboard/Dashboard.jsx#L125) cũng đếm từ giới hạn 500 users/100 clubs/50 applications.
 
 **TODO:** aggregate theo semester/campus/active roster và tiêu chí được chốt; server paging/total cho directory; bỏ phân loại suy từ membership. Cùng student/semester/policy phải đối chiếu được với profile/radar ClubHub, kể cả người có nhiều club roles.
 
 ### A13 — Excel account import mất lỗi runtime từng dòng · P2
 
-[importRows](../src/pages/Accounts.jsx#L714) catch lỗi create từng account chỉ console, sau đó `setDone(true)` và toast `Đã nhập ${good.length}` trong khi created có thể ít hơn. Có validation local và resultCount, nhưng chưa có kết quả server per-row/retry cho các dòng thất bại. Không phải chưa có nhập Excel; vấn đề là kết quả partial success chưa trung thực/khôi phục được.
+[importRows](../src/pages/accounts/Accounts.jsx#L714) catch lỗi create từng account chỉ console, sau đó `setDone(true)` và toast `Đã nhập ${good.length}` trong khi created có thể ít hơn. Có validation local và resultCount, nhưng chưa có kết quả server per-row/retry cho các dòng thất bại. Không phải chưa có nhập Excel; vấn đề là kết quả partial success chưa trung thực/khôi phục được.
 
 **TODO:** success/failed theo từng dòng, giữ dòng fail và thông báo theo số thực; preview/commit server khi contract được thống nhất. Không dùng flow này cho import roster A01.
 
 ### A14 — Health và settings chưa phản ánh đúng lỗi vận hành · P2
 
-[SystemSettings](../src/pages/SystemSettings.jsx#L170) gán badge “Hoạt động” nếu có `healthEndpoint`, không thực hiện probe đó. Load stats/settings lỗi chỉ console; mặc định có thể vẫn hiển thị/lưu. Có request save settings thật, nhưng chưa chứng minh SSO/timetable/rollover worker hoạt động.
+[SystemSettings](../src/pages/system-settings/SystemSettings.jsx#L170) gán badge “Hoạt động” nếu có `healthEndpoint`, không thực hiện probe đó. Load stats/settings lỗi chỉ console; mặc định có thể vẫn hiển thị/lưu. Có request save settings thật, nhưng chưa chứng minh SSO/timetable/rollover worker hoạt động.
 
 **TODO:** unknown/loading/degraded/error từ server hoặc probe được cho phép; error/retry rõ và không lưu mặc định đè config chưa tải được. External timetable/sync vẫn O-13, không bị xếp là core gap nếu chưa nhận scope.
 
 ### A15 — Audit hiện tại chưa đáp ứng đối soát nghiệp vụ xuyên ứng dụng · P1
 
-[Audit](../src/pages/Audit.jsx#L21) tải audit-events rồi phân trang/lọc local, chưa có drill-down cho import/carry-forward, rollover result, policy snapshot, nguồn raw/credited và correction chain. Quyền audit chỉ trong `/admin/*`, cần xác định SA được xem provenance nào của tác vụ SA.
+[Audit](../src/pages/audit/Audit.jsx#L21) tải audit-events rồi phân trang/lọc local, chưa có drill-down cho import/carry-forward, rollover result, policy snapshot, nguồn raw/credited và correction chain. Quyền audit chỉ trong `/admin/*`, cần xác định SA được xem provenance nào của tác vụ SA.
 
 **TODO:** lọc server theo scope/time/semester/source/policy/job; liên kết operation ID giữa Admin và ClubHub; xem nguyên bản và reversal, không chỉ một chuỗi action/detail. Gắn với FR-035–041 và các module còn thiếu, không coi generic audit list là đủ nghiệm thu.
 

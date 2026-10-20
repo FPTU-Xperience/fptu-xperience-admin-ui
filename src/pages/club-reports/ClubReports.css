@@ -1,0 +1,55 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .club-reports-description {
+    @apply mb-5;
+  }
+
+  .club-reports-link {
+    @apply text-accent underline;
+  }
+
+  .club-reports-content {
+    @apply grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-3 border-b border-border;
+  }
+
+  .club-reports-content-2 {
+    @apply space-y-2;
+  }
+
+  .club-reports-content-3 {
+    @apply text-xs;
+  }
+
+  .club-reports-description-2 {
+    @apply p-6 text-muted;
+  }
+
+  .club-reports-list {
+    @apply divide-y divide-border;
+  }
+
+  .club-reports-content-4 {
+    @apply min-w-0;
+  }
+
+  .club-reports-text {
+    @apply text-xs text-muted;
+  }
+
+  .club-reports-heading {
+    @apply mt-2 break-words;
+  }
+
+  .club-reports-description-3 {
+    @apply mt-1 text-xs text-muted;
+  }
+
+  .club-reports-content-5 {
+    @apply flex flex-wrap items-center gap-3;
+  }
+
+  .club-reports-text-2 {
+    @apply text-accent text-xs;
+  }
+}

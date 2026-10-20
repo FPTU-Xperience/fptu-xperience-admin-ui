@@ -1,0 +1,7 @@
+@reference '../../../index.css';
+
+@layer components {
+  .avatar-root {
+    @apply h-[34px] w-[34px] grid place-items-center rounded-full bg-[#eef1f8] text-[#8493b3] text-[11px] font-semibold shrink-0;
+  }
+}

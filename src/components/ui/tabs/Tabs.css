@@ -1,0 +1,31 @@
+@reference '../../../index.css';
+
+@layer components {
+  .tabs-content {
+    @apply flex gap-[17px] sm:gap-6 px-[17px] sm:px-[22px] border-b border-border overflow-x-auto;
+  }
+
+  .tabs-button {
+    @apply border-0 bg-transparent pt-[14px] pb-[13px] text-[10px] sm:text-[11.5px] whitespace-nowrap flex items-center gap-[7px] font-[450] border-b-2;
+  }
+
+  .tabs-button-state-active {
+    @apply border-accent text-accent;
+  }
+
+  .tabs-button-state-inactive {
+    @apply border-transparent text-[#758293];
+  }
+
+  .tabs-text {
+    @apply px-[5px] py-[2px] min-w-[18px] rounded text-[9.5px] text-center;
+  }
+
+  .tabs-text-state-active {
+    @apply bg-[#fff0e5] text-[#d78048];
+  }
+
+  .tabs-text-state-inactive {
+    @apply bg-[#f0f2f5] text-[#9ba3ae];
+  }
+}

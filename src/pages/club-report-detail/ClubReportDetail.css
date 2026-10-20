@@ -1,0 +1,103 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .club-report-detail-iframe {
+    @apply w-full h-[65dvh] border-0;
+  }
+
+  .club-report-detail-link {
+    @apply inline-flex items-center gap-2 text-xs text-muted mb-5;
+  }
+
+  .club-report-detail-content {
+    @apply grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px];
+  }
+
+  .club-report-detail-content-2 {
+    @apply flex flex-wrap gap-2 p-4 border-b border-border;
+  }
+
+  .club-report-detail-content-3 {
+    @apply p-5 sm:p-6 space-y-6 break-words;
+  }
+
+  .club-report-detail-description {
+    @apply mt-2 whitespace-pre-wrap;
+  }
+
+  .club-report-detail-description-2 {
+    @apply text-muted;
+  }
+
+  .club-report-detail-section {
+    @apply border-t border-border pt-5 space-y-3;
+  }
+
+  .club-report-detail-description-3 {
+    @apply text-xs text-muted;
+  }
+
+  .club-report-detail-description-4 {
+    @apply whitespace-pre-wrap mt-1;
+  }
+
+  .club-report-detail-description-5 {
+    @apply text-xs;
+  }
+
+  .club-report-detail-content-4 {
+    @apply space-y-3;
+  }
+
+  .club-report-detail-content-5 {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .club-report-detail-content-6 {
+    @apply flex flex-wrap items-center justify-between gap-3 border-t border-border py-3;
+  }
+
+  .club-report-detail-description-6 {
+    @apply break-all;
+  }
+
+  .club-report-detail-definition-list {
+    @apply space-y-3 text-xs;
+  }
+
+  .club-report-detail-content-7 {
+    @apply flex justify-between gap-4;
+  }
+
+  .club-report-detail-card {
+    @apply border-t border-border pt-4;
+  }
+
+  .club-report-detail-description-7 {
+    @apply text-xs text-muted mt-1;
+  }
+
+  .club-report-detail-description-8 {
+    @apply whitespace-pre-wrap mt-3;
+  }
+
+  .club-report-detail-content-8 {
+    @apply space-y-5;
+  }
+
+  .club-report-detail-content-9 {
+    @apply p-5 space-y-4;
+  }
+
+  .club-report-detail-content-10 {
+    @apply grid gap-2;
+  }
+
+  .club-report-detail-definition-list-2 {
+    @apply p-5 space-y-3 text-xs;
+  }
+
+  .club-report-detail-content-11 {
+    @apply flex justify-end gap-2;
+  }
+}

@@ -1,0 +1,15 @@
+@reference '../../../index.css';
+
+@layer components {
+  .field-root {
+    @apply flex flex-col gap-2 min-w-0 text-[11px] sm:text-[12px];
+  }
+
+  .field-label {
+    @apply text-[11px] font-medium text-[#63738a];
+  }
+
+  .field-hint {
+    @apply text-[10.5px] text-[#a3aebb] leading-[1.7];
+  }
+}

@@ -1,0 +1,146 @@
+@reference '../../index.css';
+
+@layer components {
+  .login-page {
+    min-height: 100svh;
+    background:
+      radial-gradient(ellipse at 12% 12%, #ffca55b3, transparent 58%),
+      radial-gradient(ellipse at 90% 85%, #f0293259, transparent 60%),
+      linear-gradient(135deg, #fff5dd 0%, #ffe3c7 48%, #ffd1bf 100%);
+  }
+  .login-panel {
+    box-shadow:
+      0 24px 80px -24px #a4352440,
+      0 4px 20px #ad4e1710;
+    animation: login-panel-enter 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    transition: height 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .login-method-button {
+    transition:
+      background-color 180ms ease,
+      color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+  .login-method-content {
+    animation: login-method-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes login-panel-enter {
+    from {
+      opacity: 0;
+      transform: translateY(18px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  @keyframes login-method-enter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer utilities {
+  .login-main {
+    @apply min-h-screen flex items-center justify-center p-4 sm:p-8;
+  }
+
+  .login-content {
+    @apply w-full max-w-4xl bg-surface-card border border-border rounded-2xl overflow-hidden;
+  }
+
+  .login-content-2 {
+    @apply grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)];
+  }
+
+  .login-aside {
+    @apply flex flex-col justify-center p-6 sm:p-8 bg-surface border-b md:border-b-0 md:border-r border-border;
+  }
+
+  .login-content-3 {
+    @apply mb-6;
+  }
+
+  .login-title {
+    @apply text-2xl font-semibold leading-tight text-ink;
+  }
+
+  .login-description {
+    @apply text-sm text-muted mt-3;
+  }
+
+  .login-list {
+    @apply hidden md:grid gap-5 mt-10 text-sm text-muted;
+  }
+
+  .login-item {
+    @apply flex gap-3;
+  }
+
+  .login-users {
+    @apply text-accent;
+  }
+
+  .login-section {
+    @apply flex flex-col justify-center min-w-0 p-6 sm:p-8;
+  }
+
+  .login-heading {
+    @apply text-xl font-semibold text-ink;
+  }
+
+  .login-description-2 {
+    @apply text-sm text-muted mt-2 mb-6;
+  }
+
+  .login-content-4 {
+    @apply flex gap-2 border-b border-border mb-6 pb-3;
+  }
+
+  .login-description-3 {
+    @apply flex gap-2 text-sm text-red-text bg-surface p-3 rounded-lg mb-4;
+  }
+
+  .login-content-5 {
+    @apply space-y-5;
+  }
+
+  .login-description-4 {
+    @apply text-sm text-muted;
+  }
+
+  .login-content-6 {
+    @apply flex justify-center min-w-0;
+  }
+
+  .login-description-5 {
+    @apply flex gap-2 items-center text-sm text-muted;
+  }
+
+  .login-loader-circle {
+    @apply animate-spin;
+  }
+
+  .login-button {
+    @apply w-full whitespace-normal;
+  }
+
+  .login-description-6 {
+    @apply text-xs text-muted;
+  }
+
+  .login-content-7 {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .login-input {
+    @apply w-full;
+  }
+}

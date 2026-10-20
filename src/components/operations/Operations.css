@@ -1,0 +1,71 @@
+@layer components {
+  .operation-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0;
+    border: 0 solid currentColor;
+    border-radius: 7px;
+    background: #fff;
+    color: inherit;
+    font-size: 12px;
+  }
+  .operation-link:hover {
+    background: #fff2e9;
+  }
+  .operation-notice {
+    padding: 0;
+    border: 0 solid currentColor;
+    border-radius: 9px;
+    background: #fffcf5;
+    color: #665a40;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  .operation-report-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 0;
+    overflow-wrap: anywhere;
+  }
+  a.operation-report-row:hover {
+    background: #fcfaf8;
+  }
+  .operation-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 12px;
+  }
+  .operation-table th,
+  .operation-table td {
+    padding: 0;
+    border-bottom: 0 solid currentColor;
+  }
+  .operation-table th {
+    background: #f8f9fb;
+    color: #63738a;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .operation-definition {
+    display: grid;
+    gap: 14px;
+    font-size: 12px;
+  }
+  .operation-definition > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .operation-definition dt {
+    color: #818794;
+  }
+  .operation-definition dd {
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+}

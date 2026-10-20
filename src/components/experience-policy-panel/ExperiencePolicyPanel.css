@@ -1,0 +1,15 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .experience-policy-panel-content {
+    @apply p-5 space-y-4;
+  }
+
+  .experience-policy-panel-card {
+    @apply border-t py-3;
+  }
+
+  .experience-policy-panel-fieldset {
+    @apply grid gap-4 sm:grid-cols-2;
+  }
+}

@@ -1,2 +1,2 @@
-export { SearchModal } from './SearchModal.jsx';
-export { NotificationsModal } from './NotificationsModal.jsx';
+export { SearchModal } from '../common/search-modal/SearchModal.jsx';
+export { NotificationsModal } from './notifications-modal/NotificationsModal.jsx';

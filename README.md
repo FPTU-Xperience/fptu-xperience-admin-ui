@@ -30,17 +30,26 @@ src/
   App.jsx                  Trạng thái phiên đăng nhập và quyền vào ứng dụng
   routes/index.jsx         Bộ định tuyến duy nhất, dùng guard theo quyền tài khoản
   routes/navigation.js     Danh mục route/nhãn/icon cho từng workspace
-  layouts/                 Shell, sidebar responsive, topbar và bộ chọn học kỳ
-  components/ui/           Component dùng chung: Button, Modal, Field, PageHeader…
-  components/modals/       Tìm nhanh, hướng dẫn, thông báo từ API
+  layouts/<feature>/       AppLayout, Topbar, ContextBar: JSX + CSS cùng thư mục
+  components/common/brand/ Brand.jsx + Brand.css
+  components/common/sidebar/ Sidebar.jsx + Sidebar.css
+  components/common/search-modal/ SearchModal.jsx + SearchModal.css
+  components/ui/<feature>/ Button, Modal, Field, PageHeader…: JSX + CSS cùng thư mục
+  components/modals/       Thông báo từ API: JSX + CSS cùng thư mục; exports modal
+  components/operations/   Mỗi component có JSX + CSS; Operations.css là style dùng chung
   context/                 Phiên đăng nhập, học kỳ được chọn và toast
-  pages/                   Các màn CTSV/Admin theo cấu trúc hiện có
+  pages/<feature>/         Tất cả màn CTSV/Admin: JSX + CSS cùng thư mục
+  pages/login/             Login.jsx + Login.css
   services/api.js          API client và token/request handling
   utils/                   Logic thuần có thể kiểm thử bằng Node
-  index.css                Tailwind import, theme tokens và quy tắc nền
+  styles/theme.css         Theme tokens dùng chung
+  styles/base.css          Reset, typography, form defaults và reduced motion
+  index.css                Entry CSS: Tailwind và hai stylesheet nền
 tests/                     Kiểm thử tài khoản, Excel, sổ cái và policy frontend
 scripts/ui-smoke.mjs        Browser checks với API fixture, không phải live integration
 ```
+
+Tất cả component có giao diện, layout và trang đều đặt JSX + CSS cạnh nhau trong thư mục theo chức năng, theo cách tổ chức `components/v2` của ClubHub. JSX dùng class theo component; layout, responsive, trạng thái và biến thể màu được khai báo trong CSS tương ứng bằng `@apply`. Mỗi CSS tham chiếu `index.css` để dùng chung token Tailwind v4. Primitive dùng layer `components`, style từ nơi sử dụng dùng layer `utilities` để giữ khả năng override. CSS nền được import đầu tiên trong `main.jsx`; theme được xuất tĩnh và tắt tự sinh utility từ JSX. Chỉ các giá trị thay đổi theo dữ liệu như chiều cao panel, tỷ lệ tiến độ và màu biểu đồ dùng inline style. `index.js` trong UI và modal giữ API export dùng chung.
 
 - Dùng API client hiện có; không coi localStorage hay bộ chọn actor là nguồn quyền.
 - Quyền Admin gồm `ADMIN` và alias `SYSTEM_ADMIN`; CTSV dùng `STUDENT_AFFAIRS_ADMIN`. Admin có thể vào hai workspace theo policy frontend hiện hành. Backend vẫn là nơi kiểm tra quyền thực tế.

@@ -1,0 +1,59 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .topbar-header {
+    @apply min-h-[66px] min-w-0 flex justify-between items-center gap-3 px-4 sm:px-6 lg:px-8 bg-white border-b border-[#e9ebee];
+  }
+
+  .topbar-content {
+    @apply min-w-0 flex-1 flex items-center gap-2 text-[11px] text-[#999ea7];
+  }
+
+  .topbar-text {
+    @apply lg:hidden;
+  }
+
+  .topbar-text-2 {
+    @apply hidden sm:block;
+  }
+
+  .topbar-chevron-right {
+    @apply hidden sm:block shrink-0 text-[#b8bdc5];
+  }
+
+  .topbar-value {
+    @apply hidden sm:block truncate font-medium text-[#4c5461];
+  }
+
+  .topbar-content-2 {
+    @apply shrink-0 flex items-center gap-3 sm:gap-[18px];
+  }
+
+  .topbar-button {
+    @apply flex items-center gap-[8px] text-[11px] text-[#a2a6ae] bg-transparent border-0 cursor-pointer;
+  }
+
+  .topbar-text-3 {
+    @apply hidden md:inline;
+  }
+
+  .topbar-shortcut {
+    @apply hidden md:flex items-center gap-[3px] border border-[#e9ebee] rounded px-[5px] py-[3px] text-[11px] ml-[22px];
+  }
+
+  .topbar-text-4 {
+    @apply w-[1px] h-[20px] bg-[#e9ebee] hidden sm:block;
+  }
+
+  .topbar-button-2 {
+    @apply relative bg-transparent border-0 text-[#7e8591] cursor-pointer;
+  }
+
+  .topbar-text-5 {
+    @apply hidden md:flex items-center gap-[6px] text-[11px] text-[#666f7d];
+  }
+
+  .topbar-text-6 {
+    @apply w-[5px] h-[5px] bg-[#f19050] rounded-full;
+  }
+}

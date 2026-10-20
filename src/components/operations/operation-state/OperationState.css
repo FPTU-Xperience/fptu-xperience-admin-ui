@@ -1,0 +1,19 @@
+@reference '../../../index.css';
+
+@layer utilities {
+  .operation-state-description {
+    @apply p-6 text-muted;
+  }
+
+  .operation-state-content {
+    @apply p-6 space-y-3;
+  }
+
+  .operation-state-navigation {
+    @apply flex flex-wrap items-center justify-between gap-3 border-t border-border p-4 text-xs;
+  }
+
+  .operation-state-content-2 {
+    @apply flex gap-2;
+  }
+}

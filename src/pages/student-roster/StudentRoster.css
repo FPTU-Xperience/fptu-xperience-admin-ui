@@ -1,0 +1,23 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .student-roster-content {
+    @apply mb-5;
+  }
+
+  .student-roster-description {
+    @apply mt-2;
+  }
+
+  .student-roster-content-2 {
+    @apply p-5 space-y-4;
+  }
+
+  .student-roster-content-3 {
+    @apply overflow-x-auto;
+  }
+
+  .student-roster-content-4 {
+    @apply p-5 border-t border-border;
+  }
+}

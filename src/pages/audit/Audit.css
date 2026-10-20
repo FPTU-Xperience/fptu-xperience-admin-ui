@@ -1,0 +1,71 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .audit-content {
+    @apply flex flex-wrap items-center gap-2.5 px-[17px] py-[15px];
+  }
+
+  .audit-search-box {
+    @apply mr-auto sm:min-w-full sm:max-w-none;
+  }
+
+  .audit-select {
+    @apply h-[35px] px-3 border border-[#e1e4e9] rounded-[7px] text-[11px] text-[#718094] bg-white;
+  }
+
+  .audit-content-2 {
+    @apply px-5 py-3 mb-4 p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px];
+  }
+
+  .audit-text {
+    @apply mr-2;
+  }
+
+  .audit-button {
+    @apply ml-2 underline hover:no-underline;
+  }
+
+  .audit-content-3 {
+    @apply flex items-center justify-center py-8 text-[#9096a1];
+  }
+
+  .audit-content-4 {
+    @apply w-5 h-5 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-2;
+  }
+
+  .audit-content-5 {
+    @apply overflow-x-auto;
+  }
+
+  .audit-table {
+    @apply w-full border-collapse text-left whitespace-nowrap;
+  }
+
+  .audit-column {
+    @apply bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5];
+  }
+
+  .audit-cell {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0;
+  }
+
+  .audit-text-2 {
+    @apply text-[11px] text-[#727b89];
+  }
+
+  .audit-text-3 {
+    @apply block text-[10px] text-[#a5acb5] mt-[5px] leading-[1.6];
+  }
+
+  .audit-cell-2 {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89];
+  }
+
+  .audit-value {
+    @apply block text-[11px] font-medium text-[#4a5462];
+  }
+
+  .audit-cell-3 {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89] whitespace-normal min-w-[200px] max-w-[400px];
+  }
+}

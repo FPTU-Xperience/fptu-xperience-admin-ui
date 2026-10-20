@@ -1,0 +1,35 @@
+@reference '../../../index.css';
+
+@layer components {
+  .radar-chart-content {
+    @apply flex items-center justify-center h-[300px] text-[11px] text-[#a2a6ae];
+  }
+
+  .radar-chart-content-2 {
+    @apply bg-white border border-border rounded-lg p-3 shadow-md text-[11px];
+  }
+
+  .radar-chart-description {
+    @apply font-semibold text-[#4a5462] mb-1;
+  }
+
+  .radar-chart-description-2 {
+    @apply text-[#718094];
+  }
+
+  .radar-chart-text {
+    @apply font-medium text-[#ed641c];
+  }
+
+  .radar-chart-description-3 {
+    @apply text-[10px] text-[#a2a6ae] mt-1 max-w-[200px];
+  }
+
+  .radar-chart-content-3 {
+    @apply w-full;
+  }
+
+  .radar-chart-subheading {
+    @apply text-[13px] text-[#7a8799] font-semibold mb-3;
+  }
+}

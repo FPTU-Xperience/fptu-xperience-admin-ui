@@ -30,7 +30,7 @@ const server = await createServer({
       enforce: 'pre',
       load(id) {
         if (id.replaceAll('\\', '/').endsWith('/src/services/api.js'))
-          return 'export default window.__api;';
+          return 'export default window.__api; export const workflowRequest = (...args) => window.__api.workflowRequest(...args);';
       },
       configureServer(vite) {
         vite.middlewares.use('/__qa', async (req, res) => {
@@ -140,6 +140,15 @@ try {
     'seasons',
     'anomalies',
     'reports',
+    'activity-approvals',
+    'activity-dossiers',
+    'club-requests',
+    'student-roster',
+    'rollover',
+    'leadership',
+    'club-bonuses',
+    'global-activities',
+    'experience-audit',
   ].map((slug) => `/ctsv/${slug}`);
   const adminRoutes = ['accounts', 'roles', 'integrations', 'settings', 'health', 'audit'].map(
     (slug) => `/admin/${slug}`,
@@ -153,7 +162,7 @@ try {
       for (const width of widths) {
         await open(route, actor, width);
         const data = await evaluate(
-          `(()=>{const sidebar=document.querySelector('#app-sidebar'),main=document.querySelector('main');if(!main||!sidebar)return {missing:true,text:document.body.textContent,calls:window.__calls};const r=main.getBoundingClientRect();return {viewport:document.documentElement.clientWidth,title:document.querySelector('h1').textContent,scroll:document.documentElement.scrollWidth,main:{left:r.left,right:r.right},sidebarVisible:getComputedStyle(sidebar).visibility,sidebarInert:sidebar.inert,overflow:[...document.querySelectorAll('main *')].filter(e=>e instanceof HTMLElement&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden'&&!e.closest('.overflow-x-auto,.pointer-events-none')&&e.getBoundingClientRect().right>document.documentElement.clientWidth+1).slice(0,10).map(e=>({tag:e.tagName,cls:e.className,right:e.getBoundingClientRect().right}))}})()`,
+          `(()=>{const sidebar=document.querySelector('#app-sidebar'),main=document.querySelector('main');if(!main||!sidebar)return {missing:true,text:document.body.textContent,calls:window.__calls};const r=main.getBoundingClientRect();return {viewport:document.documentElement.clientWidth,title:document.querySelector('h1').textContent,scroll:document.documentElement.scrollWidth,main:{left:r.left,right:r.right},sidebarVisible:getComputedStyle(sidebar).visibility,sidebarInert:sidebar.inert,overflow:[...document.querySelectorAll('main *')].filter(e=>e instanceof HTMLElement&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden'&&!(()=>{for(let p=e;p&&p!==main.parentElement;p=p.parentElement){const s=getComputedStyle(p);if(['auto','scroll'].includes(s.overflowX)||s.pointerEvents==='none')return true;}return false;})()&&e.getBoundingClientRect().right>document.documentElement.clientWidth+1).slice(0,10).map(e=>({tag:e.tagName,cls:e.className,right:e.getBoundingClientRect().right}))}})()`,
         );
         metrics.push({ actor, route, width, ...data });
         assert.ok(!data.missing, JSON.stringify(data));

@@ -1,0 +1,94 @@
+@reference '../../../index.css';
+
+.app-sidebar {
+  transform: translateX(-100%);
+  visibility: hidden;
+}
+.app-sidebar.is-open {
+  transform: translateX(0);
+  visibility: visible;
+}
+@media (min-width: 1024px) {
+  .app-sidebar {
+    transform: none;
+    visibility: visible;
+  }
+}
+
+@layer utilities {
+  .sidebar-aside {
+    @apply fixed top-0 left-0 h-dvh w-[245px] max-w-[calc(100vw-32px)] bg-white border-r border-border z-30 flex flex-col px-4;
+  }
+
+  .sidebar-button {
+    @apply lg:hidden absolute top-2 right-2 p-2 rounded-md hover:bg-surface;
+  }
+
+  .sidebar-nav-link {
+    @apply h-[87px] flex items-center pl-[10px] shrink-0;
+  }
+
+  .sidebar-navigation {
+    @apply overflow-y-auto flex-1 pb-[15px];
+  }
+
+  .sidebar-content {
+    @apply text-[10px] tracking-[1.1px] text-[#9b9fa7] font-semibold pt-[18px] pb-[10px] px-[12px];
+  }
+
+  .sidebar-nav-link-2 {
+    @apply flex gap-[11px] items-center min-h-[42px] py-[10px] px-[12px] text-[12.4px] rounded-lg my-[3px] transition-colors duration-150;
+  }
+
+  .sidebar-nav-link-state-active {
+    @apply text-[#df5c1d] bg-[#fff0e5] font-semibold;
+  }
+
+  .sidebar-nav-link-state-inactive {
+    @apply text-[#707785] hover:bg-[#f8f9fb] hover:text-[#303a47];
+  }
+
+  .sidebar-nav-link-3 {
+    @apply px-3 py-2 text-xs text-muted hover:text-accent;
+  }
+
+  .sidebar-content-2 {
+    @apply mt-auto pt-[14px];
+  }
+
+  .sidebar-content-3 {
+    @apply py-[17px] px-[3px] border-t border-[#e9ebee] flex items-center gap-[9px];
+  }
+
+  .sidebar-text {
+    @apply rounded-full h-[33px] w-[33px] grid place-items-center text-[11px] font-semibold shrink-0;
+  }
+
+  .sidebar-text-state-active {
+    @apply bg-[#e4e9f6] text-[#5d73a8];
+  }
+
+  .sidebar-text-state-inactive {
+    @apply bg-[#eedacc] text-[#895638];
+  }
+
+  .sidebar-content-4 {
+    @apply min-w-0 flex-1;
+  }
+
+  .sidebar-value {
+    @apply block truncate text-[11px] font-semibold;
+  }
+
+  .sidebar-caption {
+    @apply block text-[10.2px] text-[#9196a0] mt-[4px];
+  }
+
+  .sidebar-button-2 {
+    @apply ml-auto mr-[7px] p-[4px] rounded bg-transparent border-0 cursor-pointer text-[#9196a0] hover:bg-[#f0f2f5] hover:text-[#596272] transition-colors;
+  }
+
+  .sidebar-text-2 {
+    @apply w-[6px] h-[6px] bg-[#75a68a] rounded-full shrink-0;
+  }
+}

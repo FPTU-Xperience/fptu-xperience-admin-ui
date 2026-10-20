@@ -1,0 +1,47 @@
+@layer components {
+  .clubhub-brand {
+    display: inline-grid;
+    grid-template-columns: 50px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    color: #111827;
+  }
+  .clubhub-brand img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+  }
+  .clubhub-brand-copy {
+    min-width: 0;
+  }
+  .clubhub-brand-eyebrow {
+    display: block;
+    margin-bottom: 0;
+    color: #64748b;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 80%;
+    font-weight: 600;
+    font-style: italic;
+    letter-spacing: 0.25px;
+    line-height: 1.2;
+  }
+  .clubhub-brand-name {
+    display: block;
+    font-size: 26px;
+    font-weight: 750;
+    letter-spacing: -1.4px;
+    line-height: 1.05;
+  }
+  .clubhub-brand-dot {
+    color: #f97316;
+  }
+  .clubhub-brand-tagline {
+    display: block;
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 6px;
+    font-weight: 750;
+    letter-spacing: 0.8px;
+    line-height: 1.3;
+  }
+}

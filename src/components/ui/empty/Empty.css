@@ -1,0 +1,23 @@
+@reference '../../../index.css';
+
+@layer components {
+  .empty-content {
+    @apply py-[55px] px-5 text-center text-[#c5c9d0];
+  }
+
+  .empty-inbox {
+    @apply mb-[13px] mx-auto;
+  }
+
+  .empty-subheading {
+    @apply text-[#737d8b] text-[13px];
+  }
+
+  .empty-description {
+    @apply text-[#a3a9b2] text-[11px] mt-2;
+  }
+
+  .empty-content-2 {
+    @apply mt-5;
+  }
+}

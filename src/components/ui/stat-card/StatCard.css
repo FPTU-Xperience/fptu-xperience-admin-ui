@@ -1,0 +1,47 @@
+@reference '../../../index.css';
+
+@layer components {
+  .stat-card-root {
+    @apply bg-white border border-border rounded-xl p-4 sm:px-[19px] sm:py-[17px];
+  }
+
+  .stat-card-header {
+    @apply flex justify-between items-center gap-[6px] sm:gap-2 text-[10px] sm:text-[11.2px] text-[#7d8591];
+  }
+
+  .stat-card-icon {
+    @apply h-7 w-7 sm:h-[31px] sm:w-[31px] rounded-lg grid place-items-center;
+  }
+
+  .stat-card-orange {
+    @apply text-[#e3935d] bg-[#fff5ec];
+  }
+
+  .stat-card-blue {
+    @apply text-[#769bca] bg-[#f1f6fd];
+  }
+
+  .stat-card-green {
+    @apply text-[#74a491] bg-[#eff8f3];
+  }
+
+  .stat-card-purple {
+    @apply text-[#9a84c5] bg-[#f6f2fb];
+  }
+
+  .stat-card-red {
+    @apply text-[#c97874] bg-[#fff1ee];
+  }
+
+  .stat-card-value {
+    @apply block text-[28px] 3xl:text-[32px] font-semibold mt-[9px] tracking-[-0.8px] text-[#303641];
+  }
+
+  .stat-card-meta {
+    @apply flex items-center gap-[5px] text-[9px] sm:text-[10px] text-[#9b9fa7] mt-[9px] leading-[1.5];
+  }
+
+  .stat-card-change {
+    @apply flex items-center gap-[2px] text-[#59a383];
+  }
+}

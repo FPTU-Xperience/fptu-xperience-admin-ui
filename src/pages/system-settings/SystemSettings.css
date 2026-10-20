@@ -1,0 +1,111 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .system-settings-content {
+    @apply flex items-center justify-between py-[15px] border-b border-[#f1f2f4] last:border-b-0;
+  }
+
+  .system-settings-value {
+    @apply block text-[12px] font-medium text-[#4a5462];
+  }
+
+  .system-settings-description {
+    @apply text-[11px] text-[#818794] mt-[5px];
+  }
+
+  .system-settings-button {
+    @apply relative w-[40px] h-[23px] rounded-full transition-colors;
+  }
+
+  .system-settings-button-state-active {
+    @apply bg-[#ed641c];
+  }
+
+  .system-settings-button-state-inactive {
+    @apply bg-[#d1d5db];
+  }
+
+  .system-settings-text {
+    @apply absolute top-[3px] w-[17px] h-[17px] bg-white rounded-full shadow transition-transform;
+  }
+
+  .system-settings-text-state-active {
+    @apply left-[20px];
+  }
+
+  .system-settings-text-state-inactive {
+    @apply left-[3px];
+  }
+
+  .system-settings-content-2 {
+    @apply grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6;
+  }
+
+  .system-settings-content-3 {
+    @apply divide-y divide-[#e9ebee];
+  }
+
+  .system-settings-content-4 {
+    @apply flex items-center gap-[15px] py-[20px];
+  }
+
+  .system-settings-text-2 {
+    @apply w-[45px] h-[45px] rounded-[11px] bg-[#f8f5fa] grid place-items-center text-[#b49fc7] shrink-0;
+  }
+
+  .system-settings-content-5 {
+    @apply flex-1 min-w-0;
+  }
+
+  .system-settings-caption {
+    @apply block text-[11px] text-[#8d96a3] mt-[5px];
+  }
+
+  .system-settings-content-6 {
+    @apply grid sm:grid-cols-2 gap-6 mb-6;
+  }
+
+  .system-settings-content-7 {
+    @apply px-[22px] py-[25px] space-y-5;
+  }
+
+  .system-settings-content-8 {
+    @apply flex items-center gap-[15px];
+  }
+
+  .system-settings-text-3 {
+    @apply w-[55px] h-[55px] rounded-[13px] bg-[#fcf3e8] grid place-items-center text-[#c99c67];
+  }
+
+  .system-settings-description-2 {
+    @apply text-[10.5px] text-[#8d96a3] leading-relaxed;
+  }
+
+  .system-settings-text-4 {
+    @apply w-[55px] h-[55px] rounded-[13px] bg-[#edf3fb] grid place-items-center text-[#7fa3c9];
+  }
+
+  .system-settings-content-9 {
+    @apply px-[22px] py-[15px];
+  }
+
+  .system-settings-content-10 {
+    @apply pt-[15px];
+  }
+
+  .system-settings-content-11 {
+    @apply px-[22px] py-[15px] space-y-5;
+  }
+
+  .system-settings-content-12 {
+    @apply p-[14px] border border-[#e4ebf3] bg-[#f4f7fb] text-[#70869e] rounded-[7px] text-[11px] leading-[1.8];
+  }
+
+  .system-settings-content-13 {
+    @apply flex items-center justify-between py-[15px];
+  }
+
+  .system-settings-text-5 {
+    @apply text-[11px] text-[#8d96a3];
+  }
+}

@@ -1,0 +1,47 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .app-layout-content {
+    @apply min-h-screen;
+  }
+
+  .app-layout-link {
+    @apply fixed left-[10px] top-[-60px] bg-[#ed641c] text-white px-3 py-3 z-[100] rounded-[7px] focus:top-[10px];
+  }
+
+  .app-layout-button {
+    @apply fixed inset-0 bg-[#27334360] z-[29] border-0 cursor-default;
+  }
+
+  .app-layout-content-2 {
+    @apply min-w-0 min-h-screen lg:ml-[245px];
+  }
+
+  .app-layout-main {
+    @apply min-w-0 px-4 py-6 sm:px-6 lg:px-8 max-w-[1650px] mx-auto;
+  }
+
+  .app-layout-footer {
+    @apply flex flex-wrap justify-between items-center gap-[15px] text-[10px] text-[#b0b5be] py-[24px] mt-[8px];
+  }
+
+  .app-layout-content-3 {
+    @apply fixed bottom-[25px] left-1/2 lg:ml-[122px] -translate-x-1/2 max-w-[calc(100vw-32px)] z-[150] bg-white border rounded-[10px] px-4 py-[14px] flex items-center gap-3 shadow-[0_8px_40px_#1730231a];
+  }
+
+  .app-layout-content-state-active {
+    @apply border-[#efd9d5] text-[#cd8a7d];
+  }
+
+  .app-layout-content-state-inactive {
+    @apply border-[#dfece3] text-[#73a78a];
+  }
+
+  .app-layout-text-active {
+    @apply text-[#ad8b80];
+  }
+
+  .app-layout-text-inactive {
+    @apply text-[#74877b];
+  }
+}

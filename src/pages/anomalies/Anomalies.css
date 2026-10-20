@@ -1,0 +1,167 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .anomalies-description {
+    @apply mb-4 text-sm text-muted;
+  }
+
+  .anomalies-content {
+    @apply mb-4 flex flex-wrap gap-3 text-red-text;
+  }
+
+  .anomalies-content-2 {
+    @apply grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6;
+  }
+
+  .anomalies-content-3 {
+    @apply overflow-x-auto;
+  }
+
+  .anomalies-table {
+    @apply w-full border-collapse text-left whitespace-nowrap;
+  }
+
+  .anomalies-column {
+    @apply bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5];
+  }
+
+  .anomalies-cell {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0;
+  }
+
+  .anomalies-text {
+    @apply block text-[10px] text-[#a5acb5] mt-[5px] leading-[1.6];
+  }
+
+  .anomalies-cell-2 {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89];
+  }
+
+  .anomalies-cell-3 {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] font-medium;
+  }
+
+  .anomalies-cell-state-active {
+    @apply text-[#d27332];
+  }
+
+  .anomalies-cell-state-inactive {
+    @apply text-[#358b6c];
+  }
+
+  .anomalies-cell-4 {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89] whitespace-normal min-w-[200px] max-w-[420px];
+  }
+
+  .anomalies-cell-5 {
+    @apply px-5 py-12 text-center text-[#9096a1] text-[11px];
+  }
+
+  .anomalies-content-4 {
+    @apply flex items-center justify-center py-12 text-[#9096a1];
+  }
+
+  .anomalies-content-5 {
+    @apply w-6 h-6 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-3;
+  }
+
+  .anomalies-content-6 {
+    @apply px-[23px];
+  }
+
+  .anomalies-content-7 {
+    @apply flex items-center gap-[15px] py-[24px] border-b border-[#e9ebee] last:border-b-0;
+  }
+
+  .anomalies-text-2 {
+    @apply w-[43px] h-[43px] rounded-[12px] grid place-items-center shrink-0;
+  }
+
+  .anomalies-text-state-active {
+    @apply bg-[#fff0ef] text-[#d89b94];
+  }
+
+  .anomalies-text-state-inactive {
+    @apply bg-[#fff5e8] text-[#d9ab73];
+  }
+
+  .anomalies-content-8 {
+    @apply flex-1 min-w-0;
+  }
+
+  .anomalies-content-9 {
+    @apply flex items-center gap-[10px] mb-[7px];
+  }
+
+  .anomalies-subheading {
+    @apply text-[12px] font-medium text-[#4a5462];
+  }
+
+  .anomalies-description-2 {
+    @apply text-[11px] text-[#717d8d] mb-[5px];
+  }
+
+  .anomalies-caption {
+    @apply text-[10px] text-[#b1b6c0];
+  }
+
+  .anomalies-button {
+    @apply shrink-0;
+  }
+
+  .anomalies-content-10 {
+    @apply flex items-center gap-[8px] text-[11px] text-[#717d8d] my-[20px] leading-relaxed;
+  }
+
+  .anomalies-content-11 {
+    @apply px-[26px] py-6;
+  }
+
+  .anomalies-content-12 {
+    @apply p-[20px] bg-[#fbf8f2] border border-[#eee8da] rounded-[9px] mb-[23px];
+  }
+
+  .anomalies-subheading-2 {
+    @apply text-[13px] text-[#a9987b] font-semibold mb-[12px];
+  }
+
+  .anomalies-description-3 {
+    @apply text-[12px] text-[#a49885] leading-relaxed mb-[12px];
+  }
+
+  .anomalies-b {
+    @apply font-medium;
+  }
+
+  .anomalies-caption-2 {
+    @apply text-[11px] text-[#b5aa97];
+  }
+
+  .anomalies-field {
+    @apply mb-5;
+  }
+
+  .anomalies-select {
+    @apply w-full h-[39px] px-[12px] border border-[#e1e4e9] rounded-[7px] text-[12px];
+  }
+
+  .anomalies-content-13 {
+    @apply p-[14px] border border-[#f2e5ca] bg-[#fff8ec] text-[#a28654] rounded-[7px] text-[11px] leading-[1.8];
+  }
+
+  .anomalies-content-14 {
+    @apply space-y-4;
+  }
+
+  .anomalies-subheading-3 {
+    @apply text-[13px] text-[#7a8799] font-semibold;
+  }
+
+  .anomalies-description-4 {
+    @apply text-[12px] text-[#717d8d] leading-relaxed;
+  }
+
+  .anomalies-content-15 {
+    @apply sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px];
+  }
+}

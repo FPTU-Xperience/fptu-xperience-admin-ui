@@ -1,0 +1,163 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .quests-content {
+    @apply flex items-center justify-between bg-gradient-to-br from-[#f2f0fa] to-[#faf7fb] border border-[#ebe6f1] text-[#b6a6cf] p-[30px_35px] rounded-[10px] mb-[22px];
+  }
+
+  .quests-content-2 {
+    @apply text-[9px] sm:text-[10px] tracking-[1px] font-semibold mb-[10px];
+  }
+
+  .quests-heading {
+    @apply text-[17px] sm:text-[21px] text-[#74618d] font-semibold mb-[10px];
+  }
+
+  .quests-description {
+    @apply text-[11px] text-[#a296b0];
+  }
+
+  .quests-target {
+    @apply shrink-0 ml-[15px] hidden sm:block;
+  }
+
+  .quests-content-3 {
+    @apply mb-4 p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px];
+  }
+
+  .quests-text {
+    @apply mr-2;
+  }
+
+  .quests-button {
+    @apply ml-2 underline hover:no-underline;
+  }
+
+  .quests-content-4 {
+    @apply mb-5;
+  }
+
+  .quests-content-5 {
+    @apply flex items-center justify-center py-12 text-[#9096a1];
+  }
+
+  .quests-content-6 {
+    @apply w-6 h-6 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-3;
+  }
+
+  .quests-content-7 {
+    @apply grid sm:grid-cols-2 lg:grid-cols-3 gap-5;
+  }
+
+  .quests-bg {
+    @apply bg-[#f5effa];
+  }
+
+  .quests-text-2 {
+    @apply text-[#ab95c6];
+  }
+
+  .quests-bg-2 {
+    @apply bg-[#edf5f0];
+  }
+
+  .quests-text-3 {
+    @apply text-[#89b397];
+  }
+
+  .quests-card {
+    @apply bg-white border border-[#e9ebee] rounded-[11px] overflow-hidden;
+  }
+
+  .quests-content-8 {
+    @apply relative h-[150px];
+  }
+
+  .quests-content-9 {
+    @apply flex items-center justify-center overflow-hidden;
+  }
+
+  .quests-content-10 {
+    @apply absolute inset-0 flex items-center justify-center;
+  }
+
+  .quests-content-11 {
+    @apply absolute w-[170px] h-[170px] rounded-full border border-current opacity-[0.15];
+  }
+
+  .quests-content-12 {
+    @apply absolute w-[230px] h-[230px] rounded-full border border-current opacity-[0.15];
+  }
+
+  .quests-badge {
+    @apply absolute top-[15px] right-[15px] bg-white/60;
+  }
+
+  .quests-text-4 {
+    @apply absolute bottom-[13px] left-[17px] bg-white rounded-[5px] flex items-center gap-[5px] px-[8px] py-[5px] text-[10px] font-semibold text-[#a68a63];
+  }
+
+  .quests-content-13 {
+    @apply p-[22px];
+  }
+
+  .quests-content-14 {
+    @apply text-[9px] tracking-[1px] font-semibold text-[#929aa6] mb-[10px];
+  }
+
+  .quests-heading-2 {
+    @apply text-[15px] font-semibold text-[#4a5462] mb-[12px];
+  }
+
+  .quests-description-2 {
+    @apply text-[11px] text-[#717d8d] mb-[18px] min-h-[52px];
+  }
+
+  .quests-content-15 {
+    @apply flex items-center gap-[8px] text-[11px] text-[#717d8d] mb-[10px];
+  }
+
+  .quests-content-16 {
+    @apply flex items-center gap-[8px] text-[11px] text-[#717d8d] mb-[21px];
+  }
+
+  .quests-content-17 {
+    @apply flex justify-between text-[10px] text-[#abb1b9] mb-[10px];
+  }
+
+  .quests-b {
+    @apply font-medium text-[#c98e67];
+  }
+
+  .quests-content-18 {
+    @apply w-full h-[5px] bg-[#f1f2f4] rounded-[6px] overflow-hidden mb-[9px];
+  }
+
+  .quests-indicator {
+    @apply block h-full bg-[#ed9c6a] rounded-[6px];
+  }
+
+  .quests-description-3 {
+    @apply text-[10px] text-[#a4aab2] mb-[20px];
+  }
+
+  .quests-content-19 {
+    @apply flex gap-[9px] mt-5;
+  }
+
+  .quests-button-2 {
+    @apply flex-1 text-[10px];
+  }
+
+  .quests-content-20 {
+    @apply px-[26px] py-6 grid sm:grid-cols-2 gap-x-[18px] gap-y-[21px];
+  }
+
+  .quests-field {
+    @apply sm:col-span-2;
+  }
+
+  .quests-content-21 {
+    @apply sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px];
+  }
+}

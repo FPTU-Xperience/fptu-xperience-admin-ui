@@ -1,0 +1,159 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .seasons-content {
+    @apply flex gap-2;
+  }
+
+  .seasons-content-2 {
+    @apply flex items-center gap-[28px] p-[22px_26px] bg-[#eef4f6] border border-[#e3ecef] text-[#91acb6] rounded-[10px] mb-[23px];
+  }
+
+  .seasons-calendar-days {
+    @apply shrink-0;
+  }
+
+  .seasons-heading {
+    @apply text-[17px] text-[#6e8995] font-semibold mb-[8px];
+  }
+
+  .seasons-description {
+    @apply text-[11px] text-[#95a9b2] leading-relaxed;
+  }
+
+  .seasons-description-2 {
+    @apply mb-4 text-muted;
+  }
+
+  .seasons-content-3 {
+    @apply mb-4 flex flex-wrap gap-3 text-red-text;
+  }
+
+  .seasons-content-4 {
+    @apply grid sm:grid-cols-2 gap-[23px] mb-8;
+  }
+
+  .seasons-panel {
+    @apply p-[25px];
+  }
+
+  .seasons-content-5 {
+    @apply flex items-center justify-between mb-[18px];
+  }
+
+  .seasons-text {
+    @apply w-[42px] h-[42px] rounded-[10px] bg-[#f8f2eb] grid place-items-center text-[#bfa17e];
+  }
+
+  .seasons-heading-2 {
+    @apply text-[21px] font-semibold text-[#4a5462] mb-[9px];
+  }
+
+  .seasons-description-3 {
+    @apply text-[11px] text-[#717d8d] mb-[23px];
+  }
+
+  .seasons-definition-list {
+    @apply space-y-[15px] mb-[23px];
+  }
+
+  .seasons-content-6 {
+    @apply flex justify-between text-[12px];
+  }
+
+  .seasons-term {
+    @apply text-[#8795a6];
+  }
+
+  .seasons-definition {
+    @apply font-medium text-[#768598];
+  }
+
+  .seasons-button {
+    @apply w-full justify-center;
+  }
+
+  .seasons-content-7 {
+    @apply px-5 py-3 mb-4 p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px];
+  }
+
+  .seasons-text-2 {
+    @apply mr-2;
+  }
+
+  .seasons-button-2 {
+    @apply ml-2 underline hover:no-underline;
+  }
+
+  .seasons-content-8 {
+    @apply flex items-center justify-center py-8 text-[#9096a1];
+  }
+
+  .seasons-content-9 {
+    @apply w-5 h-5 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-2;
+  }
+
+  .seasons-content-10 {
+    @apply overflow-x-auto;
+  }
+
+  .seasons-table {
+    @apply w-full border-collapse text-left whitespace-nowrap;
+  }
+
+  .seasons-column {
+    @apply bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5];
+  }
+
+  .seasons-cell {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0;
+  }
+
+  .seasons-value {
+    @apply text-[12px] text-[#4a5462];
+  }
+
+  .seasons-cell-2 {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89];
+  }
+
+  .seasons-content-11 {
+    @apply flex gap-1 justify-end;
+  }
+
+  .seasons-content-12 {
+    @apply px-6 py-6;
+  }
+
+  .seasons-content-13 {
+    @apply p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px] leading-[1.8];
+  }
+
+  .seasons-content-14 {
+    @apply sticky bottom-0 z-[1] border-t border-[#e9ebee] px-6 py-4 flex gap-3 justify-end bg-[#fdfdfe] rounded-b-[14px];
+  }
+
+  .seasons-content-15 {
+    @apply px-[26px] py-6 grid sm:grid-cols-2 gap-x-[18px] gap-y-[21px];
+  }
+
+  .seasons-field {
+    @apply sm:col-span-2;
+  }
+
+  .seasons-field-2 {
+    @apply flex items-center gap-[10px] text-[12px] text-[#8592a5] sm:col-span-2 cursor-pointer;
+  }
+
+  .seasons-content-16 {
+    @apply sm:col-span-2 p-[14px] border border-[#e4ebf3] bg-[#f4f7fb] text-[#70869e] rounded-[7px] text-[11px] leading-[1.8];
+  }
+
+  .seasons-content-17 {
+    @apply sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px];
+  }
+
+  .seasons-content-18 {
+    @apply px-[26px] py-6 grid sm:grid-cols-1 gap-y-[21px];
+  }
+}

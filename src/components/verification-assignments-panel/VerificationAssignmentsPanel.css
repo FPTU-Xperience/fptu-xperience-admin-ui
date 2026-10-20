@@ -1,0 +1,23 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .verification-assignments-panel-content {
+    @apply p-5 space-y-4;
+  }
+
+  .verification-assignments-panel-content-2 {
+    @apply flex gap-2;
+  }
+
+  .verification-assignments-panel-fieldset {
+    @apply grid gap-4 sm:grid-cols-2;
+  }
+
+  .verification-assignments-panel-field {
+    @apply block;
+  }
+
+  .verification-assignments-panel-card {
+    @apply border-t py-3;
+  }
+}

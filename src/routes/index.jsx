@@ -2,26 +2,26 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { affairsNav, adminNav } from './navigation.js';
 import { canAccessPath, defaultPathFor } from '../utils/access.js';
-import AppLayout from '../layouts/AppLayout.jsx';
-import Dashboard from '../pages/Dashboard.jsx';
-import Accounts from '../pages/Accounts.jsx';
-import { Clubs } from '../pages/Clubs.jsx';
-import { Engagement } from '../pages/Engagement.jsx';
-import { DeclarationsQueue } from '../pages/DeclarationsQueue.jsx';
-import { Quests } from '../pages/Quests.jsx';
-import { Rubrics } from '../pages/Rubrics.jsx';
-import { Seasons } from '../pages/Seasons.jsx';
-import { Anomalies } from '../pages/Anomalies.jsx';
-import { Audit } from '../pages/Audit.jsx';
-import { RoleMatrix } from '../pages/RoleMatrix.jsx';
-import { SystemSettings } from '../pages/SystemSettings.jsx';
-import Login from '../pages/Login.jsx';
-import { ClubReports } from '../pages/ClubReports.jsx';
-import { ClubReportDetail } from '../pages/ClubReportDetail.jsx';
-import { ClubRequests } from '../pages/ClubRequests.jsx';
-import { StudentRoster } from '../pages/StudentRoster.jsx';
-import { PendingOperations } from '../pages/PendingOperations.jsx';
-import { ExperienceReconciliation } from '../pages/ExperienceReconciliation.jsx';
+import AppLayout from '../layouts/app-layout/AppLayout.jsx';
+import Dashboard from '../pages/dashboard/Dashboard.jsx';
+import Accounts from '../pages/accounts/Accounts.jsx';
+import { Clubs } from '../pages/clubs/Clubs.jsx';
+import { Engagement } from '../pages/engagement/Engagement.jsx';
+import { DeclarationsQueue } from '../pages/declarations-queue/DeclarationsQueue.jsx';
+import { Quests } from '../pages/quests/Quests.jsx';
+import { Rubrics } from '../pages/rubrics/Rubrics.jsx';
+import { Seasons } from '../pages/seasons/Seasons.jsx';
+import { Anomalies } from '../pages/anomalies/Anomalies.jsx';
+import { Audit } from '../pages/audit/Audit.jsx';
+import { RoleMatrix } from '../pages/role-matrix/RoleMatrix.jsx';
+import { SystemSettings } from '../pages/system-settings/SystemSettings.jsx';
+import Login from '../pages/login/Login.jsx';
+import { ClubReports } from '../pages/club-reports/ClubReports.jsx';
+import { ClubReportDetail } from '../pages/club-report-detail/ClubReportDetail.jsx';
+import { ClubRequests } from '../pages/club-requests/ClubRequests.jsx';
+import { StudentRoster } from '../pages/student-roster/StudentRoster.jsx';
+import { PendingOperations } from '../pages/pending-operations/PendingOperations.jsx';
+import { ExperienceReconciliation } from '../pages/experience-reconciliation/ExperienceReconciliation.jsx';
 
 const pages = {
   '/ctsv/overview': <Dashboard />,
@@ -57,7 +57,16 @@ export default function AppRoutes() {
   return (
     <AppLayout>
       <Routes>
-        <Route path="/ctsv/reports/:reportId" element={canAccessPath(user, '/ctsv/reports') ? <ClubReportDetail /> : <Navigate to={fallback} replace />} />
+        <Route
+          path="/ctsv/reports/:reportId"
+          element={
+            canAccessPath(user, '/ctsv/reports') ? (
+              <ClubReportDetail />
+            ) : (
+              <Navigate to={fallback} replace />
+            )
+          }
+        />
         {[...affairsNav, ...adminNav].map(({ path }) => (
           <Route
             key={path}

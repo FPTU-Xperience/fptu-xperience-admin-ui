@@ -1,0 +1,35 @@
+@reference '../../../index.css';
+
+@layer utilities {
+  .pending-operation-content {
+    @apply space-y-5;
+  }
+
+  .pending-operation-content-2 {
+    @apply flex items-start gap-3;
+  }
+
+  .pending-operation-clock3 {
+    @apply shrink-0 mt-1;
+  }
+
+  .pending-operation-description {
+    @apply mt-2;
+  }
+
+  .pending-operation-steps {
+    @apply divide-y divide-border;
+  }
+
+  .pending-operation-item {
+    @apply flex items-start gap-3 p-5;
+  }
+
+  .pending-operation-text {
+    @apply text-muted shrink-0;
+  }
+
+  .pending-operation-content-3 {
+    @apply flex flex-wrap gap-3 items-center;
+  }
+}

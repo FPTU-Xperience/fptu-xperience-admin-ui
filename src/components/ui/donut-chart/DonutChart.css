@@ -1,0 +1,67 @@
+@reference '../../../index.css';
+
+@layer components {
+  .donut-chart-content {
+    @apply flex flex-col items-center justify-center;
+  }
+
+  .donut-chart-subheading {
+    @apply text-[13px] text-[#7a8799] font-semibold mb-3;
+  }
+
+  .donut-chart-content-2 {
+    @apply flex items-center justify-center text-[11px] text-[#a2a6ae];
+  }
+
+  .donut-chart-content-3 {
+    @apply w-full;
+  }
+
+  .donut-chart-content-4 {
+    @apply flex items-center gap-5;
+  }
+
+  .donut-chart-content-5 {
+    @apply relative rounded-full shrink-0 grid place-items-center;
+  }
+
+  .donut-chart-content-6 {
+    @apply absolute inset-0 rounded-full;
+  }
+
+  .donut-chart-content-7 {
+    @apply absolute rounded-full bg-white flex flex-col items-center justify-center;
+  }
+
+  .donut-chart-value {
+    @apply text-[22px] font-semibold text-[#303641];
+  }
+
+  .donut-chart-text {
+    @apply text-[9px] text-[#a2a6ae];
+  }
+
+  .donut-chart-content-8 {
+    @apply flex-1 min-w-0 space-y-2;
+  }
+
+  .donut-chart-content-9 {
+    @apply flex items-center gap-[8px] text-[10.7px] text-[#8d94a0];
+  }
+
+  .donut-chart-text-2 {
+    @apply w-1.5 h-1.5 rounded-[2px] shrink-0;
+  }
+
+  .donut-chart-text-3 {
+    @apply truncate;
+  }
+
+  .donut-chart-value-2 {
+    @apply ml-auto text-[11px] text-[#596370] font-medium whitespace-nowrap;
+  }
+
+  .donut-chart-caption {
+    @apply w-[30px] text-right text-[10px] text-[#b4b8c0] whitespace-nowrap;
+  }
+}

@@ -1,0 +1,43 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .club-requests-content {
+    @apply flex flex-wrap gap-2 mb-5;
+  }
+
+  .club-requests-content-2 {
+    @apply grid sm:grid-cols-2 gap-4 p-5 border-b border-border;
+  }
+
+  .club-requests-list {
+    @apply divide-y divide-border;
+  }
+
+  .club-requests-content-3 {
+    @apply min-w-0 space-y-2;
+  }
+
+  .club-requests-description {
+    @apply text-xs text-muted;
+  }
+
+  .club-requests-description-2 {
+    @apply text-sm;
+  }
+
+  .club-requests-content-4 {
+    @apply flex flex-wrap gap-3 items-center;
+  }
+
+  .club-requests-form {
+    @apply p-5 space-y-4;
+  }
+
+  .club-requests-description-3 {
+    @apply whitespace-pre-wrap mt-2;
+  }
+
+  .club-requests-content-5 {
+    @apply flex justify-end gap-2;
+  }
+}

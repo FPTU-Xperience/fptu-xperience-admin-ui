@@ -1,0 +1,31 @@
+@reference '../../../index.css';
+
+@layer components {
+  .button-root {
+    @apply inline-flex items-center justify-center gap-2 rounded min-h-9 px-[13px] py-[9px] leading-[1.25] border border-[#e2e5e9] text-[11px] 3xl:text-[12px] font-semibold whitespace-nowrap transition-[background,box-shadow,border-color] duration-150 disabled:opacity-60 disabled:cursor-not-allowed active:brightness-95;
+  }
+
+  .button-secondary {
+    @apply bg-white text-[#626b79] shadow-card hover:enabled:bg-[#f9fafc] hover:enabled:border-[#ccd0d7];
+  }
+
+  .button-primary {
+    @apply bg-accent border-accent text-white shadow-accent hover:enabled:bg-accent-dark hover:enabled:border-accent-dark;
+  }
+
+  .button-danger {
+    @apply bg-[#d34f4f] text-white border-[#d34f4f];
+  }
+
+  .button-danger-soft {
+    @apply text-[#c25151] bg-[#fff3f2] border-[#f5dbd9];
+  }
+
+  .button-spinner {
+    @apply animate-spin;
+  }
+
+  .icon-button-root {
+    @apply h-[30px] w-[30px] bg-transparent rounded-md inline-flex justify-center items-center text-[#9a9faa] hover:enabled:bg-[#f0f2f5] hover:enabled:text-[#596272] disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+}

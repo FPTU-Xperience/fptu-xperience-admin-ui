@@ -1,0 +1,35 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .experience-reconciliation-form {
+    @apply flex flex-wrap gap-3 items-end p-5;
+  }
+
+  .experience-reconciliation-field {
+    @apply flex-1;
+  }
+
+  .experience-reconciliation-description {
+    @apply text-xs text-muted my-4;
+  }
+
+  .experience-reconciliation-content {
+    @apply space-y-5;
+  }
+
+  .experience-reconciliation-definition-list {
+    @apply p-5;
+  }
+
+  .experience-reconciliation-content-2 {
+    @apply p-5 space-y-4;
+  }
+
+  .experience-reconciliation-description-2 {
+    @apply text-xs text-muted;
+  }
+
+  .experience-reconciliation-card {
+    @apply break-words;
+  }
+}

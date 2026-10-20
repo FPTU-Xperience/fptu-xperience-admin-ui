@@ -1,0 +1,11 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .pending-operations-content {
+    @apply grid sm:grid-cols-2 gap-4 p-5;
+  }
+
+  .pending-operations-description {
+    @apply sm:col-span-2 text-xs text-muted;
+  }
+}

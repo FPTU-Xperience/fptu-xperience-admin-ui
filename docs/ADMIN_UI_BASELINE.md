@@ -51,7 +51,7 @@ Phân biệt ba mức: **source audit** (đọc code), **browser fixture** (rend
 ## Chuẩn repo giữ lại
 
 - HashRouter và routes hiện có; không đổi đường dẫn deep link.
-- React + Tailwind v4, token block ở `index.css`, Be Vietnam Pro tự phục vụ.
+- React + Tailwind v4, token block ở `styles/theme.css`, quy tắc nền ở `styles/base.css`, Be Vietnam Pro tự phục vụ. CSS riêng nằm cạnh JSX theo thư mục chức năng.
 - `layouts/` sở hữu shell; `components/ui` sở hữu primitive; `services/api.js` là API boundary; logic thuần ở `utils`.
 - State không thể chứng minh thay đổi server thành công; chỉ đóng form hoặc cập nhật UI sau request thành công.
 - Mọi actor/permission trong browser chỉ là presentation guard. API phải tự kiểm tra claims và campus.

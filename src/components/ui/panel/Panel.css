@@ -1,0 +1,19 @@
+@reference '../../../index.css';
+
+@layer components {
+  .panel-root {
+    @apply bg-white border border-border rounded-xl overflow-hidden;
+  }
+
+  .panel-header {
+    @apply flex justify-between items-center gap-[15px] px-[18px] sm:px-[22px] pt-5 pb-[13px];
+  }
+
+  .panel-heading {
+    @apply text-[13px] sm:text-[14px] tracking-[-0.15px] font-semibold;
+  }
+
+  .panel-description {
+    @apply text-[10px] sm:text-[10.5px] text-[#a0a5ae] mt-[6px];
+  }
+}

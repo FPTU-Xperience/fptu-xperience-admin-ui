@@ -1,0 +1,35 @@
+@reference '../../../index.css';
+
+@layer utilities {
+  .notifications-modal-content {
+    @apply p-5 sm:p-6;
+  }
+
+  .notifications-modal-description {
+    @apply text-muted;
+  }
+
+  .notifications-modal-list {
+    @apply divide-y divide-border;
+  }
+
+  .notifications-modal-item {
+    @apply flex gap-3 py-4;
+  }
+
+  .notifications-modal-bell {
+    @apply text-accent mt-1;
+  }
+
+  .notifications-modal-content-2 {
+    @apply min-w-0 space-y-1;
+  }
+
+  .notifications-modal-description-2 {
+    @apply text-sm text-muted break-words;
+  }
+
+  .notifications-modal-time {
+    @apply text-xs text-muted;
+  }
+}

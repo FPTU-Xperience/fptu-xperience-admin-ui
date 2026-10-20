@@ -1,5 +1,5 @@
 import { useAuth } from './context/AuthContext.jsx';
-import { AccessDenied, SessionLoading } from './components/ui/SessionState.jsx';
+import { AccessDenied, SessionLoading } from './components/ui/session-state/SessionState.jsx';
 import { isAdminUser } from './utils/access.js';
 import AppRoutes from './routes/index.jsx';
 

@@ -1,0 +1,223 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .dashboard-content {
+    @apply mb-4 p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px];
+  }
+
+  .dashboard-text {
+    @apply mr-2;
+  }
+
+  .dashboard-button {
+    @apply ml-2 underline hover:no-underline;
+  }
+
+  .dashboard-content-2 {
+    @apply grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6;
+  }
+
+  .dashboard-content-3 {
+    @apply flex flex-wrap items-center gap-3 mb-6 p-4 bg-white border border-border rounded-xl;
+  }
+
+  .dashboard-content-4 {
+    @apply flex items-center gap-2;
+  }
+
+  .dashboard-field {
+    @apply text-[11px] text-[#7d8591] whitespace-nowrap;
+  }
+
+  .dashboard-select {
+    @apply h-[35px] px-3 border border-[#e1e4e9] rounded-[7px] text-[11px] text-[#303641] bg-white min-w-[120px];
+  }
+
+  .dashboard-select-2 {
+    @apply h-[35px] px-3 border border-[#e1e4e9] rounded-[7px] text-[11px] text-[#303641] bg-white min-w-[160px];
+  }
+
+  .dashboard-text-2 {
+    @apply h-[35px] px-3 border border-[#e1e4e9] rounded-[7px] text-[11px] text-[#718094] bg-[#f8f9fa] min-w-[160px] flex items-center;
+  }
+
+  .dashboard-badge {
+    @apply ml-auto;
+  }
+
+  .dashboard-content-5 {
+    @apply flex items-center justify-center h-[300px] bg-white border border-border rounded-xl mb-6;
+  }
+
+  .dashboard-content-6 {
+    @apply w-6 h-6 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-3;
+  }
+
+  .dashboard-text-3 {
+    @apply text-[11px] text-[#9096a1];
+  }
+
+  .dashboard-content-7 {
+    @apply p-[20px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-xl mb-6 text-[11px];
+  }
+
+  .dashboard-content-8 {
+    @apply grid lg:grid-cols-[1.17fr_1fr] gap-5 mb-6;
+  }
+
+  .dashboard-content-9 {
+    @apply p-[20px];
+  }
+
+  .dashboard-panel {
+    @apply mb-6;
+  }
+
+  .dashboard-content-10 {
+    @apply overflow-x-auto;
+  }
+
+  .dashboard-table {
+    @apply w-full border-collapse text-left whitespace-nowrap;
+  }
+
+  .dashboard-column {
+    @apply bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5];
+  }
+
+  .dashboard-cell {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] font-medium text-[#4a5462];
+  }
+
+  .dashboard-cell-2 {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89];
+  }
+
+  .dashboard-cell-3 {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89] font-medium;
+  }
+
+  .dashboard-cell-4 {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0;
+  }
+
+  .dashboard-link {
+    @apply inline-flex items-center gap-[6px] text-[10px] text-[#a6aab2] hover:text-accent;
+  }
+
+  .dashboard-content-11 {
+    @apply px-[21px] pb-[7px];
+  }
+
+  .dashboard-link-2 {
+    @apply flex items-center gap-[12px] py-4 border-b border-[#f1f2f4] last:border-b-0 hover:text-accent;
+  }
+
+  .dashboard-text-4 {
+    @apply w-[34px] h-[34px] rounded-[9px] bg-[#fff3e8] text-[#dc9a64] grid place-items-center shrink-0;
+  }
+
+  .dashboard-value {
+    @apply block text-[11.6px] font-medium;
+  }
+
+  .dashboard-caption {
+    @apply block text-[10px] text-[#a4a9b1] mt-[5px];
+  }
+
+  .dashboard-chevron-right {
+    @apply ml-auto text-[#b2b6bd];
+  }
+
+  .dashboard-text-5 {
+    @apply w-[34px] h-[34px] rounded-[9px] bg-[#fff0ef] text-[#d4867d] grid place-items-center shrink-0;
+  }
+
+  .dashboard-link-3 {
+    @apply flex items-center gap-[12px] py-4 last:border-b-0 hover:text-accent;
+  }
+
+  .dashboard-text-6 {
+    @apply w-[34px] h-[34px] rounded-[9px] bg-[#f0f5fc] text-[#8ca9cb] grid place-items-center shrink-0;
+  }
+
+  .dashboard-content-12 {
+    @apply grid lg:grid-cols-[1fr_260px] gap-5;
+  }
+
+  .dashboard-content-13 {
+    @apply flex items-center justify-center py-8 text-[#9096a1];
+  }
+
+  .dashboard-content-14 {
+    @apply w-5 h-5 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-2;
+  }
+
+  .dashboard-link-4 {
+    @apply flex items-center gap-[10px];
+  }
+
+  .dashboard-text-7 {
+    @apply w-[31px] h-[31px] rounded-[8px] grid place-items-center text-[13px] font-[650] tracking-[-1px] shrink-0;
+  }
+
+  .dashboard-value-2 {
+    @apply block text-[11px] font-medium text-[#4a5462];
+  }
+
+  .dashboard-caption-2 {
+    @apply block text-[9.5px] text-[#a8adb5] mt-[4px];
+  }
+
+  .dashboard-text-8 {
+    @apply w-[75px] h-[5px] bg-[#f1f2f4] rounded-[6px] overflow-hidden;
+  }
+
+  .dashboard-indicator {
+    @apply block h-full rounded-[6px];
+  }
+
+  .dashboard-b {
+    @apply text-[11px] font-medium;
+  }
+
+  .dashboard-section {
+    @apply relative bg-gradient-to-br from-[#edf4ef] to-[#f5f8f2] border border-[#e3ece4] rounded-[10px] p-[22px] overflow-hidden;
+  }
+
+  .dashboard-text-9 {
+    @apply absolute right-[22px] top-[21px] text-[#9fbaa3];
+  }
+
+  .dashboard-content-15 {
+    @apply text-[9px] tracking-[1px] text-[#8ea28f] mb-[4px];
+  }
+
+  .dashboard-heading {
+    @apply text-[17px] leading-[1.55] text-[#526f58] font-semibold mt-[20px];
+  }
+
+  .dashboard-description {
+    @apply text-[10.5px] text-[#6d8974] mt-[10px];
+  }
+
+  .dashboard-content-16 {
+    @apply flex gap-[12px] items-center mt-[17px];
+  }
+
+  .dashboard-value-3 {
+    @apply text-[30px] text-[#6b8c73] font-semibold;
+  }
+
+  .dashboard-text-10 {
+    @apply text-[10px] leading-[1.6] text-[#93a596];
+  }
+
+  .dashboard-link-5 {
+    @apply flex items-center justify-between bg-[#fcfefb] border border-[#dce6db] text-[#79907c] p-[11px] rounded-[6px] text-[10px] mt-[17px];
+  }
+
+  .dashboard-text-11 {
+    @apply absolute -right-[55px] -bottom-[105px] w-[180px] h-[180px] rounded-full border border-[#d8e3d3] pointer-events-none;
+  }
+}

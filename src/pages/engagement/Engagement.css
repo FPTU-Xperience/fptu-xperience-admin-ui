@@ -1,0 +1,223 @@
+@reference '../../index.css';
+
+@layer utilities {
+  .engagement-content {
+    @apply mb-4 p-[14px] border border-[#f2dfdc] bg-[#fff3f2] text-[#bd7970] rounded-[7px] text-[11px];
+  }
+
+  .engagement-text {
+    @apply mr-2;
+  }
+
+  .engagement-button {
+    @apply ml-2 underline hover:no-underline;
+  }
+
+  .engagement-content-2 {
+    @apply grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6;
+  }
+
+  .engagement-content-3 {
+    @apply p-[13px_23px_25px];
+  }
+
+  .engagement-content-4 {
+    @apply flex items-center gap-[18px] mt-5 text-[11px] text-[#8d96a3];
+  }
+
+  .engagement-text-2 {
+    @apply w-[175px] shrink-0;
+  }
+
+  .engagement-content-5 {
+    @apply flex-1 h-[8px] bg-[#f1f2f4] rounded-[6px] overflow-hidden;
+  }
+
+  .engagement-indicator {
+    @apply block h-full bg-[#ed9c6a] rounded-[6px];
+  }
+
+  .engagement-b {
+    @apply w-[35px] text-right font-medium text-[#bd8c69];
+  }
+
+  .engagement-caption {
+    @apply w-[65px] text-right text-[11px];
+  }
+
+  .engagement-panel {
+    @apply mt-[22px];
+  }
+
+  .engagement-content-6 {
+    @apply flex items-center justify-between gap-3 px-[22px] pt-[21px] pb-[10px];
+  }
+
+  .engagement-heading {
+    @apply text-[13px];
+  }
+
+  .engagement-text-3 {
+    @apply text-[11px] bg-[#f0f2f5] px-[7px] py-[3px] rounded-sm ml-[7px] text-[#929baa] font-medium;
+  }
+
+  .engagement-text-4 {
+    @apply text-[11px] text-[#818794] hidden sm:inline;
+  }
+
+  .engagement-content-7 {
+    @apply flex flex-wrap items-center gap-2.5 px-[17px] py-[15px];
+  }
+
+  .engagement-search-box {
+    @apply mr-auto sm:min-w-full sm:max-w-none;
+  }
+
+  .engagement-select {
+    @apply h-[35px] px-3 border border-[#e1e4e9] rounded-[7px] text-[11px] text-[#718094] bg-white;
+  }
+
+  .engagement-content-8 {
+    @apply flex items-center justify-center py-8 text-[#9096a1];
+  }
+
+  .engagement-content-9 {
+    @apply w-5 h-5 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-2;
+  }
+
+  .engagement-content-10 {
+    @apply overflow-x-auto;
+  }
+
+  .engagement-table {
+    @apply w-full border-collapse text-left whitespace-nowrap;
+  }
+
+  .engagement-column {
+    @apply bg-[#fbfcfd] text-[#7b8797] font-medium text-[9.5px] tracking-[0.5px] px-5 py-[13px] border-y border-[#f0f2f5];
+  }
+
+  .engagement-cell {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0;
+  }
+
+  .engagement-content-11 {
+    @apply flex items-center gap-[11px];
+  }
+
+  .engagement-value {
+    @apply block text-[11px] font-medium text-[#4a5462];
+  }
+
+  .engagement-caption-2 {
+    @apply block text-[9.5px] text-[#b4b9c1] mt-[3px];
+  }
+
+  .engagement-cell-2 {
+    @apply px-5 py-[15px] border-b border-[#f0f2f5] last:border-b-0 text-[11px] text-[#727b89];
+  }
+
+  .engagement-text-5 {
+    @apply block text-[10px] text-[#a5acb5] mt-[5px] leading-[1.6];
+  }
+
+  .engagement-text-6 {
+    @apply text-[#818794];
+  }
+
+  .engagement-button-2 {
+    @apply h-[30px] w-[30px] bg-transparent rounded-[6px] inline-flex justify-center items-center text-[#9a9faa] hover:bg-[#f0f2f5] hover:text-[#596272];
+  }
+
+  .engagement-content-12 {
+    @apply px-[26px] py-6;
+  }
+
+  .engagement-content-13 {
+    @apply bg-[#fff6ec] rounded-[9px] p-[25px] flex flex-col items-center gap-[9px] text-[#da9156] mb-[20px];
+  }
+
+  .engagement-value-2 {
+    @apply text-[27px] font-semibold;
+  }
+
+  .engagement-text-7 {
+    @apply text-[11px] text-[#bd9b7e];
+  }
+
+  .engagement-content-14 {
+    @apply grid sm:grid-cols-2 gap-4 text-[11px] mb-[20px];
+  }
+
+  .engagement-content-15 {
+    @apply pb-[20px] border-b border-[#e9ebee];
+  }
+
+  .engagement-term {
+    @apply text-[10px] text-[#a8b2bf] mb-[10px];
+  }
+
+  .engagement-definition {
+    @apply text-[12px] text-[#808d9e] font-medium;
+  }
+
+  .engagement-subheading {
+    @apply text-[13px] text-[#7a8799] font-semibold mb-[14px];
+  }
+
+  .engagement-content-16 {
+    @apply flex items-center justify-center h-[280px] text-[#9096a1];
+  }
+
+  .engagement-content-17 {
+    @apply w-6 h-6 border-2 border-[#e1e4e9] border-t-[#ed641c] rounded-full animate-spin mr-3;
+  }
+
+  .engagement-content-18 {
+    @apply p-[20px] border border-[#e4ebf3] bg-[#f4f7fb] rounded-[9px] text-center text-[11px] text-[#70869e];
+  }
+
+  .engagement-content-19 {
+    @apply bg-[#fafbfd] rounded-[9px] p-[20px] mb-[16px];
+  }
+
+  .engagement-content-20 {
+    @apply grid grid-cols-2 sm:grid-cols-4 gap-[12px] mb-[16px];
+  }
+
+  .engagement-content-21 {
+    @apply bg-[#f4f7fb] rounded-[8px] p-[13px] text-center;
+  }
+
+  .engagement-description {
+    @apply text-[9px] text-[#adb3bc] mb-[6px];
+  }
+
+  .engagement-description-2 {
+    @apply text-[18px] font-semibold text-[#4a5462];
+  }
+
+  .engagement-content-22 {
+    @apply flex flex-wrap gap-[10px];
+  }
+
+  .engagement-content-23 {
+    @apply mt-[20px] pt-[20px] border-t border-[#e9ebee];
+  }
+
+  .engagement-h4 {
+    @apply text-[11px] text-[#7a8799] font-semibold mb-[10px];
+  }
+
+  .engagement-description-3 {
+    @apply text-[12px] text-[#808d9e];
+  }
+
+  .engagement-content-24 {
+    @apply sticky bottom-0 z-[1] border-t border-[#e9ebee] px-[26px] py-[17px] flex gap-[10px] justify-end bg-[#fdfdfe] rounded-b-[14px];
+  }
+
+  .engagement-link {
+    @apply inline-flex items-center justify-center gap-[8px] rounded-[7px] min-h-[36px] px-[13px] py-[9px] bg-[#ed641c] border border-[#ed641c] text-white text-[11px] font-semibold shadow-[0_2px_3px_#c9631815] hover:bg-[#cb4c0e] hover:border-[#cb4c0e];
+  }
+}
