@@ -45,7 +45,7 @@ export async function loadWorkInbox(client, reports, { bucket, semester }) {
     },
     {
       id: 'declarations',
-      label: 'Hồ sơ tự khai',
+      label: 'Trải nghiệm tự khai',
       path: '/ctsv/declarations',
       load: () =>
         client.studentAffairs.declarations.list({
@@ -60,7 +60,7 @@ export async function loadWorkInbox(client, reports, { bucket, semester }) {
         }),
       map: (row) => ({
         id: `api-declaration-${row.id}`,
-        title: row.title || row.activityName || `Hồ sơ tự khai #${row.id}`,
+        title: row.title || row.activityName || `Trải nghiệm tự khai #${row.id}`,
         status: row.status,
         path: '/ctsv/declarations',
         owner: row.studentName || row.fullName || 'Sinh viên',

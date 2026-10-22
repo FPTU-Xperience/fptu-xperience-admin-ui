@@ -69,7 +69,7 @@ export const affairsNav = [
   },
   { path: '/ctsv/clubs', label: 'Câu lạc bộ', icon: UsersRound, tabs: featureTabs.clubs },
   { path: '/ctsv/activities', label: 'Hoạt động', icon: Activity, tabs: featureTabs.activities },
-  { path: '/ctsv/declarations', label: 'Hồ sơ tự khai', icon: FileCheck2 },
+  { path: '/ctsv/declarations', label: 'Trải nghiệm tự khai', icon: FileCheck2 },
   {
     path: '/ctsv/monitoring',
     label: 'Theo dõi & đối soát',

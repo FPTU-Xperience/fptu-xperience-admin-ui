@@ -18,6 +18,13 @@ import {
 } from '../../components/ui/index.js';
 
 const CAPABILITIES = [
+  { code: 'Academic', label: 'Học thuật', color: '#5b8dd9' },
+  { code: 'Research', label: 'Nghiên cứu', color: '#7c6fcd' },
+  { code: 'Global', label: 'Hội nhập quốc tế', color: '#c85fa8' },
+  { code: 'CultureSports', label: 'Văn hóa & thể thao', color: '#d97b3e' },
+  { code: 'Community', label: 'Cộng đồng', color: '#3fa87b' },
+  { code: 'Entrepreneurship', label: 'Khởi nghiệp', color: '#8a6f3f' },
+  { code: 'RealWorldWork', label: 'Kinh nghiệm làm việc thực tế', color: '#64748b' },
   { code: 'ACAD', label: 'Học thuật', color: '#5b8dd9' },
   { code: 'PROF', label: 'Kỹ năng nghề nghiệp', color: '#7c6fcd' },
   { code: 'COMM', label: 'Cộng đồng', color: '#3fa87b' },
@@ -81,7 +88,7 @@ export function DeclarationsQueue() {
     } catch (err) {
       if (ticket !== requestVersion.current) return;
       console.error('Failed to fetch declarations:', err);
-      setError(err.message || 'Không thể tải danh sách hồ sơ');
+      setError(err.message || 'Không thể tải danh sách trải nghiệm');
       setDeclarations([]);
     } finally {
       if (ticket === requestVersion.current) setLoading(false);
@@ -99,6 +106,7 @@ export function DeclarationsQueue() {
   const pendingCount = declarations.filter((d) => d.status === 'SUBMITTED').length;
   const approvedCount = declarations.filter((d) => d.status === 'APPROVED').length;
   const rejectedCount = declarations.filter((d) => d.status === 'REJECTED').length;
+  const clarificationCount = declarations.filter((d) => d.status === 'NEED_CLARIFICATION').length;
 
   // Filter by query
   const filtered = declarations.filter((d) => {
@@ -131,7 +139,7 @@ export function DeclarationsQueue() {
         setReviewDecision('APPROVED');
         await fetchData();
       },
-      `Đã ${reviewDecision === 'APPROVED' ? 'phê duyệt' : reviewDecision === 'REJECTED' ? 'từ chối' : 'yêu cầu làm rõ'} hồ sơ.`,
+      `Đã ${reviewDecision === 'APPROVED' ? 'phê duyệt' : reviewDecision === 'REJECTED' ? 'từ chối' : 'yêu cầu làm rõ'} trải nghiệm.`,
     );
     setSubmitting(false);
     if (ok) setReview(null);
@@ -157,9 +165,9 @@ export function DeclarationsQueue() {
   return (
     <>
       <PageHeader
-        eyebrow="HỒ SƠ TỰ KHAI BÁO"
-        title="Duyệt hồ sơ tự khai"
-        description="Xem xét minh chứng và phê duyệt điểm tự khai báo của sinh viên."
+        eyebrow="TRẢI NGHIỆM CÁ NHÂN"
+        title="Xét duyệt trải nghiệm tự khai"
+        description="Kiểm tra minh chứng thi đấu, văn bằng, chứng chỉ và trải nghiệm bên ngoài để xét ghi nhận Xperience Point. Sinh viên có thể gửi trực tiếp hoặc đề nghị tham chiếu qua CLB trực thuộc; CTSV quyết định ghi nhận cuối cùng."
       />
 
       {/* Stats */}
@@ -168,19 +176,19 @@ export function DeclarationsQueue() {
           label="Chờ duyệt (trang này)"
           value={pendingCount}
           icon={ShieldAlert}
-          note="Hồ sơ tự khai báo"
+          note="Trải nghiệm tự khai có minh chứng"
           tone="orange"
         />
         <StatCard
           label="Đã duyệt (trang này)"
           value={approvedCount}
           icon={ShieldCheck}
-          note="Điểm được ghi nhận"
+          note="Xperience Point do máy chủ xác nhận"
           tone="green"
         />
         <StatCard
           label="Từ chối / Cần làm rõ (trang này)"
-          value={rejectedCount}
+          value={rejectedCount + clarificationCount}
           icon={FileCheck2}
           note="Cần bổ sung minh chứng"
           tone="neutral"
@@ -208,7 +216,7 @@ export function DeclarationsQueue() {
             />
             <input
               className="declarations-queue-input"
-              placeholder="Tìm sinh viên, mã SV, hoạt động…"
+              placeholder="Tìm sinh viên, mã SV, trải nghiệm…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -227,12 +235,12 @@ export function DeclarationsQueue() {
           {loading ? (
             <div className="declarations-queue-content-5">
               <div className="declarations-queue-content-6" />
-              Đang tải hồ sơ…
+              Đang tải trải nghiệm…
             </div>
           ) : filtered.length === 0 ? (
             <Empty
-              title="Không có hồ sơ"
-              description="Không có hồ sơ nào phù hợp với bộ lọc hiện tại."
+              title="Không có trải nghiệm"
+              description="Không có trải nghiệm nào phù hợp với bộ lọc hiện tại."
             />
           ) : (
             <div className="declarations-queue-content-7">
@@ -240,9 +248,9 @@ export function DeclarationsQueue() {
                 <thead>
                   <tr>
                     <th className="declarations-queue-column">SINH VIÊN</th>
-                    <th className="declarations-queue-column">HOẠT ĐỘNG</th>
+                    <th className="declarations-queue-column">TRẢI NGHIỆM</th>
                     <th className="declarations-queue-column">CHIỀU NL</th>
-                    <th className="declarations-queue-column">ĐIỂM ĐỀ XUẤT</th>
+                    <th className="declarations-queue-column">XPERIENCE POINT</th>
                     <th className="declarations-queue-column">MINH CHỨNG</th>
                     <th className="declarations-queue-column">TRẠNG THÁI</th>
                     <th className="declarations-queue-column">NGÀY NỘP</th>
@@ -299,7 +307,11 @@ export function DeclarationsQueue() {
                             )}
                           </div>
                         ) : (
-                          <span className="declarations-queue-text-7">Không có</span>
+                          <span className="declarations-queue-text-7">
+                            {d.evidenceRefs?.length
+                              ? `${d.evidenceRefs.length} tệp riêng tư · mở chi tiết để xem`
+                              : 'Không có minh chứng'}
+                          </span>
                         )}
                       </td>
                       <td className="declarations-queue-cell">
@@ -325,7 +337,7 @@ export function DeclarationsQueue() {
       </Panel>
 
       {/* Review Modal */}
-      <nav aria-label="Trang hồ sơ" className="declarations-queue-navigation">
+      <nav aria-label="Trang trải nghiệm" className="declarations-queue-navigation">
         <Button disabled={loading || page <= 1} onClick={() => setPage((value) => value - 1)}>
           Trước
         </Button>
@@ -341,7 +353,7 @@ export function DeclarationsQueue() {
       </nav>
       {review && (
         <Modal
-          title={review.studentName || 'Hồ sơ tự khai'}
+          title={review.studentName || 'Trải nghiệm tự khai'}
           description={`${review.studentCode || ''} · ${review.activityName || review.activity || ''}`}
           wide
           onClose={() => setReview(null)}
@@ -351,7 +363,7 @@ export function DeclarationsQueue() {
               {/* Score details */}
               <div className="declarations-queue-content-10">
                 <div className="declarations-queue-content-11">
-                  <p className="declarations-queue-description">ĐIỂM ĐỀ XUẤT</p>
+                  <p className="declarations-queue-description">XPERIENCE POINT</p>
                   <p className="declarations-queue-description-2">
                     {typeof review.awardedScore === 'number'
                       ? review.awardedScore
@@ -370,12 +382,16 @@ export function DeclarationsQueue() {
                 <div className="declarations-queue-content-12">
                   <p className="declarations-queue-description-3">CÔNG THỨC</p>
                   <p className="declarations-queue-description-4">
-                    {review.proposedFormula || 'P = B × min(R×Q, 8) × (1+K)'}
+                    {review.proposedFormula || 'Chưa có bảng tính từ máy chủ'}
                   </p>
                 </div>
               </div>
 
               {/* Evidence */}
+              <p className="declarations-queue-description-5">
+                {review.referenceLabel}. Thông tin tham chiếu không thay thế kết quả kiểm tra minh
+                chứng. Luồng CLB xác nhận đang chờ backend hỗ trợ.
+              </p>
               <h3 className="declarations-queue-subheading">Minh chứng đính kèm</h3>
               {(review.evidenceUrls || []).length > 0 ? (
                 <div className="declarations-queue-content-13">
@@ -393,7 +409,11 @@ export function DeclarationsQueue() {
                   ))}
                 </div>
               ) : (
-                <p className="declarations-queue-description-5">Không có minh chứng đính kèm.</p>
+                <p className="declarations-queue-description-5">
+                  {review.evidenceRefs?.length
+                    ? 'Minh chứng được lưu riêng tư. Tải từng tệp bên dưới để kiểm tra.'
+                    : 'Không có minh chứng đính kèm.'}
+                </p>
               )}
 
               {/* Review form — only for SUBMITTED */}
@@ -542,7 +562,7 @@ export function DeclarationsQueue() {
                     {reviewDecision === 'APPROVED'
                       ? 'Máy chủ kiểm tra quyền xác minh, phiên bản và chính sách trước khi ghi điểm.'
                       : reviewDecision === 'REJECTED'
-                        ? 'Hồ sơ sẽ bị từ chối, sinh viên có thể nộp lại với minh chứng bổ sung.'
+                        ? 'Trải nghiệm sẽ bị từ chối, sinh viên có thể nộp lại với minh chứng bổ sung.'
                         : 'Sinh viên sẽ nhận được thông báo yêu cầu làm rõ cùng nhận xét của bạn.'}
                   </div>
                 </>
@@ -596,7 +616,7 @@ export function DeclarationsQueue() {
                     {reviewDecision === 'APPROVED'
                       ? 'Phê duyệt'
                       : reviewDecision === 'REJECTED'
-                        ? 'Từ chối hồ sơ'
+                        ? 'Từ chối trải nghiệm'
                         : 'Yêu cầu bổ sung'}
                   </Button>
                 </>

@@ -8,6 +8,11 @@ export function mapDeclaration(row) {
     activityName: row.title || row.activityName,
     studentName: row.studentName || (row.userId ? `Sinh viên #${row.userId}` : ''),
     awardedScore: row.status?.toUpperCase() === 'APPROVED' ? row.rawPoints : null,
+    referenceLabel: row.referringClubId
+      ? `Tham chiếu CLB #${row.referringClubId}`
+      : row.isOutsideClub === true || ['EXTERNAL', 'REAL_WORLD'].includes(row.sourceType)
+        ? 'Gửi trực tiếp, không qua CLB'
+        : 'Chưa có thông tin tham chiếu',
     capability:
       row.finalCategory ||
       row.category ||

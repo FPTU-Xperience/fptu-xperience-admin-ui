@@ -34,3 +34,8 @@ Before activating a write: agree canonical IDs/semester/statuses, DTOs, eligibil
 ### XP report extension — 2026-10-21
 
 The activity simulator adds explicit autofill from evidence, draft row editing with reasons, student/action summaries and change records, and frozen closing snapshots. Settlement uses reviewed snapshot values; later corrections preserve originals. The existing report API has no XP rows/edit DTO. Required authoritative DTOs, permissions, versioning and posting are specified in [activity-xp-report](activity-xp-report.md); the UI's XP tab exposes this boundary.
+
+
+### Personal self-declared experience and club reference — 2026-10-21
+
+Navigation/inbox/review now use **Trải nghiệm tự khai** and **Xperience Point**. ClubHub's new personal-experience page reads own reports/records and submits direct external experience with private evidence using declared APIs. Optional reference through an affiliated club still requires distinct referral fields/states, membership validation, a club endorsement audit and forwarding to final CTSV review. Existing external-declaration `ClubId` is not that reference and is rejected by the canonical bridge. See [current ClubHub contract](../../../fptu-xperience-clubhub-ui/docs/contracts/personal-experience-api.md). The UI discloses the missing branch and does not synthesize endorsement.
