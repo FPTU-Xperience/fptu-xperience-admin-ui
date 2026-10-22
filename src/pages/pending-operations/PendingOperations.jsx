@@ -6,7 +6,7 @@ import PendingOperation from '../../components/operations/pending-operation/Pend
 
 const operations = {
   dossiers: {
-    title: 'Hồ sơ action & quyết toán XP',
+    title: 'Hồ sơ action & quyết toán Xperience Point',
     description:
       'Theo dõi hai lần xét duyệt: kế hoạch trước hoạt động và quyết toán điểm sau hoạt động.',
     unavailable: 'Chưa thể tiếp nhận hồ sơ action và quyết toán điểm',

@@ -353,11 +353,11 @@ export function Rubrics() {
                         }
                         className="rubrics-input-2"
                       />
-                      <span className="rubrics-text-5">XP</span>
+                      <span className="rubrics-text-5">Xperience Point</span>
                     </div>
                   ) : (
                     <span className="rubrics-text-7">
-                      {benchmark.bonusCap || 0} <span className="rubrics-text-8">XP</span>
+                      {benchmark.bonusCap || 0} <span className="rubrics-text-8">Xperience Point</span>
                     </span>
                   )}
                 </div>
@@ -491,7 +491,7 @@ export function Rubrics() {
               {/* Bonus cap */}
               <h3 className="rubrics-subheading-2">Trần điểm hoạt động thưởng</h3>
               <div className="rubrics-content-28">
-                <Field label="Trần XP thưởng (X+1)">
+                <Field label="Trần Xperience Point thưởng (X+1)">
                   <input
                     type="number"
                     min={0}

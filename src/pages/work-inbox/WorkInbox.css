@@ -1,0 +1,18 @@
+@reference '../../index.css';
+@layer components {
+  .work-inbox {
+    @apply min-w-0 space-y-4;
+  }
+  .work-inbox-filters {
+    @apply grid gap-3 md:grid-cols-3;
+  }
+  .work-inbox-urgent {
+    @apply flex items-center gap-2 text-xs;
+  }
+  .work-inbox-note {
+    @apply text-xs leading-relaxed text-muted;
+  }
+  .work-inbox a {
+    @apply font-medium text-accent hover:underline;
+  }
+}

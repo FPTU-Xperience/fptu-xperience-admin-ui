@@ -1,0 +1,9 @@
+@reference '../../../index.css';
+@layer components {
+  .leadership-workflow {
+    @apply space-y-5;
+  }
+  .leadership-workflow-nomination {
+    @apply space-y-3 rounded-xl border border-border p-4;
+  }
+}

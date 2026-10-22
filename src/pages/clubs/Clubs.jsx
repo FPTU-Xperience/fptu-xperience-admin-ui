@@ -1,13 +1,12 @@
 import './Clubs.css';
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import {
   Activity,
   ArrowRight,
   Check,
   ChevronRight,
   FileCheck2,
-  Pencil,
   Plus,
   Settings2,
   UsersRound,
@@ -34,6 +33,7 @@ import {
 export function Clubs() {
   const run = useAction();
   const [params] = useSearchParams();
+  const navigate = useNavigate();
 
   // Server-backed list state.
   const [clubs, setClubs] = useState([]);
@@ -49,7 +49,6 @@ export function Clubs() {
   const [tab, setTab] = useState(params.get('tab') || 'registry');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
-  const [detail, setDetail] = useState(null);
   const [edit, setEdit] = useState(null);
   const [review, setReview] = useState(null);
   const [note, setNote] = useState('');
@@ -107,11 +106,10 @@ export function Clubs() {
 
   useEffect(() => {
     if (params.get('club')) {
-      const found = clubs.find((c) => c.id === params.get('club'));
-      setDetail(found || null);
+      navigate(`/ctsv/clubs/${encodeURIComponent(params.get('club'))}`, { replace: true });
     }
     if (params.get('tab')) setTab(params.get('tab'));
-  }, [params, clubs]);
+  }, [params, navigate]);
 
   // Filter clubs
   const filtered = clubs.filter(
@@ -272,7 +270,12 @@ export function Clubs() {
             /* Club Grid */
             <div className="clubs-content-7">
               {filtered.map((club) => (
-                <article key={club.id} className="clubs-card">
+                <Link
+                  key={club.id}
+                  className="clubs-card"
+                  to={`/ctsv/clubs/${encodeURIComponent(club.id)}`}
+                  aria-label={`Quản lý ${club.name}`}
+                >
                   <div className="clubs-content-8">
                     <div className="clubs-content-9">
                       <span
@@ -312,10 +315,10 @@ export function Clubs() {
                       />
                     </div>
                   </div>
-                  <button className="clubs-button-2" onClick={() => setDetail(club)}>
-                    Xem câu lạc bộ <ArrowRight size={15} />
-                  </button>
-                </article>
+                  <span className="clubs-button-2">
+                    Quản lý câu lạc bộ <ArrowRight size={15} />
+                  </span>
+                </Link>
               ))}
             </div>
           )}
@@ -389,56 +392,6 @@ export function Clubs() {
             </div>
           )}
         </Panel>
-      )}
-
-      {/* Detail Modal */}
-      {detail && (
-        <Modal
-          title={detail.name}
-          description={`${detail.code} · ${detail.category}`}
-          onClose={() => setDetail(null)}
-        >
-          <div className="clubs-content-13">
-            <p className="clubs-description-2">{detail.description}</p>
-            <dl className="clubs-definition-list">
-              <div className="clubs-content-14">
-                <dt className="clubs-term">Chủ nhiệm</dt>
-                <dd className="clubs-definition">{detail.leader || 'Chưa bổ nhiệm'}</dd>
-              </div>
-              <div className="clubs-content-14">
-                <dt className="clubs-term">Email liên hệ</dt>
-                <dd className="clubs-definition">{detail.email || 'Chưa cập nhật'}</dd>
-              </div>
-              <div className="clubs-content-14">
-                <dt className="clubs-term">Thành viên</dt>
-                <dd className="clubs-definition">{detail.memberCount || 0}</dd>
-              </div>
-              <div className="clubs-content-14">
-                <dt className="clubs-term">Chỉ số gắn kết</dt>
-                <dd className="clubs-definition">{detail.health || 0}/100</dd>
-              </div>
-              <div className="clubs-content-14">
-                <dt className="clubs-term">Trạng thái</dt>
-                <dd className="clubs-definition">
-                  {detail.status === 'active' ? 'Đang hoạt động' : 'Tạm dừng'}
-                </dd>
-              </div>
-            </dl>
-          </div>
-          <div className="clubs-content-15">
-            <Button onClick={() => setDetail(null)}>Đóng</Button>
-            <Button
-              variant="primary"
-              icon={Pencil}
-              onClick={() => {
-                setEdit(detail);
-                setDetail(null);
-              }}
-            >
-              Chỉnh sửa thông tin
-            </Button>
-          </div>
-        </Modal>
       )}
 
       {/* Edit Form */}
@@ -520,7 +473,7 @@ export function Clubs() {
       {typesOpen && (
         <Modal
           title="Loại câu lạc bộ"
-          description="Mỗi loại CLB có một bộ thang điểm XP phù hợp."
+          description="Mỗi loại CLB có một bộ thang điểm Xperience Point phù hợp."
           onClose={() => setTypesOpen(false)}
         >
           <div className="clubs-content-13">
@@ -576,7 +529,7 @@ function safeNumber(value, fallback = 0) {
 }
 
 // Map backend club to frontend format
-function mapClubsFromApi(clubs) {
+export function mapClubsFromApi(clubs) {
   return clubs.map((club) => ({
     id: String(club.id),
     name: safeString(club.name, ''),
@@ -612,7 +565,7 @@ function mapApplicationsFromApi(apps) {
   }));
 }
 
-function ClubForm({ club, types, onClose, onSave }) {
+export function ClubForm({ club, types, onClose, onSave }) {
   const run = useAction();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -652,6 +605,8 @@ function ClubForm({ club, types, onClose, onSave }) {
         } else {
           saved = await api.clubs.create(payload);
         }
+        if (!saved?.id || !saved.name || (club.id && String(saved.id) !== String(club.id)))
+          throw new Error('Chưa xác nhận được hồ sơ đã lưu. Tải lại thông tin trước khi thử tiếp.');
         const mapped = mapClubsFromApi([saved])[0];
         onSave(mapped);
       } finally {
@@ -685,7 +640,8 @@ function ClubForm({ club, types, onClose, onSave }) {
             </select>
           </Field>
           <Field label="Chủ nhiệm">
-            <input maxLength={100} {...bind('leader')} />
+            <input value={form.leader || 'Chưa bổ nhiệm'} readOnly aria-readonly="true" />
+            <small>Thay đổi chủ nhiệm qua hồ sơ chuyển giao hoặc kế nhiệm.</small>
           </Field>
           <Field label="Email liên hệ">
             <input type="email" {...bind('email')} placeholder="clb@fpt.edu.vn" />

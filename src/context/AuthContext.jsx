@@ -4,24 +4,8 @@ import api from '../services/api.js';
 
 const AuthContext = createContext(null);
 
-// Roles for the application (matching backend)
-export const ROLES = {
-  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
-  ADMIN: 'ADMIN',
-  STUDENT_AFFAIRS_ADMIN: 'STUDENT_AFFAIRS_ADMIN',
-  CLUB_MANAGER: 'CLUB_MANAGER',
-  TREASURER: 'TREASURER',
-  CLUB_MEMBER: 'CLUB_MEMBER',
-};
-
-export const ROLE_LABELS = {
-  [ROLES.SYSTEM_ADMIN]: 'Quản trị hệ thống',
-  [ROLES.ADMIN]: 'Quản trị viên',
-  [ROLES.STUDENT_AFFAIRS_ADMIN]: 'Công tác sinh viên',
-  [ROLES.CLUB_MANAGER]: 'Chủ nhiệm CLB',
-  [ROLES.TREASURER]: 'Thủ quỹ',
-  [ROLES.CLUB_MEMBER]: 'Thành viên CLB',
-};
+import { ROLE_IDS as ROLES, ROLE_LABELS, normalizeActor, systemRolesFor } from '../utils/roles.js';
+export { ROLE_IDS as ROLES, ROLE_LABELS } from '../utils/roles.js';
 
 export { isAdmin, isCTSV, isAdminUser } from '../utils/access.js';
 
@@ -78,7 +62,7 @@ export function AuthProvider({ children }) {
     try {
       // Try to get user info from backend
       const userData = await api.auth.me();
-      setUser(userData);
+      setUser(normalizeActor(userData));
       setError(null);
     } catch (err) {
       console.error('Failed to load current user:', err);
@@ -125,8 +109,8 @@ export function AuthProvider({ children }) {
         }
       }
 
-      setUser(userData);
-      return userData;
+      setUser(normalizeActor(userData));
+      return normalizeActor(userData);
     } catch (err) {
       api.clearTokens();
       setUser(null);
@@ -165,10 +149,10 @@ export function AuthProvider({ children }) {
 
       // Fetch user info from appropriate me endpoint based on role
       try {
-        const roles = userData?.roles || [];
-        if (roles.includes(ROLES.SYSTEM_ADMIN) || roles.includes(ROLES.ADMIN)) {
+        const roles = systemRolesFor(userData);
+        if (roles.includes(ROLES.SYSTEM_ADMIN)) {
           userData = await api.auth.adminMe();
-        } else if (roles.includes(ROLES.STUDENT_AFFAIRS_ADMIN)) {
+        } else if (roles.includes(ROLES.STUDENT_AFFAIR)) {
           userData = await api.auth.ctsvMe();
         } else {
           userData = await api.auth.me();
@@ -187,12 +171,12 @@ export function AuthProvider({ children }) {
         /* Ignore */
       }
 
-      setUser(userData);
+      setUser(normalizeActor(userData));
 
       // Dispatch custom event to notify WorkspaceContext to update role
       window.dispatchEvent(new Event('fptu-auth-changed'));
 
-      return userData;
+      return normalizeActor(userData);
     } catch (err) {
       api.clearTokens();
       setUser(null);

@@ -19,7 +19,7 @@ export function WorkspaceProvider({ children }) {
 
   useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
-    if (!user || role !== 'STUDENT_AFFAIRS_ADMIN') return;
+    if (!user || role !== 'STUDENT_AFFAIR') return;
     let active = true;
     setSemesterStatus('loading');
     Promise.allSettled([api.seasons.list(), api.seasons.getActive()]).then(([list, current]) => {

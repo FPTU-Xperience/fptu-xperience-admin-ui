@@ -1,0 +1,12 @@
+@reference '../../../index.css';
+@layer components {
+  .reconciliation-workflow {
+    @apply space-y-5;
+  }
+  .reconciliation-workflow a {
+    @apply text-accent hover:underline;
+  }
+  .reconciliation-workflow-form {
+    @apply space-y-4;
+  }
+}

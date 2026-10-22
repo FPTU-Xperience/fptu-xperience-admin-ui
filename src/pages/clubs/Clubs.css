@@ -50,6 +50,7 @@
   }
 
   .clubs-card {
+    @apply no-underline text-inherit transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-[#5c8d80];
     @apply bg-white border border-[#e9ebee] rounded-[10px] overflow-hidden flex flex-col;
   }
 

@@ -347,7 +347,7 @@ export function createAnomaliesSeed() {
     },
     {
       id: 'case-2',
-      title: 'Trao XP chưa có minh chứng',
+      title: 'Trao Xperience Point chưa có minh chứng',
       club: 'FPTU Photography',
       student: 'student-12',
       severity: 'medium',
@@ -361,7 +361,7 @@ export function createAnomaliesSeed() {
     },
     {
       id: 'case-3',
-      title: 'XP tăng vượt ngưỡng trong ngày',
+      title: 'Xperience Point tăng vượt ngưỡng trong ngày',
       club: 'F-Code',
       student: 'student-18',
       severity: 'medium',
@@ -369,7 +369,7 @@ export function createAnomaliesSeed() {
       count: 3,
       source: 'Hackathon nội bộ · EVT-032',
       evidence:
-        'Ba lần trao XP cho cùng sinh viên trong vòng 5 phút. Cần xác minh đóng góp có bị ghi nhận trùng.',
+        'Ba lần trao Xperience Point cho cùng sinh viên trong vòng 5 phút. Cần xác minh đóng góp có bị ghi nhận trùng.',
       status: 'open',
       time: '2026-09-14T08:30:00+07:00',
     },

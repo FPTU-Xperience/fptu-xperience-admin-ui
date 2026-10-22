@@ -1,13 +1,16 @@
 import './Sidebar.css';
 import { useEffect, useRef } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { navigationItemFor } from '../../../routes/navigation.js';
 import { LogOut, X } from 'lucide-react';
 import Brand from '../brand/Brand.jsx';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { useWorkspace } from '../../../context/WorkspaceContext.jsx';
-import { isAdmin, ROLE_LABELS } from '../../../context/AuthContext.jsx';
+import { ROLE_LABELS } from '../../../context/AuthContext.jsx';
 
 export default function Sidebar({ nav, mobile, onClose }) {
+  const location = useLocation();
+  const current = navigationItemFor(location.pathname, location.state);
   const { user, logout } = useAuth();
   const { role } = useWorkspace();
 
@@ -49,7 +52,7 @@ export default function Sidebar({ nav, mobile, onClose }) {
     };
   }, [mobile]);
 
-  const admin = role === 'ADMIN';
+  const admin = role === 'SYSTEM_ADMIN';
 
   async function handleLogout() {
     try {
@@ -101,7 +104,9 @@ export default function Sidebar({ nav, mobile, onClose }) {
               to={path}
               className={({ isActive }) =>
                 `sidebar-nav-link-2 ${
-                  isActive ? 'sidebar-nav-link-state-active' : 'sidebar-nav-link-state-inactive'
+                  isActive || current?.path === path
+                    ? 'sidebar-nav-link-state-active'
+                    : 'sidebar-nav-link-state-inactive'
                 }`
               }
             >
@@ -112,11 +117,6 @@ export default function Sidebar({ nav, mobile, onClose }) {
         ))}
       </nav>
 
-      {isAdmin(user) && (
-        <NavLink className="sidebar-nav-link-3" to={admin ? '/ctsv/overview' : '/admin/accounts'}>
-          {admin ? 'Không gian Công tác sinh viên' : 'Không gian quản trị hệ thống'}
-        </NavLink>
-      )}
       {/* Bottom section */}
       <div className="sidebar-content-2">
         {/* User profile */}

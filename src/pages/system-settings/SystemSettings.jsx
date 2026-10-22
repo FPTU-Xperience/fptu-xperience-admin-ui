@@ -174,7 +174,7 @@ export function SystemSettings({ type }) {
                 ],
                 [
                   Activity,
-                  'Tác vụ tính XP & chuyển học kỳ',
+                  'Tác vụ tính Xperience Point & chuyển học kỳ',
                   'Lịch chạy tác vụ và kết quả xử lý',
                   '/api/kpis/health',
                 ],
@@ -275,7 +275,7 @@ export function SystemSettings({ type }) {
                 <div className="system-settings-content-9">
                   <Toggle
                     label="Thông báo trong ứng dụng"
-                    description="Cập nhật trạng thái hồ sơ, nhiệm vụ và XP"
+                    description="Cập nhật trạng thái hồ sơ, nhiệm vụ và Xperience Point"
                     checked={form.inAppNotifications}
                     onChange={(v) => setForm({ ...form, inAppNotifications: v })}
                   />
@@ -315,7 +315,7 @@ export function SystemSettings({ type }) {
                   </Field>
                   <Field
                     label="Số ngày lưu nhật ký vận hành"
-                    hint="Không áp dụng cho sổ cái XP và hồ sơ đóng góp vĩnh viễn."
+                    hint="Không áp dụng cho sổ cái Xperience Point và hồ sơ đóng góp vĩnh viễn."
                   >
                     <input
                       required

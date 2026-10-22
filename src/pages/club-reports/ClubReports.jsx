@@ -1,7 +1,7 @@
 import './ClubReports.css';
 import '../../components/operations/Operations.css';
 import { useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useWorkspace } from '../../context/WorkspaceContext.jsx';
@@ -21,20 +21,49 @@ import {
   PageNavigation,
 } from '../../components/operations/operation-state/OperationState.jsx';
 
-export function ClubReports({ activitiesOnly = false }) {
+export function ClubReports({
+  activitiesOnly = false,
+  reportScope,
+  clubId: fixedClubId,
+  clubName,
+}) {
+  const location = useLocation();
   const { user } = useAuth();
   const { season, semesterStatus } = useWorkspace();
   const [search, setSearch] = useSearchParams();
-  const clubs = useOperationQuery(async () => {
-    const rows = await api.clubs.list();
-    if (!Array.isArray(rows)) throw new Error('Không tải được bộ lọc câu lạc bộ.');
-    return rows;
-  }, `${user?.id}:report-clubs`);
+  const clubs = useOperationQuery(
+    async () => {
+      if (fixedClubId) return [{ id: fixedClubId, name: clubName }];
+      const rows = await api.clubs.list();
+      if (!Array.isArray(rows)) throw new Error('Không tải được bộ lọc câu lạc bộ.');
+      return rows;
+    },
+    `${user?.id}:report-clubs:${fixedClubId || 'all'}`,
+  );
   const page = Math.max(1, parseInt(search.get('page'), 10) || 1);
   const status = search.get('status') ?? 'Under Review';
-  const type = activitiesOnly ? 'FUTURE_EVENT' : search.get('type') || '';
+  const types =
+    reportScope === 'club'
+      ? ['CLUB_TERM_START', 'CLUB_TERM_END']
+      : reportScope === 'activity'
+        ? ['FUTURE_EVENT', 'CLUB_ACTIVITY']
+        : undefined;
+  const requestedType = search.get('type') || '';
+  const type = activitiesOnly
+    ? 'FUTURE_EVENT'
+    : !types || types.includes(requestedType)
+      ? requestedType
+      : '';
   const period = search.get('periodScope') === 'all' ? '' : season;
-  const params = { page, pageSize: 20, status, period, clubId: search.get('clubId'), type };
+  const params = {
+    page,
+    pageSize: 20,
+    status,
+    period,
+    clubId: fixedClubId || search.get('clubId'),
+    type,
+    ...(types ? { types } : {}),
+  };
   const ready = !['idle', 'loading'].includes(semesterStatus);
   const result = useOperationQuery(
     () => (ready ? reportWorkflows.list(params) : null),
@@ -76,7 +105,15 @@ export function ClubReports({ activitiesOnly = false }) {
   return (
     <>
       <PageHeader
-        title={activitiesOnly ? 'Phê duyệt hoạt động' : 'Báo cáo từ câu lạc bộ'}
+        title={
+          reportScope === 'club'
+            ? 'Báo cáo đầu / cuối kỳ CLB'
+            : reportScope === 'activity'
+              ? 'Hồ sơ hoạt động từ CLB'
+              : activitiesOnly
+                ? 'Phê duyệt hoạt động'
+                : 'Báo cáo từ câu lạc bộ'
+        }
         description={
           activitiesOnly
             ? 'Xét đề xuất tổ chức hoạt động đã được CLB chuyển tiếp.'
@@ -86,12 +123,14 @@ export function ClubReports({ activitiesOnly = false }) {
         <Button icon={RefreshCw} onClick={result.retry}>
           Tải lại
         </Button>
-        <Link
-          className="operation-link"
-          to={activitiesOnly ? '/ctsv/reports' : '/ctsv/activity-approvals'}
-        >
-          {activitiesOnly ? 'Tất cả báo cáo' : 'Phê duyệt hoạt động'}
-        </Link>
+        {!reportScope && (
+          <Link
+            className="operation-link"
+            to={activitiesOnly ? '/ctsv/reports' : '/ctsv/activity-approvals'}
+          >
+            {activitiesOnly ? 'Tất cả báo cáo' : 'Phê duyệt hoạt động'}
+          </Link>
+        )}
       </PageHeader>
       {['error', 'empty'].includes(semesterStatus) && (
         <p role="status" className="operation-notice club-reports-description">
@@ -106,7 +145,7 @@ export function ClubReports({ activitiesOnly = false }) {
             bằng VNĐ, tách biệt điểm trải nghiệm.
           </p>
           <Link className="club-reports-link" to="/ctsv/activity-dossiers">
-            Hồ sơ action & quyết toán XP
+            Hồ sơ action & quyết toán Xperience Point
           </Link>
         </div>
       )}
@@ -137,31 +176,39 @@ export function ClubReports({ activitiesOnly = false }) {
             <Field label="Loại báo cáo">
               <select value={type} onChange={(event) => update('type', event.target.value)}>
                 <option value="">Tất cả loại</option>
-                {Object.entries(REPORT_TYPES).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
+                {Object.entries(REPORT_TYPES)
+                  .filter(([value]) => !types || types.includes(value))
+                  .map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
               </select>
             </Field>
           )}
           <div className="club-reports-content-2">
             <Field label="Câu lạc bộ">
               <select
-                value={search.get('clubId') || ''}
+                value={fixedClubId || search.get('clubId') || ''}
                 onChange={(event) => update('clubId', event.target.value)}
-                disabled={clubs.loading || Boolean(clubs.error)}
+                disabled={!!fixedClubId || clubs.loading || Boolean(clubs.error)}
               >
                 <option value="">Tất cả CLB</option>
-                {search.get('clubId') &&
+                {fixedClubId && (
+                  <option value={fixedClubId}>{clubName || `CLB #${fixedClubId}`}</option>
+                )}
+                {!fixedClubId &&
+                  search.get('clubId') &&
                   !clubs.data?.some((club) => String(club.id) === search.get('clubId')) && (
                     <option value={search.get('clubId')}>CLB #{search.get('clubId')}</option>
                   )}
-                {clubs.data?.map((club) => (
-                  <option key={club.id} value={club.id}>
-                    {club.name}
-                  </option>
-                ))}
+                {clubs.data
+                  ?.filter((club) => String(club.id) !== fixedClubId)
+                  .map((club) => (
+                    <option key={club.id} value={club.id}>
+                      {club.name}
+                    </option>
+                  ))}
               </select>
             </Field>
             {clubs.error && (
@@ -184,7 +231,12 @@ export function ClubReports({ activitiesOnly = false }) {
                   <Link
                     to={`/ctsv/reports/${row.id}`}
                     state={{
-                      returnTo: `${activitiesOnly ? '/ctsv/activity-approvals' : '/ctsv/reports'}?${search}`,
+                      returnTo: `${location.pathname}?${search}`,
+                      navigationOwner: ['CLUB_TERM_START', 'CLUB_TERM_END'].includes(
+                        reportType(row),
+                      )
+                        ? 'clubs'
+                        : 'activities',
                     }}
                     className="operation-report-row"
                   >

@@ -1,0 +1,9 @@
+@reference '../../../index.css';
+@layer components {
+  .bonus-workflow {
+    @apply space-y-5;
+  }
+  .bonus-workflow a {
+    @apply font-medium text-accent hover:underline;
+  }
+}

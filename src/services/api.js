@@ -535,7 +535,7 @@ export const api = {
   },
 
   // ---------------------------------------------------------------------------
-  // Anomalies (XP audit)
+  // Anomalies (Xperience Point audit)
   // ---------------------------------------------------------------------------
   anomalies: {
     // Backend doesn't have this endpoint yet; return seed data
@@ -596,7 +596,7 @@ export const api = {
       complete: (id, payload) => api.post(`/api/v1/quests/${id}/complete`, payload),
       myQuests: () => api.get('/api/v1/quests/me'),
     },
-    // Anomalies & XP Ledger (Kiểm duyệt bất thường & Sổ cái)
+    // Anomalies & Xperience Point Ledger (Kiểm duyệt bất thường & Sổ cái)
     anomalies: {
       list: (params) => api.get('/api/v1/student-affairs/anomalies', params),
       stats: () => api.get('/api/v1/student-affairs/anomalies/stats'),

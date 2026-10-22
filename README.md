@@ -1,5 +1,7 @@
 # FPTU Xperience — Admin & Công tác sinh viên
 
+Luồng báo cáo XP (2026-10-21): [tự điền, chỉnh sửa theo sinh viên/action và lịch sử thay đổi](docs/contracts/activity-xp-report.md). Thử tại Hoạt động → nguồn MOCK; chưa ghi XP chính thức qua backend.
+
 Frontend React cho **Công tác sinh viên (CTSV)** và **Admin**, dùng HashRouter, Tailwind CSS v4 và API client tại `src/services/api.js`.
 
 ## Chạy dự án

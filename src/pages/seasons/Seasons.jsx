@@ -115,7 +115,7 @@ export function Seasons() {
         <div>
           <h2 className="seasons-heading">Tiến bộ theo mùa. Giá trị theo năm tháng.</h2>
           <p className="seasons-description">
-            XP cạnh tranh và xếp hạng được tính riêng mỗi học kỳ. Hồ sơ đóng góp và lịch sử xác thực
+            Xperience Point cạnh tranh và xếp hạng được tính riêng mỗi học kỳ. Hồ sơ đóng góp và lịch sử xác thực
             được giữ lâu dài.
           </p>
         </div>
@@ -159,11 +159,11 @@ export function Seasons() {
             <dl className="seasons-definition-list">
               <div className="seasons-content-6">
                 <dt className="seasons-term">Ngưỡng cần kết nối</dt>
-                <dd className="seasons-definition">{s.threshold} XP</dd>
+                <dd className="seasons-definition">{s.threshold} Xperience Point</dd>
               </div>
               <div className="seasons-content-6">
-                <dt className="seasons-term">XP mỗi cấp độ</dt>
-                <dd className="seasons-definition">{s.xpPerLevel} XP</dd>
+                <dt className="seasons-term">Xperience Point mỗi cấp độ</dt>
+                <dd className="seasons-definition">{s.xpPerLevel} Xperience Point</dd>
               </div>
               <div className="seasons-content-6">
                 <dt className="seasons-term">Hiển thị xếp hạng</dt>
@@ -395,7 +395,7 @@ function SeasonForm({ value, onClose, onSave }) {
               onChange={(e) => setForm({ ...form, end: e.target.value })}
             />
           </Field>
-          <Field label="Ngưỡng cần kết nối (XP)">
+          <Field label="Ngưỡng cần kết nối (Xperience Point)">
             <input
               required
               type="number"
@@ -405,7 +405,7 @@ function SeasonForm({ value, onClose, onSave }) {
               onChange={(e) => setForm({ ...form, threshold: e.target.value })}
             />
           </Field>
-          <Field label="XP mỗi cấp độ">
+          <Field label="Xperience Point mỗi cấp độ">
             <input
               required
               type="number"
@@ -424,7 +424,7 @@ function SeasonForm({ value, onClose, onSave }) {
             Cho phép hiển thị xếp hạng theo học kỳ
           </label>
           <div className="seasons-content-16">
-            Mở học kỳ mới tạo phạm vi XP mới; hồ sơ đóng góp trọn đời và sổ cái hiện tại vẫn được
+            Mở học kỳ mới tạo phạm vi Xperience Point mới; hồ sơ đóng góp trọn đời và sổ cái hiện tại vẫn được
             giữ nguyên.
           </div>
         </div>

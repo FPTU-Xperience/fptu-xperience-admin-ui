@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Check, ShieldAlert, X } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext.jsx';
-import { navigationFor } from '../../routes/navigation.js';
+import { navigationFor, navigationItemFor, searchNavigationFor } from '../../routes/navigation.js';
 import { IconButton } from '../../components/ui/index.js';
 import { NotificationsModal, SearchModal } from '../../components/modals/index.js';
 import Sidebar from '../../components/common/sidebar/Sidebar.jsx';
@@ -11,15 +11,13 @@ import Topbar from '../topbar/Topbar.jsx';
 
 export default function AppLayout({ children }) {
   const { role, season, setSeason, toast, dismissToast } = useWorkspace();
-  const admin = role === 'ADMIN';
+  const admin = role === 'SYSTEM_ADMIN';
   const nav = navigationFor(admin);
   const location = useLocation();
   const [mobile, setMobile] = useState(false);
   const [search, setSearch] = useState(false);
   const [notifications, setNotifications] = useState(false);
-  const current =
-    nav.find((n) => n.path === location.pathname || location.pathname.startsWith(`${n.path}/`)) ||
-    nav[0];
+  const current = navigationItemFor(location.pathname, location.state) || nav[0];
 
   useEffect(() => {
     document.title = `${current?.label || 'Dashboard'} | ClubHub Admin`;
@@ -133,7 +131,7 @@ export default function AppLayout({ children }) {
       )}
 
       {/* Modals */}
-      {search && <SearchModal nav={nav} onClose={() => setSearch(false)} />}
+      {search && <SearchModal nav={searchNavigationFor(admin)} onClose={() => setSearch(false)} />}
       {notifications && <NotificationsModal onClose={() => setNotifications(false)} />}
     </div>
   );

@@ -473,7 +473,7 @@ export default function Dashboard() {
                 <ShieldAlert size={21} />
               </span>
               <div>
-                <strong className="dashboard-value">Báo cáo XP bất thường</strong>
+                <strong className="dashboard-value">Báo cáo Xperience Point bất thường</strong>
                 <small className="dashboard-caption">
                   {loading ? '-' : summary.anomaliesCount} trường hợp cần xem xét
                 </small>

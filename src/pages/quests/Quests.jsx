@@ -162,7 +162,7 @@ export function Quests() {
                   </Badge>
                   <span className="quests-text-4">
                     <Sparkles size={14} />
-                    {q.reward} XP
+                    {q.reward} Xperience Point
                   </span>
                 </div>
 
@@ -382,7 +382,7 @@ function QuestForm({ quest, season, onClose, onSave }) {
               <option>Tân sinh viên</option>
             </select>
           </Field>
-          <Field label="XP thưởng *">
+          <Field label="Xperience Point thưởng *">
             <input type="number" required min={1} max={5000} step={1} {...bind('reward')} />
           </Field>
           <Field label="Mục tiêu lượt đăng ký *">

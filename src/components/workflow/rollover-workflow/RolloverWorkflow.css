@@ -1,0 +1,30 @@
+@reference '../../../index.css';
+@layer components {
+  .rollover-workflow {
+    @apply space-y-5;
+  }
+  .rollover-workflow-option {
+    @apply flex items-start gap-2 text-xs;
+  }
+  .rollover-workflow-steps {
+    @apply grid gap-2;
+  }
+  .rollover-workflow-steps li {
+    @apply flex items-center gap-3 rounded-lg border border-border p-3 text-slate-500;
+  }
+  .rollover-workflow-steps li > span {
+    @apply grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100;
+  }
+  .rollover-workflow-steps small {
+    @apply mt-1 block text-xs;
+  }
+  .rollover-workflow-steps li[data-complete='true'] {
+    @apply border-emerald-100 bg-emerald-50 text-emerald-800;
+  }
+  .rollover-workflow-steps li[aria-current='step'] {
+    @apply border-orange-200 text-orange-800;
+  }
+  .rollover-workflow-receipt {
+    @apply rounded-lg bg-emerald-50 p-4 text-emerald-900;
+  }
+}

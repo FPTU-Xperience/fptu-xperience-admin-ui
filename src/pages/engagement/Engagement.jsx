@@ -233,7 +233,7 @@ export function Engagement({ reports = false }) {
         <StatCard
           label="Cần thêm cơ hội kết nối"
           value={loading ? '-' : lowEngagementCount}
-          note={`Dưới ngưỡng ${threshold} XP của học kỳ`}
+          note={`Dưới ngưỡng ${threshold} Xperience Point của học kỳ`}
           icon={Sparkles}
           tone="purple"
         />

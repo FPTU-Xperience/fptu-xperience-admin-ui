@@ -29,3 +29,8 @@ Adding semester metadata does not run rollover. Selecting a target semester in t
 - Raw budget/bonus is not FinanceService money or the removed Bonus Matrix page. No requirement here reintroduces “Hệ số cộng điểm”.
 
 Before activating a write: agree canonical IDs/semester/statuses, DTOs, eligibility, permission/capabilities, expectedVersion, idempotency/receipt/retry behavior, private evidence and history projections; implement BE validation and focused tests; then wire the screen and test against ClubHub with two actors. Unknown numeric rules remain open, not frontend defaults.
+
+
+### XP report extension — 2026-10-21
+
+The activity simulator adds explicit autofill from evidence, draft row editing with reasons, student/action summaries and change records, and frozen closing snapshots. Settlement uses reviewed snapshot values; later corrections preserve originals. The existing report API has no XP rows/edit DTO. Required authoritative DTOs, permissions, versioning and posting are specified in [activity-xp-report](activity-xp-report.md); the UI's XP tab exposes this boundary.

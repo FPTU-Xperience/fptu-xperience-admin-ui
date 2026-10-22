@@ -1,0 +1,54 @@
+@reference '../../../index.css';
+@layer components {
+  .workflow-grid {
+    @apply grid min-w-0 gap-4 md:grid-cols-2;
+  }
+  .workflow-actions {
+    @apply flex flex-wrap items-center gap-2;
+  }
+  .workflow-body {
+    @apply min-w-0 space-y-4 p-4 sm:p-5;
+  }
+  .workflow-table-scroll {
+    @apply max-w-full overflow-x-auto;
+  }
+  .workflow-table {
+    @apply w-full border-collapse text-left text-xs;
+  }
+  .workflow-table th {
+    @apply whitespace-nowrap bg-slate-50 px-4 py-3 font-medium text-slate-500;
+  }
+  .workflow-table td {
+    @apply border-t border-border px-4 py-3 align-top;
+  }
+  .workflow-table td small {
+    @apply mt-1 block text-muted;
+  }
+  .workflow-history {
+    @apply space-y-3;
+  }
+  .workflow-history li {
+    @apply border-l-2 border-orange-200 pl-3 text-xs;
+  }
+  .workflow-history span {
+    @apply mt-1 block text-[10px] text-muted;
+  }
+  .workflow-progress {
+    @apply grid gap-2 sm:grid-cols-5;
+  }
+  .workflow-progress li {
+    @apply flex items-center gap-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-500;
+  }
+  .workflow-progress li span {
+    @apply grid h-6 w-6 shrink-0 place-items-center rounded-full border border-slate-200 bg-white;
+  }
+  .workflow-progress li[aria-current='step'] {
+    @apply bg-orange-50 font-semibold text-orange-800;
+  }
+  .workflow-progress li[data-done='true'] {
+    @apply text-emerald-700;
+  }
+  .workflow-status {
+    @apply mt-3 text-xs font-medium text-slate-600;
+  }
+}

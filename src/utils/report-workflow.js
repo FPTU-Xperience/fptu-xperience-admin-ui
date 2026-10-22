@@ -1,3 +1,4 @@
+import { isCTSV } from './access.js';
 export const REPORT_STATUSES = {
   Draft: 'Nháp',
   'Awaiting Finance': 'Chờ hồ sơ tài chính',
@@ -36,7 +37,7 @@ export function reportPage(value, pageSize = 20) {
 
 export function canDecideReport(user, report) {
   return Boolean(
-    user?.roles?.includes('STUDENT_AFFAIRS_ADMIN') &&
+    isCTSV(user) &&
     report?.status === 'Under Review' &&
     String(report.createdByUserId) !== String(user?.id),
   );

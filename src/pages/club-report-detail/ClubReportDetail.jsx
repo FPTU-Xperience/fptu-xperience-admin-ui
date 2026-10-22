@@ -1,7 +1,7 @@
 import './ClubReportDetail.css';
 import '../../components/operations/Operations.css';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Download, Eye, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useWorkspace } from '../../context/WorkspaceContext.jsx';
@@ -66,11 +66,23 @@ export function ClubReportDetail() {
 }
 
 function ClubReportView({ reportId }) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { notify } = useWorkspace();
   const location = useLocation();
   const result = useOperationQuery(() => reportWorkflows.get(reportId), `${user?.id}:${reportId}`);
   const report = result.data;
+  const navigationOwner =
+    report && ['CLUB_TERM_START', 'CLUB_TERM_END'].includes(reportType(report))
+      ? 'clubs'
+      : 'activities';
+  useEffect(() => {
+    if (report && location.state?.navigationOwner !== navigationOwner)
+      navigate(`${location.pathname}${location.search}`, {
+        replace: true,
+        state: { ...location.state, navigationOwner },
+      });
+  }, [report?.id, navigationOwner, location.state?.navigationOwner]);
   const [tab, setTab] = useState('content'),
     [decision, setDecision] = useState(''),
     [feedback, setFeedback] = useState('');
@@ -117,7 +129,9 @@ function ClubReportView({ reportId }) {
   };
   const back = location.state?.returnTo?.startsWith('/ctsv/')
     ? location.state.returnTo
-    : '/ctsv/reports';
+    : navigationOwner === 'clubs'
+      ? '/ctsv/clubs?view=reports'
+      : '/ctsv/activities?view=club&source=api';
   return (
     <>
       <Link to={back} className="club-report-detail-link">
@@ -153,6 +167,7 @@ function ClubReportView({ reportId }) {
               >
                 {[
                   ['content', 'Nội dung'],
+                  ['xp', 'Điểm Xperience Point'],
                   ['files', 'Tệp đính kèm'],
                   ['history', 'Lịch sử & phản hồi'],
                 ].map(([value, label]) => (
@@ -167,6 +182,20 @@ function ClubReportView({ reportId }) {
                 ))}
               </div>
               <div className="club-report-detail-content-3">
+                {tab === 'xp' && (
+                  <section>
+                    <h2>Báo cáo điểm Xperience Point theo sinh viên / action</h2>
+                    <p>
+                      API báo cáo hiện chưa cung cấp bảng Xperience Point, nguồn minh chứng và lịch sử chỉnh sửa
+                      theo từng sinh viên / action. Chưa có dữ liệu để hiển thị hoặc chỉnh sửa Xperience Point
+                      của báo cáo này.
+                    </p>
+                    <p>Phê duyệt báo cáo hiện tại chưa xác nhận việc ghi sổ Xperience Point theo action.</p>
+                    <Link className="operation-link" to={`/ctsv/activities?view=club&source=mock`}>
+                      Mở luồng mẫu: tự điền, chỉnh sửa và xét duyệt Xperience Point · MOCK
+                    </Link>
+                  </section>
+                )}
                 {tab === 'content' && (
                   <>
                     {Object.entries({

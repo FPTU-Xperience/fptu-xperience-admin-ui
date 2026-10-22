@@ -1,0 +1,9 @@
+@reference '../../../index.css';
+@layer components {
+  .roster-workflow {
+    @apply min-w-0 space-y-5;
+  }
+  .roster-workflow-file {
+    @apply block h-auto w-full max-w-full p-3 text-xs;
+  }
+}

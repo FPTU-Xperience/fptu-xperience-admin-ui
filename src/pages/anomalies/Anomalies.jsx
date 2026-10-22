@@ -71,7 +71,7 @@ export function Anomalies() {
       <PageHeader
         eyebrow="MINH BẠCH TRONG TỪNG GHI NHẬN"
         title="Kiểm duyệt bất thường"
-        description="Kiểm tra minh chứng, ghi nhận quyết định và bảo vệ tính toàn vẹn của XP."
+        description="Kiểm tra minh chứng, ghi nhận quyết định và bảo vệ tính toàn vẹn của Xperience Point."
       />
 
       <p className="anomalies-description">
@@ -115,7 +115,7 @@ export function Anomalies() {
           items={[
             { id: 'open', label: 'Cần xem xét', count: openCount },
             { id: 'resolved', label: 'Đã xử lý', count: resolvedCount },
-            { id: 'ledger', label: 'Sổ cái XP', count: ledger?.length || 0 },
+            { id: 'ledger', label: 'Sổ cái Xperience Point', count: ledger?.length || 0 },
           ]}
         />
 
@@ -127,7 +127,7 @@ export function Anomalies() {
                 <tr>
                   <th className="anomalies-column">BÚT TOÁN</th>
                   <th className="anomalies-column">NGUỒN GHI NHẬN</th>
-                  <th className="anomalies-column">XP</th>
+                  <th className="anomalies-column">Xperience Point</th>
                   <th className="anomalies-column">PHIÊN BẢN</th>
                   <th className="anomalies-column">LÝ DO</th>
                 </tr>
@@ -200,7 +200,7 @@ export function Anomalies() {
                     {a.club} · {a.count} lượt ghi nhận liên quan
                   </p>
                   <small className="anomalies-caption">
-                    {a.time} · {a.amount} XP cần đối soát
+                    {a.time} · {a.amount} Xperience Point cần đối soát
                   </small>
                 </div>
                 <Button
@@ -220,7 +220,7 @@ export function Anomalies() {
         ) : (
           <Empty
             title="Không có trường hợp trong nhóm này"
-            description="Các quyết định xử lý được lưu cùng nhật ký và sổ cái XP."
+            description="Các quyết định xử lý được lưu cùng nhật ký và sổ cái Xperience Point."
           />
         )}
       </Panel>
@@ -248,7 +248,7 @@ export function Anomalies() {
                 <h3 className="anomalies-subheading-2">Dữ liệu cần xác minh</h3>
                 <p className="anomalies-description-3">{item.evidence}</p>
                 <p className="anomalies-description-3">
-                  <b className="anomalies-b">XP đang đối soát:</b> {item.amount} XP · Sinh viên:{' '}
+                  <b className="anomalies-b">Xperience Point đang đối soát:</b> {item.amount} Xperience Point · Sinh viên:{' '}
                   {item.student}
                 </p>
                 <small className="anomalies-caption-2">
@@ -267,13 +267,13 @@ export function Anomalies() {
                       className="anomalies-select"
                     >
                       <option value="keep">Giữ nguyên — ghi nhận hợp lệ</option>
-                      <option value="adjust">Điều chỉnh giảm XP</option>
-                      <option value="revoke">Thu hồi toàn bộ XP của bút toán</option>
+                      <option value="adjust">Điều chỉnh giảm Xperience Point</option>
+                      <option value="revoke">Thu hồi toàn bộ Xperience Point của bút toán</option>
                     </select>
                   </Field>
 
                   {decision === 'adjust' && (
-                    <Field label="XP hợp lệ sau điều chỉnh" className="anomalies-field">
+                    <Field label="Xperience Point hợp lệ sau điều chỉnh" className="anomalies-field">
                       <input
                         type="number"
                         required
@@ -301,7 +301,7 @@ export function Anomalies() {
                   {decision !== 'keep' && (
                     <div className="anomalies-content-13">
                       Sẽ ghi thêm một bút toán{' '}
-                      {decision === 'revoke' ? -item.amount : Number(adjustment) - item.amount} XP
+                      {decision === 'revoke' ? -item.amount : Number(adjustment) - item.amount} Xperience Point
                       liên kết với bút toán gốc. Phần điều chỉnh thuộc học kỳ của đóng góp gốc.
                     </div>
                   )}
@@ -312,10 +312,10 @@ export function Anomalies() {
                   <h3 className="anomalies-subheading-3">Kết quả xử lý</h3>
                   <Badge tone="green">
                     {item.decision === 'keep'
-                      ? 'Giữ nguyên XP'
+                      ? 'Giữ nguyên Xperience Point'
                       : item.decision === 'adjust'
-                        ? `Đã điều chỉnh còn ${item.adjustment} XP`
-                        : 'Đã thu hồi XP'}
+                        ? `Đã điều chỉnh còn ${item.adjustment} Xperience Point`
+                        : 'Đã thu hồi Xperience Point'}
                   </Badge>
                   <p className="anomalies-description-4">{item.reason}</p>
                 </div>

@@ -3,8 +3,9 @@ import { reportDecision, reportPage, reportType } from '../utils/report-workflow
 export function createReportWorkflows(client, write) {
   return {
     async list(params) {
-      const { type, ...query } = params;
-      if (!type) return reportPage(await client.reports.list(query), params.pageSize);
+      const { type, types, ...query } = params;
+      if (!type && !types?.length)
+        return reportPage(await client.reports.list(query), params.pageSize);
       // The current API only filters an exact tag. CLUB_ACTIVITY tags contain an activity ID.
       // Traverse server pages before filtering so counts/paging do not hide matching reports.
       let items = [],
@@ -25,7 +26,9 @@ export function createReportWorkflows(client, write) {
       } while ((page - 1) * 100 < total);
       if (new Set(items.map((row) => row.id)).size !== items.length)
         throw new Error('Danh sách đã thay đổi. Vui lòng tải lại.');
-      items = items.filter((row) => reportType(row) === type);
+      items = items.filter((row) =>
+        type ? reportType(row) === type : types.includes(reportType(row)),
+      );
       return reportPage(
         {
           items: items.slice((params.page - 1) * params.pageSize, params.page * params.pageSize),

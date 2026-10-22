@@ -1,0 +1,43 @@
+@reference '../../index.css';
+@layer components {
+  .club-detail {
+    @apply min-w-0 flex flex-col gap-4;
+  }
+  .club-detail .feature-workspace-body {
+    @apply flex flex-col gap-5;
+  }
+  .club-detail-back {
+    @apply inline-flex w-fit items-center gap-2 text-sm font-medium text-[#427466] hover:underline;
+  }
+  .club-detail-context {
+    @apply flex flex-wrap items-center gap-3 text-xs text-[#697382];
+  }
+  .club-detail-context > button {
+    @apply sm:ml-auto;
+  }
+  .club-detail-facts {
+    @apply grid grid-cols-1 gap-5 sm:grid-cols-2;
+  }
+  .club-detail-facts dt {
+    @apply text-xs text-[#697382];
+  }
+  .club-detail-facts dd {
+    @apply mt-1 text-sm font-medium break-words;
+  }
+  .club-detail-shortcuts {
+    @apply grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3;
+  }
+  .club-detail-shortcuts > a {
+    @apply min-w-0 rounded-xl border border-[#e5e9e7] bg-white p-5 flex flex-col gap-2 transition-colors hover:border-[#5c8d80] focus-visible:outline-2 focus-visible:outline-[#5c8d80];
+  }
+  .club-detail-shortcuts strong {
+    @apply text-sm text-[#253c35];
+  }
+  .club-detail-shortcuts span {
+    @apply text-xs leading-6 text-[#697382];
+  }
+  .club-detail a,
+  .club-detail p {
+    @apply break-words;
+  }
+}

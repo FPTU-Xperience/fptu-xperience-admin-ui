@@ -12,11 +12,11 @@ import { clubRequestBody, clubRequestRows } from '../src/utils/club-request-work
 import { validateRosterDraft, readRosterDraft } from '../src/utils/roster-preview.js';
 
 const report = { id: 12, status: 'Under Review', version: 4, createdByUserId: 3 };
-const staff = { id: 9, roles: ['STUDENT_AFFAIRS_ADMIN'] };
+const staff = { id: 9, roles: ['STUDENT_AFFAIR'] };
 
 test('only independent CTSV can decide forwarded reports, not admin-only, self, or other states', () => {
   assert.equal(canDecideReport(staff, report), true);
-  assert.equal(canDecideReport({ id: 9, roles: ['ADMIN'] }, report), false);
+  assert.equal(canDecideReport({ id: 9, roles: ['SYSTEM_ADMIN'] }, report), false);
   assert.equal(canDecideReport({ ...staff, id: 3 }, report), false);
   for (const status of ['Draft', 'Submitted', 'Awaiting Finance', 'Approved', 'Rejected'])
     assert.equal(canDecideReport(staff, { ...report, status }), false);

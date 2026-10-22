@@ -1,0 +1,39 @@
+@reference '../../../index.css';
+@layer components {
+  .mock-boundary {
+    @apply min-w-0 space-y-4;
+  }
+  .mock-boundary > div:last-child {
+    @apply space-y-4;
+  }
+  .mock-boundary-notice {
+    @apply grid grid-cols-[20px_minmax(0,1fr)] items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950 sm:grid-cols-[20px_minmax(0,1fr)_auto];
+  }
+  .mock-boundary-notice > div {
+    @apply min-w-0;
+  }
+  .mock-boundary-notice p {
+    @apply mt-1 text-xs;
+  }
+  .mock-boundary-notice small {
+    @apply mt-2 block text-amber-800;
+  }
+  .mock-boundary-notice > button {
+    @apply col-start-2 justify-self-start sm:col-start-auto;
+  }
+  .mock-boundary button {
+    @apply max-w-full whitespace-normal;
+  }
+  .mock-boundary-semester {
+    @apply flex flex-wrap items-center gap-3 text-xs;
+  }
+  .mock-boundary-readonly {
+    @apply rounded-lg bg-slate-100 p-3 text-xs text-slate-600;
+  }
+  .mock-boundary-result {
+    @apply rounded-lg bg-emerald-50 p-3 text-emerald-900;
+  }
+  .mock-boundary-error {
+    @apply rounded-lg bg-red-50 p-3 text-red-800;
+  }
+}
