@@ -1,0 +1,17 @@
+{
+  "navigationPages": 11,
+  "registeredPages": 11,
+  "navigationTabs": 26,
+  "systemRoles": [
+    "SYSTEM_ADMIN",
+    "STUDENT_AFFAIR",
+    "STUDENT"
+  ],
+  "missing": [],
+  "adminCanAccessCTSV": false,
+  "ctsvCanAccessAdmin": false,
+  "backendInventory": {
+    "status": "not-run",
+    "reason": "Sibling scripts/source-route-inventory.mjs is absent; earlier API inventory remains a historical snapshot."
+  }
+}

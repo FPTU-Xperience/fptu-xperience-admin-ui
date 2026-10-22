@@ -1,0 +1,13 @@
+{
+  "navigationPages": 11,
+  "registeredPages": 11,
+  "reportDetailRoute": true,
+  "clubDetailRoute": true,
+  "navigationTabs": 28,
+  "missing": [],
+  "orphan": [],
+  "backendOperationChecks": 18,
+  "unsupported": [],
+  "unresolvedBackendReceiverDeclarations": 0,
+  "removedFeatureSourceReferences": []
+}
