@@ -109,7 +109,7 @@ export function createSeed() {
       username: 'admin.demo',
       fullName: 'Nguyễn Hoàng Nam',
       email: 'admin.demo@example.edu.vn',
-      role: 'ADMIN',
+      role: 'SYSTEM_ADMIN',
       status: 'active',
     },
     {
@@ -117,7 +117,7 @@ export function createSeed() {
       username: 'admin.backup',
       fullName: 'Trần Minh Châu',
       email: 'admin.backup@example.edu.vn',
-      role: 'ADMIN',
+      role: 'SYSTEM_ADMIN',
       status: 'active',
     },
     {
@@ -125,7 +125,7 @@ export function createSeed() {
       username: 'ctsv.demo',
       fullName: 'Nguyễn Hà Linh',
       email: 'ctsv.demo@example.edu.vn',
-      role: 'STUDENT_AFFAIRS_ADMIN',
+      role: 'STUDENT_AFFAIR',
       status: 'active',
     },
     {
@@ -133,7 +133,7 @@ export function createSeed() {
       username: 'ctsv.02',
       fullName: 'Phạm Thu Hà',
       email: 'ctsv.02@example.edu.vn',
-      role: 'STUDENT_AFFAIRS_ADMIN',
+      role: 'STUDENT_AFFAIR',
       status: 'active',
     },
     ...clubs.map((club, i) => ({
@@ -141,7 +141,7 @@ export function createSeed() {
       username: `manager.${i + 1}`,
       fullName: names[i],
       email: `manager.${i + 1}@example.edu.vn`,
-      role: 'CLUB_MANAGER',
+      role: 'STUDENT',
       status: 'active',
       clubIds: [club.id],
     })),
@@ -150,7 +150,7 @@ export function createSeed() {
       username: `SE${180001 + i}`,
       fullName: names[i % names.length],
       email: `student.${i + 1}@example.edu.vn`,
-      role: 'CLUB_MEMBER',
+      role: 'STUDENT',
       status: i % 31 === 0 ? 'locked' : 'active',
       major: MAJORS[i % MAJORS.length],
       cohort: i % 3 === 0 ? 'K20' : i % 3 === 1 ? 'K19' : 'K18',

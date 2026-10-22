@@ -101,9 +101,9 @@ export async function downloadAccountTemplate() {
     'TaiKhoan',
     ['username', 'fullName', 'email', 'role', 'status'],
     [
-      ['SE200001', 'Nguyễn Minh Anh', 'minhanh@example.edu.vn', 'CLUB_MEMBER', 'active'],
-      ['CTSV003', 'Trần Thu Hà', 'thuha@example.edu.vn', 'STUDENT_AFFAIRS_ADMIN', 'active'],
-      ['MANAGER009', 'Lê Quốc Bảo', 'quocbao@example.edu.vn', 'CLUB_MANAGER', 'active'],
+      ['SE200001', 'Nguyễn Minh Anh', 'minhanh@example.edu.vn', 'STUDENT', 'active'],
+      ['CTSV003', 'Trần Thu Hà', 'thuha@example.edu.vn', 'STUDENT_AFFAIR', 'active'],
+      ['MANAGER009', 'Lê Quốc Bảo', 'quocbao@example.edu.vn', 'STUDENT', 'active'],
     ],
   );
   downloadBuffer(buffer, 'FPTU_Mau_tai_khoan.xlsx');

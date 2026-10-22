@@ -1,3 +1,4 @@
+import { systemRolesFor } from '../../utils/roles.js';
 import './Dashboard.css';
 import { useWorkspace } from '../../context/WorkspaceContext.jsx';
 import { useEffect, useState } from 'react';
@@ -137,8 +138,7 @@ export default function Dashboard() {
 
       // Calculate students
       const students = users.filter((user) => {
-        const roles = Array.isArray(user.roles) ? user.roles : [user.role].filter(Boolean);
-        return roles.includes('CLUB_MEMBER') || user.role === 'CLUB_MEMBER';
+        return systemRolesFor(user).includes('STUDENT');
       });
 
       // Calculate pending applications

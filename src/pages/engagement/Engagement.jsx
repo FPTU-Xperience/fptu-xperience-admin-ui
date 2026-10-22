@@ -1,3 +1,4 @@
+import { systemRolesFor } from '../../utils/roles.js';
 import './Engagement.css';
 import { useWorkspace } from '../../context/WorkspaceContext.jsx';
 import { useEffect, useState } from 'react';
@@ -78,11 +79,10 @@ export function Engagement({ reports = false }) {
         api.clubs.list({ page: 1, pageSize: 100 }),
       ]);
 
-      // Filter to only CLUB_MEMBER
+      // Students are system actors; club membership is a separate relation.
       const users = Array.isArray(usersResponse) ? usersResponse : usersResponse?.items || [];
       const clubMembers = users.filter((u) => {
-        const roles = Array.isArray(u.roles) ? u.roles : [u.role].filter(Boolean);
-        return roles.includes('CLUB_MEMBER') || u.role === 'CLUB_MEMBER';
+        return systemRolesFor(u).includes('STUDENT');
       });
 
       // Map students

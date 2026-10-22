@@ -7,12 +7,12 @@ const valid = {
   username: 'SE999999',
   fullName: 'Sinh Viên Kiểm Thử',
   email: 'test@example.edu.vn',
-  role: 'CLUB_MEMBER',
+  role: 'STUDENT',
   status: 'active',
 };
 test('accepts a valid account and the Student Affairs actor', () => {
   assert.deepEqual(validateAccount(valid, []), []);
-  assert.deepEqual(validateAccount({ ...valid, role: 'STUDENT_AFFAIRS_ADMIN' }, []), []);
+  assert.deepEqual(validateAccount({ ...valid, role: 'STUDENT_AFFAIR' }, []), []);
 });
 test('rejects missing fields, invalid email, role and status', () => {
   assert.equal(
@@ -52,7 +52,7 @@ test('prevents own account deletion, locking and role changes', () => {
     () =>
       guardAccountChanges(accounts, ['admin-self'], 'admin-self', {
         status: 'locked',
-        role: 'ADMIN',
+        role: 'SYSTEM_ADMIN',
       }),
     /đang sử dụng/,
   );
@@ -60,7 +60,7 @@ test('prevents own account deletion, locking and role changes', () => {
     () =>
       guardAccountChanges(accounts, ['admin-self'], 'admin-self', {
         status: 'active',
-        role: 'CLUB_MEMBER',
+        role: 'STUDENT',
       }),
     /đang sử dụng/,
   );
@@ -72,4 +72,11 @@ test('prevents removing final active admin even in a batch', () => {
     /ít nhất một Admin/,
   );
   assert.doesNotThrow(() => guardAccountChanges(accounts, ['admin-2'], 'admin-self'));
+});
+
+test('creation validation accepts only the three new system role names', () => {
+  for (const role of ['SYSTEM_ADMIN', 'STUDENT_AFFAIR', 'STUDENT'])
+    assert.deepEqual(validateAccount({ ...valid, role }, []), []);
+  for (const role of ['ADMIN', 'STUDENT_AFFAIRS_ADMIN', 'CLUB_MANAGER', 'CLUB_MEMBER', 'TREASURER'])
+    assert.ok(validateAccount({ ...valid, role }, []).includes('Vai trò không hợp lệ'));
 });

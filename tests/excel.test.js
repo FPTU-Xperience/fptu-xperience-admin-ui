@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import { createWorkbookBuffer, readAccountWorkbook } from '../src/utils/excel.js';
 
 const headers = ['username', 'fullName', 'email', 'role', 'status'];
-const record = ['SE999999', 'Sinh Viên Kiểm Thử', 'test@example.edu.vn', 'CLUB_MEMBER', 'active'];
+const record = ['SE999999', 'Sinh Viên Kiểm Thử', 'test@example.edu.vn', 'STUDENT', 'active'];
 function file(buffer, name = 'test.xlsx') {
   return { name, size: buffer.byteLength, arrayBuffer: async () => buffer };
 }
@@ -12,7 +12,7 @@ test('real .xlsx buffer round trip preserves Vietnamese text and role', async ()
   const buffer = await createWorkbookBuffer('TaiKhoan', headers, [record]);
   const rows = await readAccountWorkbook(file(buffer), []);
   assert.equal(rows[0].fullName, record[1]);
-  assert.equal(rows[0].role, 'CLUB_MEMBER');
+  assert.equal(rows[0].role, 'STUDENT');
   assert.deepEqual(rows[0].errors, []);
 });
 test('rejects missing required header and empty workbooks', async () => {
@@ -69,11 +69,7 @@ test('accepts Vietnamese headers, defaults status, skips empty lines and catches
   const buffer = await createWorkbookBuffer(
     'TaiKhoan',
     ['MSSV', 'Họ và tên', 'Email', 'Vai trò'],
-    [
-      record.slice(0, 4),
-      [],
-      ['SE888888', 'Nguyễn Văn An', 'NEW@example.edu.vn', 'STUDENT_AFFAIRS_ADMIN'],
-    ],
+    [record.slice(0, 4), [], ['SE888888', 'Nguyễn Văn An', 'NEW@example.edu.vn', 'STUDENT_AFFAIR']],
   );
   const rows = await readAccountWorkbook(file(buffer), [{ email: record[2], username: record[0] }]);
   assert.equal(rows.length, 2);

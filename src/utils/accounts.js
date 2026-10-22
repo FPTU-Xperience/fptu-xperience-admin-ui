@@ -22,12 +22,12 @@ export function validateAccount(input, accounts, excludingId) {
 export function guardAccountChanges(accounts, ids, actorId, replacement) {
   if (
     ids.includes(actorId) &&
-    (!replacement || replacement.status !== 'active' || replacement.role !== 'ADMIN')
+    (!replacement || replacement.status !== 'active' || replacement.role !== 'SYSTEM_ADMIN')
   )
     throw new Error('Không thể xóa, khóa hoặc đổi vai trò tài khoản đang sử dụng.');
   const next = accounts.filter((a) => !ids.includes(a.id));
   if (replacement) next.push(replacement);
-  if (!next.some((a) => a.role === 'ADMIN' && a.status === 'active'))
+  if (!next.some((a) => a.role === 'SYSTEM_ADMIN' && a.status === 'active'))
     throw new Error('Cần giữ lại ít nhất một Admin đang hoạt động.');
 }
 

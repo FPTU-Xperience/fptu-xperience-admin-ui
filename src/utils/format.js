@@ -1,9 +1,4 @@
-export const ROLES = {
-  ADMIN: 'Quản trị viên',
-  STUDENT_AFFAIRS_ADMIN: 'Công tác sinh viên',
-  CLUB_MANAGER: 'Chủ nhiệm CLB',
-  CLUB_MEMBER: 'Sinh viên',
-};
+export { ROLE_LABELS as ROLES } from './roles.js';
 export const MAJORS = [
   'Kỹ thuật phần mềm',
   'Trí tuệ nhân tạo',
