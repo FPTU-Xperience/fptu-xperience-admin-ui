@@ -16,7 +16,7 @@ import {
   Panel,
 } from '../../components/ui/index.js';
 
-export function Seasons() {
+export function Seasons({ section = 'all' }) {
   const run = useAction();
 
   const { retrySemesters } = useWorkspace();
@@ -100,158 +100,175 @@ export function Seasons() {
         description="Thiết lập nhịp trải nghiệm, ngưỡng kết nối và thời hạn báo cáo."
       >
         <div className="seasons-content">
-          <Button icon={Plus} onClick={() => setEditingSeason({})}>
-            Thêm học kỳ
-          </Button>
-          <Button variant="primary" icon={Plus} onClick={() => setEditingDeadline({})}>
-            Thêm deadline
-          </Button>
+          {section !== 'deadlines' && (
+            <Button icon={Plus} onClick={() => setEditingSeason({})}>
+              Thêm học kỳ
+            </Button>
+          )}
+          {section !== 'periods' && (
+            <Button variant="primary" icon={Plus} onClick={() => setEditingDeadline({})}>
+              Thêm deadline
+            </Button>
+          )}
         </div>
       </PageHeader>
 
       {/* Season Principle Banner */}
-      <div className="seasons-content-2">
-        <CalendarDays size={28} className="seasons-calendar-days" />
-        <div>
-          <h2 className="seasons-heading">Tiến bộ theo mùa. Giá trị theo năm tháng.</h2>
-          <p className="seasons-description">
-            Xperience Point cạnh tranh và xếp hạng được tính riêng mỗi học kỳ. Hồ sơ đóng góp và lịch sử xác thực
-            được giữ lâu dài.
-          </p>
-        </div>
-      </div>
-
-      {seasonStatus === 'loading' && (
-        <p role="status" className="seasons-description-2">
-          Đang tải học kỳ…
-        </p>
-      )}
-      {seasonStatus === 'error' && (
-        <div role="alert" className="seasons-content-3">
-          <p>{seasonError}</p>
-          <Button onClick={fetchSeasons}>Thử lại</Button>
-        </div>
-      )}
-      {seasonStatus === 'empty' && (
-        <Empty title="Chưa có học kỳ" description="Thêm học kỳ đầu tiên để bắt đầu cấu hình." />
-      )}
-      {/* Season Grid */}
-      <div className="seasons-content-4">
-        {seasons.map((s) => (
-          <Panel key={s.id} className="seasons-panel">
-            {/* Heading */}
-            <div className="seasons-content-5">
-              <span className="seasons-text">
-                <CalendarDays size={24} />
-              </span>
-              <Badge tone={s.id === currentSeason ? 'orange' : 'neutral'}>
-                {s.id === currentSeason ? 'Đang xem' : 'Học kỳ khác'}
-              </Badge>
+      {section !== 'deadlines' && (
+        <>
+          <div className="seasons-content-2">
+            <CalendarDays size={28} className="seasons-calendar-days" />
+            <div>
+              <h2 className="seasons-heading">Tiến bộ theo mùa. Giá trị theo năm tháng.</h2>
+              <p className="seasons-description">
+                Xperience Point cạnh tranh và xếp hạng được tính riêng mỗi học kỳ. Hồ sơ đóng góp và lịch sử xác
+                thực được giữ lâu dài.
+              </p>
             </div>
+          </div>
 
-            {/* Info */}
-            <h2 className="seasons-heading-2">{seasonLabel(s.id)}</h2>
-            <p className="seasons-description-3">
-              {date(s.start)} — {date(s.end)}
+          {seasonStatus === 'loading' && (
+            <p role="status" className="seasons-description-2">
+              Đang tải học kỳ…
             </p>
+          )}
+          {seasonStatus === 'error' && (
+            <div role="alert" className="seasons-content-3">
+              <p>{seasonError}</p>
+              <Button onClick={fetchSeasons}>Thử lại</Button>
+            </div>
+          )}
+          {seasonStatus === 'empty' && (
+            <Empty title="Chưa có học kỳ" description="Thêm học kỳ đầu tiên để bắt đầu cấu hình." />
+          )}
+          {/* Season Grid */}
+          <div className="seasons-content-4">
+            {seasons.map((s) => (
+              <Panel key={s.id} className="seasons-panel">
+                {/* Heading */}
+                <div className="seasons-content-5">
+                  <span className="seasons-text">
+                    <CalendarDays size={24} />
+                  </span>
+                  <Badge tone={s.id === currentSeason ? 'orange' : 'neutral'}>
+                    {s.id === currentSeason ? 'Đang xem' : 'Học kỳ khác'}
+                  </Badge>
+                </div>
 
-            {/* Details */}
-            <dl className="seasons-definition-list">
-              <div className="seasons-content-6">
-                <dt className="seasons-term">Ngưỡng cần kết nối</dt>
-                <dd className="seasons-definition">{s.threshold} Xperience Point</dd>
-              </div>
-              <div className="seasons-content-6">
-                <dt className="seasons-term">Xperience Point mỗi cấp độ</dt>
-                <dd className="seasons-definition">{s.xpPerLevel} Xperience Point</dd>
-              </div>
-              <div className="seasons-content-6">
-                <dt className="seasons-term">Hiển thị xếp hạng</dt>
-                <dd className="seasons-definition">
-                  {s.rankings ? 'Bật' : 'Tắt · Ưu tiên tiến bộ cá nhân'}
-                </dd>
-              </div>
-            </dl>
+                {/* Info */}
+                <h2 className="seasons-heading-2">{seasonLabel(s.id)}</h2>
+                <p className="seasons-description-3">
+                  {date(s.start)} — {date(s.end)}
+                </p>
 
-            <Button icon={Pencil} onClick={() => setEditingSeason(s)} className="seasons-button">
-              Chỉnh sửa cấu hình
-            </Button>
-          </Panel>
-        ))}
-      </div>
+                {/* Details */}
+                <dl className="seasons-definition-list">
+                  <div className="seasons-content-6">
+                    <dt className="seasons-term">Ngưỡng cần kết nối</dt>
+                    <dd className="seasons-definition">{s.threshold} Xperience Point</dd>
+                  </div>
+                  <div className="seasons-content-6">
+                    <dt className="seasons-term">Xperience Point mỗi cấp độ</dt>
+                    <dd className="seasons-definition">{s.xpPerLevel} Xperience Point</dd>
+                  </div>
+                  <div className="seasons-content-6">
+                    <dt className="seasons-term">Hiển thị xếp hạng</dt>
+                    <dd className="seasons-definition">
+                      {s.rankings ? 'Bật' : 'Tắt · Ưu tiên tiến bộ cá nhân'}
+                    </dd>
+                  </div>
+                </dl>
 
-      {/* Deadlines Section */}
-      <Panel title="Deadline báo cáo" description="Thời hạn nộp báo cáo hoạt động cho từng học kỳ">
-        {error && (
-          <div className="seasons-content-7">
-            <span className="seasons-text-2">⚠️</span>
-            {error}
-            <button className="seasons-button-2" onClick={fetchDeadlines}>
-              Thử lại
-            </button>
+                <Button
+                  icon={Pencil}
+                  onClick={() => setEditingSeason(s)}
+                  className="seasons-button"
+                >
+                  Chỉnh sửa cấu hình
+                </Button>
+              </Panel>
+            ))}
           </div>
-        )}
 
-        {loading ? (
-          <div className="seasons-content-8">
-            <div className="seasons-content-9" />
-            Đang tải deadline...
-          </div>
-        ) : deadlines.length === 0 ? (
-          <Empty
-            title="Chưa có deadline"
-            description="Thêm deadline để quản lý thời hạn nộp báo cáo."
-          />
-        ) : (
-          <div className="seasons-content-10">
-            <table className="seasons-table">
-              <thead>
-                <tr>
-                  <th className="seasons-column">HỌC KỲ</th>
-                  <th className="seasons-column">NGÀY HẾT HẠN</th>
-                  <th className="seasons-column">LOẠI</th>
-                  <th className="seasons-column">TRẠNG THÁI</th>
-                  <th className="seasons-column" />
-                </tr>
-              </thead>
-              <tbody>
-                {deadlines.map((dl) => (
-                  <tr key={dl.period}>
-                    <td className="seasons-cell">
-                      <strong className="seasons-value">{dl.period}</strong>
-                    </td>
-                    <td className="seasons-cell-2">{date(dl.dueDate)}</td>
-                    <td className="seasons-cell">
-                      <Badge>{dl.type || 'monthly'}</Badge>
-                    </td>
-                    <td className="seasons-cell">
-                      <Badge tone={dl.isPast ? 'neutral' : 'green'} dot>
-                        {dl.isPast ? 'Đã qua' : 'Còn hạn'}
-                      </Badge>
-                    </td>
-                    <td className="seasons-cell">
-                      <div className="seasons-content-11">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          icon={Pencil}
-                          onClick={() => setEditingDeadline(dl)}
-                        />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          icon={Trash2}
-                          onClick={() => setDeletingDeadline(dl)}
-                        />
-                      </div>
-                    </td>
+          {/* Deadlines Section */}
+        </>
+      )}
+      {section !== 'periods' && (
+        <Panel
+          title="Deadline báo cáo"
+          description="Thời hạn nộp báo cáo hoạt động cho từng học kỳ"
+        >
+          {error && (
+            <div className="seasons-content-7">
+              <span className="seasons-text-2">⚠️</span>
+              {error}
+              <button className="seasons-button-2" onClick={fetchDeadlines}>
+                Thử lại
+              </button>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="seasons-content-8">
+              <div className="seasons-content-9" />
+              Đang tải deadline...
+            </div>
+          ) : deadlines.length === 0 ? (
+            <Empty
+              title="Chưa có deadline"
+              description="Thêm deadline để quản lý thời hạn nộp báo cáo."
+            />
+          ) : (
+            <div className="seasons-content-10">
+              <table className="seasons-table">
+                <thead>
+                  <tr>
+                    <th className="seasons-column">HỌC KỲ</th>
+                    <th className="seasons-column">NGÀY HẾT HẠN</th>
+                    <th className="seasons-column">LOẠI</th>
+                    <th className="seasons-column">TRẠNG THÁI</th>
+                    <th className="seasons-column" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Panel>
+                </thead>
+                <tbody>
+                  {deadlines.map((dl) => (
+                    <tr key={dl.period}>
+                      <td className="seasons-cell">
+                        <strong className="seasons-value">{dl.period}</strong>
+                      </td>
+                      <td className="seasons-cell-2">{date(dl.dueDate)}</td>
+                      <td className="seasons-cell">
+                        <Badge>{dl.type || 'monthly'}</Badge>
+                      </td>
+                      <td className="seasons-cell">
+                        <Badge tone={dl.isPast ? 'neutral' : 'green'} dot>
+                          {dl.isPast ? 'Đã qua' : 'Còn hạn'}
+                        </Badge>
+                      </td>
+                      <td className="seasons-cell">
+                        <div className="seasons-content-11">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={Pencil}
+                            onClick={() => setEditingDeadline(dl)}
+                          />
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={Trash2}
+                            onClick={() => setDeletingDeadline(dl)}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
+      )}
 
       {/* Season Form Modal */}
       {editingSeason && (

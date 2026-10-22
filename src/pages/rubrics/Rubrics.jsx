@@ -79,7 +79,7 @@ function computeTotal(weights) {
   return weights.reduce((s, w) => s + Number(w.weight || 0), 0);
 }
 
-export function Rubrics() {
+export function Rubrics({ showPolicy = true }) {
   const run = useAction();
   const { season } = useWorkspace();
 
@@ -533,7 +533,9 @@ export function Rubrics() {
       )}
 
       {/* History Modal */}
-      <ExperiencePolicyPanel benchmarkId={benchmark?.id} onChanged={fetchBenchmark} />
+      {showPolicy && (
+        <ExperiencePolicyPanel benchmarkId={benchmark?.id} onChanged={fetchBenchmark} />
+      )}
       {history && (
         <Modal
           title={`Lịch sử Benchmark · ${history.semesterCode}`}

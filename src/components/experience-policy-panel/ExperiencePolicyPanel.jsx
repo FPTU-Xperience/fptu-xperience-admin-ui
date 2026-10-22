@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { isAdmin } from '../../utils/access.js';
 import { Button, Field, Panel } from '../ui/index.js';
 
-export default function ExperiencePolicyPanel({ benchmarkId, onChanged }) {
+export default function ExperiencePolicyPanel({ benchmarkId, onChanged, historyOnly = false }) {
   const { user } = useAuth();
   const [policy, setPolicy] = useState(null),
     [attempt, retry] = useState(0),
@@ -73,7 +73,9 @@ export default function ExperiencePolicyPanel({ benchmarkId, onChanged }) {
   if (!benchmarkId) return null;
   return (
     <Panel
-      title="Phiên bản chính sách trải nghiệm"
+      title={
+        historyOnly ? 'Lịch sử phiên bản chính sách từ máy chủ' : 'Phiên bản chính sách trải nghiệm'
+      }
       description="Lưu snapshot đã phê duyệt riêng với thao tác khóa benchmark. Phê duyệt chỉ được gửi khi người vận hành xác nhận các tham số đã thống nhất."
     >
       <div className="experience-policy-panel-content">
@@ -95,7 +97,7 @@ export default function ExperiencePolicyPanel({ benchmarkId, onChanged }) {
                 <small>Phiên bản {version.policyVersion}</small>
               </article>
             ))}
-            {isAdmin(user) && (
+            {isAdmin(user) && !historyOnly && (
               <fieldset disabled={busy} className="experience-policy-panel-fieldset">
                 <Field label="Cơ sở phê duyệt / lý do mở bản nháp">
                   <textarea

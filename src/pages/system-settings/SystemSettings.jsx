@@ -49,7 +49,7 @@ const DEFAULT_SETTINGS = {
   retention: 365,
 };
 
-export function SystemSettings({ type }) {
+export function SystemSettings({ type, integrationSection = 'all', healthSection = 'all' }) {
   const run = useAction();
   const [form, setForm] = useState(DEFAULT_SETTINGS);
 
@@ -132,74 +132,81 @@ export function SystemSettings({ type }) {
       {type === 'health' ? (
         <>
           {/* Stats Grid */}
-          <div className="system-settings-content-2">
-            <StatCard
-              label="Tài khoản trong hệ thống"
-              value={loading ? '-' : stats.accounts}
-              icon={Users}
-              note="Tài khoản đã đăng ký"
-              tone="blue"
-            />
-            <StatCard
-              label="Câu lạc bộ"
-              value={loading ? '-' : stats.clubs}
-              icon={Database}
-              note="Câu lạc bộ đang hoạt động"
-              tone="green"
-            />
-            <StatCard
-              label="Sự kiện nhật ký"
-              value={loading ? '-' : stats.audit}
-              icon={ScrollText}
-              note="Các thay đổi đã ghi nhận"
-            />
-          </div>
+          {healthSection !== 'connections' && (
+            <div className="system-settings-content-2">
+              <StatCard
+                label="Tài khoản trong hệ thống"
+                value={loading ? '-' : stats.accounts}
+                icon={Users}
+                note="Tài khoản đã đăng ký"
+                tone="blue"
+              />
+              <StatCard
+                label="Câu lạc bộ"
+                value={loading ? '-' : stats.clubs}
+                icon={Database}
+                note="Câu lạc bộ đang hoạt động"
+                tone="green"
+              />
+              <StatCard
+                label="Sự kiện nhật ký"
+                value={loading ? '-' : stats.audit}
+                icon={ScrollText}
+                note="Các thay đổi đã ghi nhận"
+              />
+            </div>
+          )}
 
           {/* Service List */}
-          <Panel title="Trạng thái dịch vụ" description="Kết nối tới các microservice của backend.">
-            <div className="system-settings-content-3">
-              {[
-                [Server, 'API Gateway', 'Cổng kết nối các microservice', '/api/health'],
-                [
-                  KeyRound,
-                  'Định danh trường học',
-                  'Google / hệ thống SSO của trường',
-                  '/api/auth/health',
-                ],
-                [
-                  CalendarDays,
-                  'Đồng bộ thời khóa biểu',
-                  'Lọc hoạt động theo lịch học thực tế',
-                  null,
-                ],
-                [
-                  Activity,
-                  'Tác vụ tính Xperience Point & chuyển học kỳ',
-                  'Lịch chạy tác vụ và kết quả xử lý',
-                  '/api/kpis/health',
-                ],
-                [
-                  ShieldCheck,
-                  'Kiểm tra toàn vẹn sổ cái',
-                  'Kiểm chứng dữ liệu đóng góp trên máy chủ',
-                  '/api/reports/health',
-                ],
-              ].map(([Icon, title, desc, healthEndpoint]) => (
-                <div key={title} className="system-settings-content-4">
-                  <span className="system-settings-text-2">
-                    <Icon size={22} />
-                  </span>
-                  <div className="system-settings-content-5">
-                    <strong className="system-settings-value">{title}</strong>
-                    <small className="system-settings-caption">{desc}</small>
+          {healthSection !== 'overview' && (
+            <Panel
+              title="Trạng thái dịch vụ"
+              description="Kết nối tới các microservice của backend."
+            >
+              <div className="system-settings-content-3">
+                {[
+                  [Server, 'API Gateway', 'Cổng kết nối các microservice', '/api/health'],
+                  [
+                    KeyRound,
+                    'Định danh trường học',
+                    'Google / hệ thống SSO của trường',
+                    '/api/auth/health',
+                  ],
+                  [
+                    CalendarDays,
+                    'Đồng bộ thời khóa biểu',
+                    'Lọc hoạt động theo lịch học thực tế',
+                    null,
+                  ],
+                  [
+                    Activity,
+                    'Tác vụ tính Xperience Point & chuyển học kỳ',
+                    'Lịch chạy tác vụ và kết quả xử lý',
+                    '/api/kpis/health',
+                  ],
+                  [
+                    ShieldCheck,
+                    'Kiểm tra toàn vẹn sổ cái',
+                    'Kiểm chứng dữ liệu đóng góp trên máy chủ',
+                    '/api/reports/health',
+                  ],
+                ].map(([Icon, title, desc, healthEndpoint]) => (
+                  <div key={title} className="system-settings-content-4">
+                    <span className="system-settings-text-2">
+                      <Icon size={22} />
+                    </span>
+                    <div className="system-settings-content-5">
+                      <strong className="system-settings-value">{title}</strong>
+                      <small className="system-settings-caption">{desc}</small>
+                    </div>
+                    <Badge tone={healthEndpoint ? 'green' : 'neutral'}>
+                      {healthEndpoint ? 'Hoạt động' : 'Chưa kết nối'}
+                    </Badge>
                   </div>
-                  <Badge tone={healthEndpoint ? 'green' : 'neutral'}>
-                    {healthEndpoint ? 'Hoạt động' : 'Chưa kết nối'}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </Panel>
+                ))}
+              </div>
+            </Panel>
+          )}
         </>
       ) : (
         <form onSubmit={submit}>
@@ -207,65 +214,69 @@ export function SystemSettings({ type }) {
             /* Integrations Grid */
             <div className="system-settings-content-6">
               {/* Identity Panel */}
-              <Panel
-                title="Định danh sinh viên"
-                description="Đăng nhập qua tài khoản thuộc hệ thống của trường."
-              >
-                <div className="system-settings-content-7">
-                  <div className="system-settings-content-8">
-                    <span className="system-settings-text-3">
-                      <KeyRound size={28} />
-                    </span>
-                    <Badge tone="green">Đã kết nối</Badge>
+              {integrationSection !== 'timetable' && (
+                <Panel
+                  title="Định danh sinh viên"
+                  description="Đăng nhập qua tài khoản thuộc hệ thống của trường."
+                >
+                  <div className="system-settings-content-7">
+                    <div className="system-settings-content-8">
+                      <span className="system-settings-text-3">
+                        <KeyRound size={28} />
+                      </span>
+                      <Badge>Cấu hình định danh</Badge>
+                    </div>
+                    <Field
+                      label="Tên miền email được phép"
+                      hint="Chỉ nhập tên miền, ví dụ: fpt.edu.vn"
+                    >
+                      <input
+                        placeholder="fpt.edu.vn"
+                        pattern="[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+                        maxLength={253}
+                        value={form.googleDomain}
+                        onChange={(e) => setForm({ ...form, googleDomain: e.target.value })}
+                      />
+                    </Field>
+                    <p className="system-settings-description-2">
+                      Định danh qua Google Workspace for Education. Sinh viên đăng nhập bằng email
+                      trường.
+                    </p>
                   </div>
-                  <Field
-                    label="Tên miền email được phép"
-                    hint="Chỉ nhập tên miền, ví dụ: fpt.edu.vn"
-                  >
-                    <input
-                      placeholder="fpt.edu.vn"
-                      pattern="[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
-                      maxLength={253}
-                      value={form.googleDomain}
-                      onChange={(e) => setForm({ ...form, googleDomain: e.target.value })}
-                    />
-                  </Field>
-                  <p className="system-settings-description-2">
-                    Định danh qua Google Workspace for Education. Sinh viên đăng nhập bằng email
-                    trường.
-                  </p>
-                </div>
-              </Panel>
+                </Panel>
+              )}
 
               {/* Timetable Panel */}
-              <Panel
-                title="Thời khóa biểu"
-                description="Hỗ trợ gợi ý câu lạc bộ và hoạt động phù hợp lịch học."
-              >
-                <div className="system-settings-content-7">
-                  <div className="system-settings-content-8">
-                    <span className="system-settings-text-4">
-                      <CalendarDays size={28} />
-                    </span>
-                    <Badge>Chưa kết nối</Badge>
+              {integrationSection !== 'identity' && (
+                <Panel
+                  title="Thời khóa biểu"
+                  description="Hỗ trợ gợi ý câu lạc bộ và hoạt động phù hợp lịch học."
+                >
+                  <div className="system-settings-content-7">
+                    <div className="system-settings-content-8">
+                      <span className="system-settings-text-4">
+                        <CalendarDays size={28} />
+                      </span>
+                      <Badge>Chưa kết nối</Badge>
+                    </div>
+                    <Field
+                      label="Địa chỉ API thời khóa biểu"
+                      hint="Địa chỉ dùng cho cấu hình tích hợp phía máy chủ."
+                    >
+                      <input
+                        type="url"
+                        placeholder="https://…"
+                        value={form.timetableUrl}
+                        onChange={(e) => setForm({ ...form, timetableUrl: e.target.value })}
+                      />
+                    </Field>
+                    <p className="system-settings-description-2">
+                      Lưu địa chỉ chưa kích hoạt đồng bộ. Cần dịch vụ backend và quyền truy cập được
+                      cấp bởi trường.
+                    </p>
                   </div>
-                  <Field
-                    label="Địa chỉ API thời khóa biểu"
-                    hint="Địa chỉ dùng cho cấu hình tích hợp phía máy chủ."
-                  >
-                    <input
-                      type="url"
-                      placeholder="https://…"
-                      value={form.timetableUrl}
-                      onChange={(e) => setForm({ ...form, timetableUrl: e.target.value })}
-                    />
-                  </Field>
-                  <p className="system-settings-description-2">
-                    Lưu địa chỉ chưa kích hoạt đồng bộ. Cần dịch vụ backend và quyền truy cập được
-                    cấp bởi trường.
-                  </p>
-                </div>
-              </Panel>
+                </Panel>
+              )}
             </div>
           ) : (
             /* Settings Grid */

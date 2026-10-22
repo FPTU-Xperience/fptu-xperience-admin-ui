@@ -1,3 +1,4 @@
+import { isCTSV } from '../../utils/access.js';
 import './ClubRequests.css';
 import '../../components/operations/Operations.css';
 import { useEffect, useRef, useState } from 'react';
@@ -17,7 +18,7 @@ import {
 
 const titles = { disband: 'Giải thể câu lạc bộ', transfer: 'Chuyển chủ nhiệm' };
 const states = { PENDING: 'Chờ duyệt', APPROVED: 'Đã duyệt', REJECTED: 'Từ chối' };
-export function ClubRequests() {
+export function ClubRequests({ clubId: fixedClubId } = {}) {
   const { user } = useAuth();
   const { notify } = useWorkspace();
   const [params, setParams] = useSearchParams();
@@ -45,6 +46,8 @@ export function ClubRequests() {
   }, []);
   const rows = (result.data || []).filter(
     (row) =>
+      (!(fixedClubId || params.get('clubId')) ||
+        String(row.clubId) === (fixedClubId || params.get('clubId'))) &&
       (!status || row.status.toUpperCase() === status) &&
       normalize(
         `${row.clubName} ${row.id} ${row.requesterName || ''} ${row.currentOwnerName || ''} ${row.newOwnerName || ''}`,
@@ -53,7 +56,11 @@ export function ClubRequests() {
   const totalPages = Math.max(1, Math.ceil(rows.length / 20)),
     currentPage = Math.min(page, totalPages);
   const choose = (value) => {
-    setParams({ type: value });
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set('type', value);
+      return next;
+    });
     setPage(1);
     setReview(null);
     setQuery('');
@@ -61,7 +68,7 @@ export function ClubRequests() {
   };
   const submit = async (event) => {
     event.preventDefault();
-    if (lock.current || !user.roles.includes('STUDENT_AFFAIRS_ADMIN')) return;
+    if (lock.current || !isCTSV(user)) return;
     lock.current = true;
     setBusy(true);
     setError('');
@@ -110,7 +117,14 @@ export function ClubRequests() {
             {label}
           </Button>
         ))}
-        <Link className="operation-link" to="/ctsv/leadership">
+        <Link
+          className="operation-link"
+          to={
+            fixedClubId
+              ? `/ctsv/clubs/${encodeURIComponent(fixedClubId)}?view=leadership`
+              : '/ctsv/clubs?view=leadership'
+          }
+        >
           Kế nhiệm khẩn cấp
         </Link>
       </div>
@@ -211,8 +225,7 @@ export function ClubRequests() {
                 <p className="club-requests-description">{date(review.reviewedAtUtc)}</p>
               </div>
             )}
-            {review.status.toUpperCase() === 'PENDING' &&
-            user.roles.includes('STUDENT_AFFAIRS_ADMIN') ? (
+            {review.status.toUpperCase() === 'PENDING' && isCTSV(user) ? (
               <>
                 <Field label="Quyết định">
                   <select
