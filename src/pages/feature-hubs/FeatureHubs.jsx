@@ -8,7 +8,6 @@ import FeatureWorkspace, {
 } from '../../components/workflow/feature-workspace/FeatureWorkspace.jsx';
 import MockBoundary from '../../components/workflow/mock-boundary/MockBoundary.jsx';
 import ActivityWorkflow from '../../components/workflow/activity-workflow/ActivityWorkflow.jsx';
-import RosterWorkflow from '../../components/workflow/roster-workflow/RosterWorkflow.jsx';
 import RolloverWorkflow from '../../components/workflow/rollover-workflow/RolloverWorkflow.jsx';
 import LeadershipWorkflow from '../../components/workflow/leadership-workflow/LeadershipWorkflow.jsx';
 import BonusWorkflow from '../../components/workflow/bonus-workflow/BonusWorkflow.jsx';
@@ -33,6 +32,9 @@ import Accounts from '../accounts/Accounts.jsx';
 import { RoleMatrix } from '../role-matrix/RoleMatrix.jsx';
 import { SystemSettings } from '../system-settings/SystemSettings.jsx';
 import { Audit } from '../audit/Audit.jsx';
+import { StudentRoster } from '../student-roster/StudentRoster.jsx';
+import ActivityApplications from './ActivityApplications.jsx';
+import AcademicCalendar from '../seasons/AcademicCalendar.jsx';
 
 export function SourceSwitch({ realLabel = 'Hồ sơ API', mockLabel = 'Luồng mô phỏng', children }) {
   const [search, setSearch] = useSearchParams(),
@@ -76,13 +78,14 @@ export function SemesterHub() {
       tabs={tabs}
       active={active}
     >
-      {active === 'periods' && <Seasons section="periods" />}
-      {active === 'deadlines' && <Seasons section="deadlines" />}
-      {active === 'students' && (
-        <MockBoundary>
-          <RosterWorkflow />
-        </MockBoundary>
+      {active === 'periods' && (
+        <>
+          <Seasons section="periods" />
+          <AcademicCalendar />
+        </>
       )}
+      {active === 'deadlines' && <Seasons section="deadlines" />}
+      {active === 'students' && <StudentRoster />}
       {active === 'rollover' && (
         <MockBoundary>
           <RolloverWorkflow />
@@ -135,7 +138,10 @@ export function ActivitiesHub() {
                 <ActivityWorkflow />
               </MockBoundary>
             ) : (
-              <ClubReports reportScope="activity" />
+              <>
+                <ActivityApplications />
+                <ClubReports reportScope="activity" />
+              </>
             )
           }
         </SourceSwitch>
