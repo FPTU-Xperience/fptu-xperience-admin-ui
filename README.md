@@ -22,7 +22,7 @@ Các biến môi trường hiện có:
 | `VITE_API_BASE_URL`     | API gateway; mặc định phát triển là `http://localhost:7000` |
 | `VITE_GOOGLE_CLIENT_ID` | Google Identity Services client hiện tại                    |
 
-Chưa thay đổi phương án Google SSO giữa Admin UI và ClubHub. Dev Login vẫn là luồng có sẵn của repo; backend phải kiểm soát việc bật endpoint này.
+Email + mật khẩu và Google dùng chung session refresh, đồng bộ login/logout giữa các tab và SSO Admin/CTSV hai chiều với ClubHub: [cơ chế và thứ tự triển khai](docs/session-and-staff-sso.md). `VITE_LOGIN_ACCOUNT_SHORTCUTS=true` bật hai nút điền nhanh email trong môi trường cần kiểm thử; mặc định ẩn và không điền mật khẩu. Logout/session hết hạn đều về ClubHub `/v2`. Deploy API trước hai UI; source/browser fixture chưa xác nhận SSO trên production. Luồng dev-login chỉ nhập email đã được thay bằng `/api/auth/email-login` yêu cầu mật khẩu.
 
 ## Cấu trúc và quy ước
 

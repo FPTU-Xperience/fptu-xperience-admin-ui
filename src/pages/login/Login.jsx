@@ -6,18 +6,25 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import Brand from '../../components/common/brand/Brand.jsx';
+import { session } from '../../services/api.js';
+import { bindGoogleSignIn } from '../../services/google-signin.js';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { googleLogin, devLogin, isLoading, error, clearError } = useAuth();
+  const { googleLogin, emailLogin, isLoading, isSigningIn, error, clearError } = useAuth();
+  const busy = isLoading || isSigningIn;
   const [loginMode, setLoginMode] = useState('google');
-  const [devEmail, setDevEmail] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const shortcuts = import.meta.env.VITE_LOGIN_ACCOUNT_SHORTCUTS === 'true';
   const [localError, setLocalError] = useState('');
   const [googleReady, setGoogleReady] = useState(false);
   const googleButtonRef = useRef(null);
-  const googleScriptRef = useRef(null);
+  const popupAuthEnd = useRef(null);
+  const credentialHandler = useRef(null);
+  credentialHandler.current = handleGoogleResponse;
   const panelContentRef = useRef(null);
   const [panelHeight, setPanelHeight] = useState(null);
 
@@ -33,47 +40,43 @@ export default function Login() {
   useEffect(() => {
     if (loginMode !== 'google' || !GOOGLE_CLIENT_ID) return;
 
-    if (window.google?.accounts?.id) {
-      initializeGoogle();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onerror = () => setLocalError('Không thể tải đăng nhập Google. Vui lòng thử lại.');
-    script.onload = () => {
-      googleScriptRef.current = script;
-      initializeGoogle();
+    let disposed = false, unbind;
+    const initialize = () => {
+      if (disposed || !googleButtonRef.current || !window.google?.accounts?.id) return;
+      unbind?.();
+      unbind = bindGoogleSignIn(window.google.accounts.id, GOOGLE_CLIENT_ID,
+        response => credentialHandler.current?.(response));
+      googleButtonRef.current.replaceChildren();
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline', size: 'large', shape: 'rectangular', text: 'signin_with', locale: 'vi',
+        click_listener: () => {
+          popupAuthEnd.current?.();
+          popupAuthEnd.current = session.beginAuthentication();
+        },
+      });
+      setGoogleReady(true);
     };
-    document.head.appendChild(script);
-
+    const onError = () => setLocalError('Không thể tải đăng nhập Google. Vui lòng thử lại.');
+    let script = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+    if (!script) {
+      script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+    script.addEventListener('load', initialize);
+    script.addEventListener('error', onError);
+    if (window.google?.accounts?.id) initialize();
     return () => {
-      if (googleScriptRef.current) {
-        googleScriptRef.current.remove();
-      }
+      disposed = true;
+      unbind?.();
+      popupAuthEnd.current?.();
+      popupAuthEnd.current = null;
+      script.removeEventListener('load', initialize);
+      script.removeEventListener('error', onError);
     };
   }, [loginMode]);
-
-  function initializeGoogle() {
-    if (!window.google?.accounts?.id || !GOOGLE_CLIENT_ID || !googleButtonRef.current) return;
-
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleResponse,
-    });
-
-    window.google.accounts.id.renderButton(googleButtonRef.current, {
-      theme: 'outline',
-      size: 'large',
-      shape: 'rectangular',
-      text: 'signin_with',
-      locale: 'vi',
-    });
-
-    setGoogleReady(true);
-  }
 
   async function handleGoogleResponse(response) {
     setLocalError('');
@@ -84,24 +87,28 @@ export default function Login() {
       navigateAfterLogin(userData);
     } catch (err) {
       setLocalError(err.message || 'Đăng nhập Google thất bại.');
+    } finally {
+      popupAuthEnd.current?.();
+      popupAuthEnd.current = null;
     }
   }
 
-  async function handleDevSubmit(e) {
+  async function handleEmailSubmit(e) {
     e.preventDefault();
     setLocalError('');
     clearError();
 
-    if (!devEmail.trim()) {
-      setLocalError('Vui lòng nhập email để đăng nhập dev.');
+    if (!email.trim() || !password) {
+      setLocalError('Vui lòng nhập email và mật khẩu.');
       return;
     }
 
     try {
-      const userData = await devLogin(devEmail.trim());
+      const userData = await emailLogin(email.trim(), password);
+      setPassword('');
       navigateAfterLogin(userData);
     } catch (err) {
-      setLocalError(err.message || 'Dev login thất bại.');
+      setLocalError(err.message || 'Đăng nhập email thất bại.');
     }
   }
 
@@ -141,13 +148,14 @@ export default function Login() {
             <h2 className="login-heading">Đăng nhập</h2>
             <p className="login-description-2">Sử dụng tài khoản được cấp quyền truy cập.</p>
             <div className="login-content-4" role="group" aria-label="Phương thức đăng nhập">
-              {['google', 'dev'].map((mode) => (
+              {['google', 'email'].map((mode) => (
                 <Button
                   key={mode}
                   type="button"
                   variant={loginMode === mode ? 'primary' : 'secondary'}
                   aria-pressed={loginMode === mode}
                   className="login-method-button"
+                  disabled={busy}
                   onClick={() => {
                     setLoginMode(mode);
                     setLocalError('');
@@ -169,8 +177,7 @@ export default function Login() {
                 <div className="login-content-5">
                   {!GOOGLE_CLIENT_ID ? (
                     <p className="login-description-4">
-                      Đăng nhập Google chưa sẵn sàng. Bạn có thể dùng Dev Login trong môi trường
-                      phát triển.
+                      Đăng nhập Google chưa sẵn sàng. Bạn có thể đăng nhập bằng email và mật khẩu.
                     </p>
                   ) : (
                     <>
@@ -187,35 +194,40 @@ export default function Login() {
                       )}
                     </>
                   )}
-                  <Button className="login-button" onClick={() => setLoginMode('dev')}>
+                  <Button className="login-button" onClick={() => setLoginMode('email')}>
                     Chuyển sang Đăng nhập bằng email
                   </Button>
                 </div>
               ) : (
-                <form onSubmit={handleDevSubmit} className="login-content-5">
+                <form onSubmit={handleEmailSubmit} className="login-content-5">
                   <p className="login-description-6">
-                    Chế độ phát triển · Chỉ tài khoản Admin hoặc CTSV được truy cập.
+                    Dùng email và mật khẩu của tài khoản được cấp quyền.
                   </p>
-                  <div className="login-content-7" role="group" aria-label="Tài khoản thử nghiệm">
-                    <Button type="button" onClick={() => setDevEmail('admin@fpt.edu.vn')}>
+                  {shortcuts && <div className="login-content-7" role="group" aria-label="Điền nhanh email">
+                    <Button type="button" disabled={busy} onClick={() => setEmail('admin@fpt.edu.vn')}>
                       Admin
                     </Button>
-                    <Button type="button" onClick={() => setDevEmail('ctsv.an@fpt.edu.vn')}>
+                    <Button type="button" disabled={busy} onClick={() => setEmail('ctsv.an@fpt.edu.vn')}>
                       CTSV
                     </Button>
-                  </div>
+                  </div>}
                   <Field label="Email tài khoản">
                     <input
                       type="email"
                       required
-                      value={devEmail}
-                      onChange={(event) => setDevEmail(event.target.value)}
-                      autoComplete="email"
-                      disabled={isLoading}
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      autoComplete="username"
+                      disabled={busy}
                       className="login-input"
                     />
                   </Field>
-                  <Button type="submit" variant="primary" className="login-input" busy={isLoading}>
+                  <Field label="Mật khẩu">
+                    <input type="password" required maxLength={128} value={password}
+                      onChange={event => setPassword(event.target.value)} autoComplete="current-password"
+                      disabled={busy} className="login-input" />
+                  </Field>
+                  <Button type="submit" variant="primary" className="login-input" busy={busy} disabled={busy}>
                     Đăng nhập
                   </Button>
                 </form>

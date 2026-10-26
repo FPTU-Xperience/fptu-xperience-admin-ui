@@ -22,7 +22,7 @@ const users=[user||{id:1,fullName:'Khách',roles:[]},{id:2,username:'SE000002',f
 const radar={semesterCode:'FALL2026',academicYear:'2026-2027',averageERI:32,averageD:30,averageJ:0.4,averageM:1.1,pillars:['Học thuật','Kỹ năng','Cộng đồng','Thể chất','Toàn cầu','Đạo đức'].map((name,i)=>({pillarName:name,averageSaturatedScore:20+i*5})),profileTitlesDistribution:[],campusesComparison:[]};
 const data={'auth.me':user,'auth.adminMe':user,'auth.ctsvMe':user,'seasons.list':semesters,'seasons.getActive':semesters[0],'users.list':{items:users,totalItems:users.length},'users.roles':['SYSTEM_ADMIN','STUDENT_AFFAIR','STUDENT'],'roles.list':[],'roles.stats':{ADMIN:1,STUDENT_AFFAIRS_ADMIN:1,CLUB_MANAGER:0,CLUB_MEMBER:1},'clubs.list':clubs,'clubs.getById':clubs[0],'clubs.members.list':{items:[{id:8,userId:2,fullName:'Sinh viên kiểm thử',email:'student@example.test',role:'STUDENT',status:'APPROVED'}],page:1,pageSize:20,totalItems:1,totalPages:1},'reports.list':{items:[],total:0},'clubs.categories.list':[{id:1,name:'Công nghệ'}],'clubs.applications.list':[],'studentAffairs.radar.overview':radar,'studentAffairs.benchmarks.getActive':null,'studentAffairs.students.radar':radar,'admin.health.stats':{accounts:2,clubs:1,audit:0},'admin.settings.get':{},'notifications.list':[{id:1,title:'Thông báo kiểm thử',message:'Nội dung từ API fixture',createdAtUtc:'2026-10-15T00:00:00Z',isRead:false}]};
 const fixture=(parts=[])=>new Proxy(function(){},{get:(_,key)=>key==='then'?undefined:fixture([...parts,key]),apply:(_,self,args)=>{const key=parts.join('.');window.__calls.push({key,args});if(key==='getAccessToken')return user?'qa-token':null;if(key==='getRefreshToken')return null;if(['clearTokens','setToken','setRefreshToken'].includes(key))return;const fail=(failure==='semesters'&&key==='seasons.list')||(failure==='benchmark'&&key==='studentAffairs.benchmarks.getActive')||(failure==='save'&&key==='seasons.create')||(failure==='notifications'&&key==='notifications.list')||(failure==='reports'&&key==='reports.list')||(failure==='club'&&key==='clubs.getById')||(key==='users.create'&&window.__failAccountCreate);if(fail)return Promise.reject(Object.assign(Error('Lỗi API kiểm thử'),{status:503}));if(key==='clubs.getById')return Promise.resolve({...clubs[0],id:Number(args[0]),name:Number(args[0])===1?clubs[0].name:'CLB thứ hai kiểm thử'});if(key==='get')return Promise.resolve([]);return Promise.resolve(key in data?data[key]:[]);}});
-window.__api=fixture();
+window.__api=fixture();window.__qaUser=user;
 </script><script type="module" src="/src/main.jsx"></script></body></html>`;
 const server = await createServer({
   server: { host: '127.0.0.1', port: 5189, strictPort: true, open: false },
@@ -32,7 +32,12 @@ const server = await createServer({
       enforce: 'pre',
       load(id) {
         if (id.replaceAll('\\', '/').endsWith('/src/services/api.js'))
-          return 'export default window.__api; export const workflowRequest = (...args) => window.__api.workflowRequest(...args);';
+          return `export default window.__api;
+            export const workflowRequest = (...args) => window.__api.workflowRequest(...args);
+            export const session = {
+              read: () => window.__api.getAccessToken() ? { id: 'fixture-session', accessToken: 'fixture', user: window.__qaUser } : null,
+              subscribe: () => () => {},
+            };`;
       },
       configureServer(vite) {
         vite.middlewares.use('/__qa', async (req, res) => {

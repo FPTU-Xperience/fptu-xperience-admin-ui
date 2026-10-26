@@ -4,11 +4,14 @@
  * Base URL có thể được override qua biến môi trường VITE_API_BASE_URL.
  */
 
+import { createSessionClient } from './session-client.js';
+
 const DEFAULT_BASE_URL = 'http://localhost:7000';
 const BASE_URL = (
   import.meta.env.VITE_API_BASE_URL ||
   DEFAULT_BASE_URL
 ).replace(/\/+$/, '');
+export const session = createSessionClient({ baseUrl: BASE_URL });
 
 // =============================================================================
 // TOKEN MANAGEMENT
@@ -16,7 +19,7 @@ const BASE_URL = (
 
 function getAccessToken() {
   try {
-    return localStorage.getItem('accessToken')
+    return session.read()?.accessToken || null
   } catch {
     return null
   }
@@ -24,7 +27,7 @@ function getAccessToken() {
 
 function getRefreshToken() {
   try {
-    return localStorage.getItem('refreshToken')
+    return session.read()?.refreshToken || null
   } catch {
     return null
   }
@@ -58,7 +61,7 @@ async function downloadBlob(endpoint, defaultFileName) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const response = await fetch(url, {
+  const response = await session.authFetch(url, {
     method: 'GET',
     headers,
   })
@@ -119,7 +122,7 @@ async function downloadBytes(endpoint) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const response = await fetch(url, {
+  const response = await session.authFetch(url, {
     method: 'GET',
     headers,
   })
@@ -166,7 +169,9 @@ async function request(path, options = {}) {
     finalHeaders.set('Content-Type', 'application/json')
   }
 
-  const response = await fetch(buildUrl(path, params), {
+  const anonymous = ['/api/auth/google', '/api/auth/email-login', '/api/auth/refresh', '/api/auth/sso/redeem'].includes(path)
+  const url = buildUrl(path, params)
+  const response = await session.authFetch(url, {
     method,
     headers: finalHeaders,
     body:
@@ -175,7 +180,8 @@ async function request(path, options = {}) {
         : body instanceof FormData
           ? body
           : JSON.stringify(body),
-  })
+  }, { anonymous })
+
 
   // Handle empty responses
   const text = await response.text()
@@ -244,12 +250,7 @@ export const api = {
   },
 
   clearTokens() {
-    try {
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-    } catch {
-      // Ignore localStorage issues
-    }
+    session.clear()
   },
 
   getAccessToken,
@@ -265,6 +266,7 @@ export const api = {
   // HTTP Methods
   // ---------------------------------------------------------------------------
   get: (path, params) => request(path, { method: 'GET', params }),
+  request: (path, options) => request(path, options),
   post: (path, body, params) => request(path, { method: 'POST', body, params }),
   put: (path, body, params) => request(path, { method: 'PUT', body, params }),
   patch: (path, body, params) => request(path, { method: 'PATCH', body, params }),
@@ -284,9 +286,9 @@ export const api = {
     // Google OAuth login
     google: (credential) => api.post('/api/auth/google', { credential }),
     // Dev login bypass (email only, no password)
-    devLogin: (email) => api.post('/api/auth/dev-login', { email }),
-    logout: (refreshToken) => api.post('/api/auth/logout', { refreshToken }),
-    refresh: (refreshToken) => api.post('/api/auth/refresh', { refreshToken }),
+    emailLogin: (email, password) => api.post('/api/auth/email-login', { email, password }),
+    logout: () => session.logout(),
+    refresh: () => session.refresh(),
     // Get current user info
     me: () => api.get('/api/v1/me'),
     adminMe: () => api.get('/api/v1/admin/me'),
