@@ -13,6 +13,10 @@
     @apply text-[13px] sm:text-[14px] tracking-[-0.15px] font-semibold;
   }
 
+  .panel-header:not(:has(.panel-description)) {
+    @apply py-4;
+  }
+
   .panel-description {
     @apply text-[10px] sm:text-[10.5px] text-[#a0a5ae] mt-[6px];
   }

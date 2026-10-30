@@ -74,7 +74,7 @@ export default function ExperiencePolicyPanel({ benchmarkId, onChanged, historyO
   return (
     <Panel
       title={
-        historyOnly ? 'Lịch sử phiên bản chính sách từ máy chủ' : 'Phiên bản chính sách trải nghiệm'
+        historyOnly ? 'Lịch sử chính sách' : 'Phiên bản chính sách trải nghiệm'
       }
       description="Lưu snapshot đã phê duyệt riêng với thao tác khóa benchmark. Phê duyệt chỉ được gửi khi người vận hành xác nhận các tham số đã thống nhất."
     >

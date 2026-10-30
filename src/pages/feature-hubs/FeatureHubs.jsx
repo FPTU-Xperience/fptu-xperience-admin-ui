@@ -36,7 +36,7 @@ import { StudentRoster } from '../student-roster/StudentRoster.jsx';
 import ActivityApplications from './ActivityApplications.jsx';
 import AcademicCalendar from '../seasons/AcademicCalendar.jsx';
 
-export function SourceSwitch({ realLabel = 'Hồ sơ API', mockLabel = 'Luồng mô phỏng', children }) {
+export function SourceSwitch({ realLabel = 'Hồ sơ', mockLabel = 'Thử quy trình', children }) {
   const [search, setSearch] = useSearchParams(),
     mock = search.get('source') === 'mock';
   const choose = (source) =>
@@ -61,7 +61,7 @@ export function SourceSwitch({ realLabel = 'Hồ sơ API', mockLabel = 'Luồng 
           variant={mock ? 'primary' : 'secondary'}
           onClick={() => choose('mock')}
         >
-          {mockLabel} · Mock JS
+          {mockLabel} · Mô phỏng
         </Button>
       </div>
       {children(mock)}
@@ -131,7 +131,7 @@ export function ActivitiesHub() {
       active={active}
     >
       {active === 'club' && (
-        <SourceSwitch realLabel="Báo cáo hoạt động · API" mockLabel="Action & quyết toán">
+        <SourceSwitch realLabel="Báo cáo hoạt động" mockLabel="Action & quyết toán">
           {(mock) =>
             mock ? (
               <MockBoundary>
@@ -167,7 +167,7 @@ export function MonitoringHub() {
     >
       {active === 'engagement' && <Engagement />}
       {active === 'anomalies' && (
-        <SourceSwitch realLabel="Danh sách bất thường · API" mockLabel="Xử lý & điều chỉnh nguồn">
+        <SourceSwitch realLabel="Danh sách bất thường" mockLabel="Xử lý & điều chỉnh nguồn">
           {(mock) =>
             mock ? (
               <MockBoundary>
@@ -180,7 +180,7 @@ export function MonitoringHub() {
         </SourceSwitch>
       )}
       {active === 'reconciliation' && (
-        <SourceSwitch realLabel="Tra cứu đóng góp · API" mockLabel="Đối soát tổng thể">
+        <SourceSwitch realLabel="Tra cứu đóng góp" mockLabel="Đối soát tổng thể">
           {(mock) =>
             mock ? (
               <MockBoundary>
@@ -202,13 +202,13 @@ function PolicyRecords({ historyOnly }) {
     () => api.studentAffairs.benchmarks.getActive(),
     `${user?.id}:active-policy-benchmark:${season}`,
   );
-  if (result.loading) return <p role="status">Đang đọc benchmark và chính sách máy chủ…</p>;
+  if (result.loading) return <p role="status">Đang tải chính sách…</p>;
   if (result.error)
     return (
       <Panel title="Không tải được chính sách">
         <WorkflowBody>
           <p role="alert">{result.error.message}</p>
-          <Button onClick={result.retry}>Thử lại API</Button>
+          <Button onClick={result.retry}>Thử lại</Button>
         </WorkflowBody>
       </Panel>
     );
@@ -217,8 +217,7 @@ function PolicyRecords({ historyOnly }) {
       <Panel title="Chưa có benchmark để tra cứu chính sách">
         <WorkflowBody>
           <p>
-            Tạo hoặc chọn benchmark tại tab Benchmark. Không có chính sách mô phỏng thay cho cấu
-            hình thật.
+            Tạo hoặc chọn benchmark để xem chính sách.
           </p>
         </WorkflowBody>
       </Panel>
@@ -226,9 +225,7 @@ function PolicyRecords({ historyOnly }) {
   return (
     <div className="feature-hubs-section">
       <p className="feature-hubs-note">
-        Phạm vi trả về từ API: {result.data.semesterCode || 'máy chủ chưa cung cấp mã học kỳ'} ·
-        benchmark #{result.data.id}. Khóa benchmark và phê duyệt snapshot chính sách là hai thao tác
-        riêng.
+        Học kỳ: {result.data.semesterCode || 'Chưa xác định'}
       </p>
       <ExperiencePolicyPanel
         benchmarkId={result.data.id}
@@ -304,7 +301,7 @@ export function OperationsHub() {
   return (
     <FeatureWorkspace
       title="Vận hành hệ thống"
-      description="Theo dõi thống kê và thông tin kết nối; chỉ hiển thị trạng thái đã được nguồn dữ liệu xác nhận."
+      description="Theo dõi thống kê và tình trạng kết nối."
       tabs={tabs}
       active={active}
     >
@@ -318,7 +315,7 @@ export function AuditHub() {
   return (
     <FeatureWorkspace
       title="Nhật ký & truy vết"
-      description="Tra cứu sự kiện do máy chủ ghi nhận. Nhật ký mock nằm riêng trong hồ sơ mô phỏng."
+      description="Tra cứu lịch sử thao tác và thay đổi."
       tabs={tabs}
       active={active}
     >

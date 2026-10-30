@@ -1,7 +1,7 @@
 @reference '../../index.css';
 @layer components {
   .feature-hubs-section {
-    @apply min-w-0 space-y-5;
+    @apply min-w-0 space-y-4;
   }
   .feature-hubs-source {
     @apply flex flex-wrap gap-2;
@@ -10,6 +10,6 @@
     @apply max-w-full whitespace-normal;
   }
   .feature-hubs-note {
-    @apply rounded-lg border border-border bg-slate-50 p-4 text-xs leading-relaxed text-muted;
+    @apply text-xs leading-relaxed text-muted;
   }
 }

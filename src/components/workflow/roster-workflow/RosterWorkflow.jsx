@@ -86,8 +86,7 @@ export default function RosterWorkflow() {
       <Panel title="Chuẩn bị → xem trước → xác nhận nhập mô phỏng">
         <WorkflowBody>
           <p>
-            File chỉ được đọc trên trình duyệt. Xác nhận dưới đây thay thế danh sách trong kho mock
-            của học kỳ này; không tạo tài khoản hoặc xác nhận danh tính trên server.
+            Nhập danh sách mô phỏng cho học kỳ này; không tạo tài khoản thật.
           </p>
           <input
             className="roster-workflow-file"
@@ -112,7 +111,7 @@ export default function RosterWorkflow() {
                 })
               }
             >
-              Xem trước bằng dữ liệu JS
+              Xem trước danh sách
             </Button>
           </WorkflowActions>
           {busy && <p role="status">Đang kiểm tra file…</p>}
@@ -132,7 +131,7 @@ export default function RosterWorkflow() {
                 }{' '}
                 sinh viên hiện tại không có trong bản nhập.
               </p>
-              <p>Danh tính và tác động nêu trên chỉ được so sánh trong bộ dữ liệu mock.</p>
+              <p>Kết quả chỉ áp dụng cho dữ liệu mô phỏng.</p>
             </WorkflowBody>
             <WorkflowTable
               label="Xem trước nhập roster"

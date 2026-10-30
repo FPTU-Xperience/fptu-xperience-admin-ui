@@ -25,7 +25,7 @@ export default function WorkInbox({ overview }) {
   const active = useFeatureView(tabs),
     { user } = useAuth(),
     { season, semesterStatus } = useWorkspace(),
-    { scope, semester } = useWorkflow();
+    { scope } = useWorkflow();
   const [query, setQuery] = useState(''),
     [source, setSource] = useState('all'),
     [kind, setKind] = useState('all'),
@@ -51,7 +51,7 @@ export default function WorkInbox({ overview }) {
   return (
     <FeatureWorkspace
       title="Việc cần xử lý"
-      description="Chọn công việc để mở đúng hồ sơ và bước cần xử lý. Các hàng chờ là góc nhìn của cùng nguồn hồ sơ."
+      description="Theo dõi hồ sơ và công việc cần xử lý."
       tabs={tabs}
       active={active}
     >
@@ -61,10 +61,9 @@ export default function WorkInbox({ overview }) {
         <div className="work-inbox">
           <Panel
             title="Hàng chờ công việc"
-            description={`Báo cáo API theo kỳ ${season || 'chưa xác định'}; các nguồn khác giữ phạm vi do API hỗ trợ. Mock theo kỳ ${semester}.`}
             action={
               <Button icon={RefreshCw} onClick={live.retry}>
-                Tải lại API
+                Tải lại
               </Button>
             }
           >
@@ -79,9 +78,9 @@ export default function WorkInbox({ overview }) {
                 </Field>
                 <Field label="Nguồn dữ liệu">
                   <select value={source} onChange={(e) => setSource(e.target.value)}>
-                    <option value="all">Tất cả · phân biệt từng dòng</option>
-                    <option value="API">API</option>
-                    <option value="MOCK">Mock JS</option>
+                    <option value="all">Tất cả</option>
+                    <option value="API">Hồ sơ thật</option>
+                    <option value="MOCK">Mô phỏng</option>
                   </select>
                 </Field>
                 <Field label="Loại công việc">
@@ -101,8 +100,8 @@ export default function WorkInbox({ overview }) {
                 />{' '}
                 Chỉ hồ sơ có hạn đã qua
               </label>
-              {live.loading && <p role="status">Đang đọc các hàng chờ API…</p>}
-              {live.error && <p role="alert">Không tải được hàng chờ API: {live.error.message}</p>}
+              {live.loading && <p role="status">Đang tải công việc…</p>}
+              {live.error && <p role="alert">Không tải được công việc: {live.error.message}</p>}
               {(live.data || [])
                 .filter((s) => s.error)
                 .map((s) => (
@@ -111,9 +110,7 @@ export default function WorkInbox({ overview }) {
                   </p>
                 ))}
               <p className="work-inbox-note">
-                API và mock được gắn nhãn riêng. Mỗi nguồn API lấy trang đầu tối đa 20 hồ sơ nếu có
-                phân trang; mở danh sách nguồn để xem đầy đủ. Tab Đã xử lý hiển thị báo cáo/hồ sơ tự
-                khai đã phê duyệt; các kết quả từ chối vẫn xem tại nguồn.
+                Hiển thị tối đa 20 hồ sơ mỗi nguồn. Mở danh sách nguồn để xem đầy đủ.
               </p>
             </WorkflowBody>
             <WorkflowTable
@@ -126,11 +123,10 @@ export default function WorkInbox({ overview }) {
                     <strong>{row.title}</strong>
                   </td>
                   <td>
-                    <Badge tone={row.source === 'MOCK' ? 'orange' : 'blue'}>{row.source}</Badge>
-                    <small>
-                      {row.kind}
-                      {row.source === 'API' && !row.periodScoped ? ' · phạm vi theo API' : ''}
-                    </small>
+                    <Badge tone={row.source === 'MOCK' ? 'orange' : 'blue'}>
+                      {row.source === 'MOCK' ? 'Mô phỏng' : 'Hồ sơ thật'}
+                    </Badge>
+                    <small>{row.kind}</small>
                   </td>
                   <td>
                     {row.owner}
@@ -160,10 +156,6 @@ export default function WorkInbox({ overview }) {
               </Link>
             ))}
           </WorkflowActions>
-          <p className="work-inbox-note">
-            Thao tác lên hồ sơ mock ở màn chi tiết chỉ thay đổi dữ liệu JS trong phiên, không gửi
-            API.
-          </p>
         </div>
       )}
     </FeatureWorkspace>

@@ -73,7 +73,7 @@ function ClubRecord({ clubId }) {
         description={
           club
             ? `${club.code} · ${club.category || 'Chưa phân loại'} · Hồ sơ quản lý của CTSV`
-            : 'Đang tra cứu hồ sơ từ API.'
+            : 'Đang tải hồ sơ.'
         }
         tabs={clubDetailTabs}
         active={active}
@@ -85,7 +85,7 @@ function ClubRecord({ clubId }) {
                 <Badge tone={club.status === 'active' ? 'green' : 'orange'}>
                   {club.status === 'active' ? 'Đang hoạt động' : 'Tạm dừng'}
                 </Badge>
-                <span>Hồ sơ API · CLB #{clubId}</span>
+                <span>CLB #{clubId}</span>
                 <Button icon={RefreshCw} onClick={profile.retry}>
                   Tải lại thông tin
                 </Button>
@@ -107,7 +107,7 @@ function ClubRecord({ clubId }) {
                       <dl className="club-detail-facts">
                         <div>
                           <dt>Chủ nhiệm</dt>
-                          <dd>{club.leader || 'Chưa có thông tin từ API'}</dd>
+                          <dd>{club.leader || 'Chưa cập nhật'}</dd>
                         </div>
                         <div>
                           <dt>Thành viên</dt>
@@ -154,9 +154,9 @@ function ClubRecord({ clubId }) {
               )}
               {active === 'leadership' && (
                 <>
-                  <Panel title="Chủ nhiệm hiện tại · API">
+                  <Panel title="Chủ nhiệm hiện tại">
                     <WorkflowBody>
-                      <p>{club.leader || 'API chưa trả thông tin chủ nhiệm.'}</p>
+                      <p>{club.leader || 'Chưa có thông tin chủ nhiệm.'}</p>
                       <Link to={`${root}?view=requests&type=transfer`}>
                         Xử lý hồ sơ chuyển chủ nhiệm →
                       </Link>
@@ -176,7 +176,7 @@ function ClubRecord({ clubId }) {
                 </ClubScenario>
               )}
               {editing && (
-                <Panel title="Cập nhật hồ sơ API">
+                <Panel title="Cập nhật hồ sơ">
                   <OperationState {...categories} onRetry={categories.retry}>
                     {categories.data && (
                       <ClubForm
@@ -201,7 +201,7 @@ function ClubRecord({ clubId }) {
   );
 }
 const descriptions = {
-  members: 'Tra cứu thành viên, vai trò và trạng thái từ API.',
+  members: 'Tra cứu thành viên, vai trò và trạng thái.',
   reports: 'Xét duyệt báo cáo đầu kỳ và cuối kỳ của CLB.',
   activities: 'Duyệt hồ sơ hoạt động; mô phỏng action và quyết toán.',
   requests: 'Xét duyệt đề nghị giải thể và chuyển chủ nhiệm.',
@@ -216,9 +216,7 @@ function ClubScenario({ club, children }) {
       <Panel title={`Mô phỏng riêng · ${club.name}`}>
         <WorkflowBody>
           <p>
-            Chỉ tên và mã định danh được lấy từ hồ sơ CLB. Nhân sự MOCK-SE001/002, trạng thái hoạt
-            động và số dư ban đầu bằng 0 là dữ liệu JS, không phản ánh thành viên hay ngân sách
-            thật.
+            Thành viên và ngân sách ở đây là dữ liệu mô phỏng.
           </p>
           {!exists && (
             <Button
@@ -266,8 +264,8 @@ function ClubMembers({ clubId }) {
   };
   return (
     <Panel
-      title="Thành viên CLB · API"
-      description="Tra cứu danh sách hiện tại; dữ liệu thành viên này không phải danh sách sinh viên của học kỳ mô phỏng."
+      title="Thành viên CLB"
+      description="Danh sách thành viên hiện tại."
     >
       <WorkflowBody>
         <WorkflowActions>
@@ -290,7 +288,7 @@ function ClubMembers({ clubId }) {
           onRetry={result.retry}
         >
           <WorkflowTable
-            label="Thành viên CLB từ API"
+            label="Thành viên CLB"
             columns={['Thành viên', 'Email', 'Vai trò', 'Trạng thái']}
           >
             {result.data?.items.map((member) => (

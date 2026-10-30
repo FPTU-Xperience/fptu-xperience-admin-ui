@@ -12,14 +12,12 @@ export default function MockBoundary({ children }) {
       <div className="mock-boundary-notice">
         <FlaskConical size={19} aria-hidden="true" />
         <div>
-          <strong>MOCK · Dữ liệu JS</strong>
+          <strong>Chế độ mô phỏng</strong>
           <p>
-            Luồng chưa có backend. Chỉ thay đổi dữ liệu mẫu trong phiên này; không ghi điểm, gửi hồ
-            sơ hay cập nhật dữ liệu thật. Tải lại trang sẽ khôi phục mẫu.
+            Thay đổi chỉ áp dụng trong phiên này, không cập nhật hồ sơ thật.
           </p>
           <small>
-            Học kỳ mô phỏng: {semester}. Tham số điểm chỉ để thử luồng, chưa phải chính sách chuyển
-            đổi ví.
+            Học kỳ: {semester}
           </small>
         </div>
         <Button

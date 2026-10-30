@@ -161,7 +161,7 @@ export function SystemSettings({ type, integrationSection = 'all', healthSection
           {healthSection !== 'overview' && (
             <Panel
               title="Trạng thái dịch vụ"
-              description="Kết nối tới các microservice của backend."
+              description="Theo dõi kết nối các dịch vụ."
             >
               <div className="system-settings-content-3">
                 {[
@@ -187,7 +187,7 @@ export function SystemSettings({ type, integrationSection = 'all', healthSection
                   [
                     ShieldCheck,
                     'Kiểm tra toàn vẹn sổ cái',
-                    'Kiểm chứng dữ liệu đóng góp trên máy chủ',
+                    'Kiểm chứng dữ liệu đóng góp',
                     '/api/reports/health',
                   ],
                 ].map(([Icon, title, desc, healthEndpoint]) => (
@@ -261,7 +261,7 @@ export function SystemSettings({ type, integrationSection = 'all', healthSection
                     </div>
                     <Field
                       label="Địa chỉ API thời khóa biểu"
-                      hint="Địa chỉ dùng cho cấu hình tích hợp phía máy chủ."
+                      hint="Địa chỉ dịch vụ thời khóa biểu."
                     >
                       <input
                         type="url"
@@ -271,8 +271,7 @@ export function SystemSettings({ type, integrationSection = 'all', healthSection
                       />
                     </Field>
                     <p className="system-settings-description-2">
-                      Lưu địa chỉ chưa kích hoạt đồng bộ. Cần dịch vụ backend và quyền truy cập được
-                      cấp bởi trường.
+                      Cần quyền truy cập từ nhà trường để kích hoạt đồng bộ.
                     </p>
                   </div>
                 </Panel>
@@ -338,8 +337,7 @@ export function SystemSettings({ type, integrationSection = 'all', healthSection
                     />
                   </Field>
                   <div className="system-settings-content-12">
-                    Các thông số được lưu để xem thử. Thông báo và giới hạn truy cập sẽ hoạt động
-                    sau khi nối dịch vụ backend.
+                    Các thông số hiện chỉ dùng để xem thử, chưa có hiệu lực.
                   </div>
                 </div>
               </Panel>

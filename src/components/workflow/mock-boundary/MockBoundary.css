@@ -7,7 +7,7 @@
     @apply space-y-4;
   }
   .mock-boundary-notice {
-    @apply grid grid-cols-[20px_minmax(0,1fr)] items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950 sm:grid-cols-[20px_minmax(0,1fr)_auto];
+    @apply grid grid-cols-[20px_minmax(0,1fr)] items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-950 sm:grid-cols-[20px_minmax(0,1fr)_auto];
   }
   .mock-boundary-notice > div {
     @apply min-w-0;
@@ -16,7 +16,7 @@
     @apply mt-1 text-xs;
   }
   .mock-boundary-notice small {
-    @apply mt-2 block text-amber-800;
+    @apply mt-1 block text-xs text-amber-800;
   }
   .mock-boundary-notice > button {
     @apply col-start-2 justify-self-start sm:col-start-auto;

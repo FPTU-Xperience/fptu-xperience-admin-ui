@@ -42,7 +42,7 @@ export default function LeadershipWorkflow({ clubId: fixedClubId } = {}) {
       </Panel>
       <Panel
         title="Đề cử kế nhiệm khẩn cấp"
-        description="Chuyển chủ nhiệm theo đơn thông thường vẫn được xử lý bằng API tại mục Hồ sơ & yêu cầu."
+        description="Xử lý đơn chuyển chủ nhiệm tại mục Hồ sơ & yêu cầu."
       >
         <form
           onSubmit={(e) => {

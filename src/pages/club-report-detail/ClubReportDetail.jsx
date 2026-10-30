@@ -186,13 +186,11 @@ function ClubReportView({ reportId }) {
                   <section>
                     <h2>Báo cáo điểm Xperience Point theo sinh viên / action</h2>
                     <p>
-                      API báo cáo hiện chưa cung cấp bảng Xperience Point, nguồn minh chứng và lịch sử chỉnh sửa
-                      theo từng sinh viên / action. Chưa có dữ liệu để hiển thị hoặc chỉnh sửa Xperience Point
-                      của báo cáo này.
+                      Báo cáo này chưa có bảng Xperience Point để xem hoặc chỉnh sửa.
                     </p>
                     <p>Phê duyệt báo cáo hiện tại chưa xác nhận việc ghi sổ Xperience Point theo action.</p>
                     <Link className="operation-link" to={`/ctsv/activities?view=club&source=mock`}>
-                      Mở luồng mẫu: tự điền, chỉnh sửa và xét duyệt Xperience Point · MOCK
+                      Thử quy trình Xperience Point · Mô phỏng
                     </Link>
                   </section>
                 )}

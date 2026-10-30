@@ -101,7 +101,7 @@ export default function ActivityApplications() {
     }
   };
   return (
-    <Panel title="Hồ sơ hoạt động CLB · API">
+    <Panel title="Hồ sơ hoạt động CLB">
       <Field label="Câu lạc bộ">
         <select
           value={clubId}

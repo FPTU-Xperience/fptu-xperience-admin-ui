@@ -183,7 +183,7 @@ export function DeclarationsQueue() {
           label="Đã duyệt (trang này)"
           value={approvedCount}
           icon={ShieldCheck}
-          note="Xperience Point do máy chủ xác nhận"
+          note="Xperience Point đã xác nhận"
           tone="green"
         />
         <StatCard
@@ -382,15 +382,14 @@ export function DeclarationsQueue() {
                 <div className="declarations-queue-content-12">
                   <p className="declarations-queue-description-3">CÔNG THỨC</p>
                   <p className="declarations-queue-description-4">
-                    {review.proposedFormula || 'Chưa có bảng tính từ máy chủ'}
+                    {review.proposedFormula || 'Chưa có bảng tính'}
                   </p>
                 </div>
               </div>
 
               {/* Evidence */}
               <p className="declarations-queue-description-5">
-                {review.referenceLabel}. Thông tin tham chiếu không thay thế kết quả kiểm tra minh
-                chứng. Luồng CLB xác nhận đang chờ backend hỗ trợ.
+                {review.referenceLabel}. Cần kiểm tra minh chứng trước khi quyết định.
               </p>
               <h3 className="declarations-queue-subheading">Minh chứng đính kèm</h3>
               {(review.evidenceUrls || []).length > 0 ? (
@@ -521,8 +520,7 @@ export function DeclarationsQueue() {
                     </div>
                   ))}
                   <p>
-                    Kiểm tra từng thuộc tính và minh chứng; tổng tỷ trọng phải bằng 1. Điểm cuối do
-                    máy chủ tính.
+                    Kiểm tra thuộc tính và minh chứng; tổng tỷ trọng phải bằng 1.
                   </p>
                 </fieldset>
               )}
@@ -560,7 +558,7 @@ export function DeclarationsQueue() {
                     }`}
                   >
                     {reviewDecision === 'APPROVED'
-                      ? 'Máy chủ kiểm tra quyền xác minh, phiên bản và chính sách trước khi ghi điểm.'
+                      ? 'Xperience Point sẽ được ghi nhận theo chính sách đã phê duyệt.'
                       : reviewDecision === 'REJECTED'
                         ? 'Trải nghiệm sẽ bị từ chối, sinh viên có thể nộp lại với minh chứng bổ sung.'
                         : 'Sinh viên sẽ nhận được thông báo yêu cầu làm rõ cùng nhận xét của bạn.'}

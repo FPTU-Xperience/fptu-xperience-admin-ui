@@ -130,7 +130,7 @@ export default function Accounts() {
           label="Tổng tài khoản"
           value={number(accounts.length)}
           icon={Users}
-          note="Danh sách API và tài khoản JS được gắn nhãn riêng"
+          note="Quản lý tài khoản và quyền truy cập"
           tone="blue"
         />
         <StatCard
@@ -417,14 +417,14 @@ function CreateCTSVAccount({ accounts, onClose, onSave }) {
                 setErrors([]);
               }}
             >
-              <option value="mock">Mock JS · thử luồng</option>
-              <option value="api">API · cần backend hỗ trợ 3 role mới</option>
+              <option value="mock">Mô phỏng</option>
+              <option value="api">Tài khoản thật</option>
             </select>
           </Field>
           <p role="status">
             {source === 'mock'
-              ? 'MOCK JS: Chỉ tạo bản ghi mẫu trong bộ nhớ. Không tạo quyền đăng nhập thật; tải lại danh sách hoặc trang sẽ xóa mẫu.'
-              : 'Gửi vai trò STUDENT_AFFAIR lên API. Backend hiện còn role cũ; lỗi API sẽ hiển thị ở đây, không tự chuyển sang mock.'}
+              ? 'Tài khoản mô phỏng không có quyền đăng nhập và sẽ mất khi tải lại.'
+              : 'Tạo tài khoản CTSV với thông tin bên dưới.'}
           </p>
         </div>
         <div className="accounts-content-15">
