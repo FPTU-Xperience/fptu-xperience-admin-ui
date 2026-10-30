@@ -8,8 +8,12 @@ import { IconButton } from '../../components/ui/index.js';
 import { NotificationsModal, SearchModal } from '../../components/modals/index.js';
 import Sidebar from '../../components/common/sidebar/Sidebar.jsx';
 import Topbar from '../topbar/Topbar.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+import GuidedHelp from '../../components/guided-help/GuidedHelp.jsx';
+import { adminGuidePlan } from '../../components/guided-help/guide-plans.js';
 
 export default function AppLayout({ children }) {
+  const { user } = useAuth();
   const { role, season, setSeason, toast, dismissToast } = useWorkspace();
   const admin = role === 'SYSTEM_ADMIN';
   const nav = navigationFor(admin);
@@ -133,6 +137,7 @@ export default function AppLayout({ children }) {
       {/* Modals */}
       {search && <SearchModal nav={searchNavigationFor(admin)} onClose={() => setSearch(false)} />}
       {notifications && <NotificationsModal onClose={() => setNotifications(false)} />}
+      <GuidedHelp plan={adminGuidePlan(location.pathname, role)} routeKey={location.pathname + location.search} accountKey={user?.id} />
     </div>
   );
 }

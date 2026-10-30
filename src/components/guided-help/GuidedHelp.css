@@ -1,0 +1,109 @@
+.web-guide {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 45;
+}
+.web-guide--inline {
+  position: static;
+  z-index: auto;
+}
+.web-guide-launcher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #fed7aa;
+  border-radius: 24px;
+  background: #fff;
+  color: #9a3412;
+  box-shadow: 0 3px 14px #0f172a12;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.web-guide-launcher:hover {
+  background: #fff7ed;
+}
+.web-guide-launcher:focus-visible {
+  outline: 3px solid #fb923c;
+  outline-offset: 3px;
+}
+.web-guide-launcher:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.web-guide--inline .web-guide-launcher {
+  box-shadow: none;
+}
+.web-guide-notice {
+  max-width: 280px;
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a3412;
+  font:
+    12px/1.6 system-ui,
+    sans-serif;
+}
+.web-guide-popover.driver-popover {
+  max-width: min(340px, calc(100vw - 24px));
+  padding: 20px;
+  border-radius: 14px;
+  color: #172033;
+  font-family: inherit;
+  box-shadow: 0 10px 35px #0f172a24;
+}
+.web-guide-popover .driver-popover-title {
+  margin-right: 20px;
+  font-size: 17px;
+  line-height: 1.4;
+}
+.web-guide-popover .driver-popover-description {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.web-guide-popover .driver-popover-footer {
+  margin-top: 18px;
+  gap: 10px;
+}
+.web-guide-popover .driver-popover-footer button {
+  padding: 9px 12px;
+  border-radius: 8px;
+  text-shadow: none;
+  font: inherit;
+  font-size: 12px;
+}
+.web-guide-popover .driver-popover-next-btn {
+  background: #c2410c;
+  color: #fff;
+  border-color: #c2410c;
+}
+.web-guide-popover .driver-popover-next-btn:hover {
+  background: #9a3412;
+}
+.web-guide-popover button:focus-visible {
+  outline: 3px solid #fb923c;
+  outline-offset: 2px;
+}
+@media (max-width: 600px) {
+  .web-guide {
+    right: 12px;
+    bottom: 12px;
+  }
+  .web-guide-launcher {
+    width: 44px;
+    padding: 10px;
+  }
+  .web-guide-launcher > span {
+    display: none;
+  }
+  .web-guide-popover.driver-popover {
+    padding: 16px;
+  }
+}

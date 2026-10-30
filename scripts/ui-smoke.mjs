@@ -154,279 +154,286 @@ try {
         ),
     );
   };
-  const widths = [320, 375, 414, 768, 1280];
-  const legacyStaffRoutes = [
-    'overview',
-    'clubs',
-    'declarations',
-    'engagement',
-    'quests',
-    'rubrics',
-    'seasons',
-    'anomalies',
-    'reports',
-    'activity-approvals',
-    'activity-dossiers',
-    'club-requests',
-    'student-roster',
-    'rollover',
-    'leadership',
-    'club-bonuses',
-    'global-activities',
-    'experience-audit',
-  ].map((slug) => `/ctsv/${slug}`);
-  const legacyAdminRoutes = [
-    'accounts',
-    'roles',
-    'integrations',
-    'settings',
-    'health',
-    'audit',
-  ].map((slug) => `/admin/${slug}`);
-  const routeTabs = (items) =>
-    items.flatMap((item) =>
-      item.tabs?.length ? item.tabs.map((tab) => `${item.path}?view=${tab.id}`) : [item.path],
-    );
-  const staffRoutes = [
-    ...routeTabs(affairsNav),
-    '/ctsv/activities?view=club&source=mock',
-    '/ctsv/monitoring?view=anomalies&source=mock',
-    '/ctsv/monitoring?view=reconciliation&source=mock',
-    ...['overview', 'members', 'reports', 'activities', 'requests', 'leadership', 'bonus'].map(
-      (view) => `/ctsv/clubs/1?view=${view}`,
-    ),
-    '/ctsv/clubs/1?view=activities&source=mock',
-  ];
-  const adminRoutes = [...routeTabs(adminNav), '/admin/operations?view=connections'];
-  const metrics = [];
-  const routeCases = [
-    ['staff', process.env.UI_SMOKE_ONLY_FLOWS ? [] : staffRoutes],
-    ['admin', process.env.UI_SMOKE_ONLY_FLOWS ? [] : adminRoutes],
-  ].flatMap(([actor, routes]) =>
-    routes.flatMap((route) => widths.map((width) => ({ actor, route, width }))),
-  );
-  const startIndex = process.env.UI_SMOKE_FROM_ROUTE
-    ? routeCases.findIndex((item) => item.route === process.env.UI_SMOKE_FROM_ROUTE)
-    : 0;
-  assert.ok(startIndex >= 0, 'Unknown resume route');
-  for (const { actor, route, width } of routeCases.slice(startIndex)) {
-    await open(route, actor, width, '', true);
-    const data = await evaluate(
-      `(()=>{const sidebar=document.querySelector('#app-sidebar'),main=document.querySelector('main');if(!main||!sidebar)return {missing:true,text:document.body.textContent,calls:window.__calls};const r=main.getBoundingClientRect();return {viewport:document.documentElement.clientWidth,title:document.querySelector('h1').textContent,scroll:document.documentElement.scrollWidth,main:{left:r.left,right:r.right},sidebarVisible:getComputedStyle(sidebar).visibility,sidebarInert:sidebar.inert,overflow:[...document.querySelectorAll('main *')].filter(e=>e instanceof HTMLElement&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden'&&!(()=>{for(let p=e;p&&p!==main.parentElement;p=p.parentElement){const s=getComputedStyle(p);if(['auto','scroll'].includes(s.overflowX)||s.pointerEvents==='none')return true;}return false;})()&&e.getBoundingClientRect().right>document.documentElement.clientWidth+1).slice(0,10).map(e=>({tag:e.tagName,cls:e.className,right:e.getBoundingClientRect().right}))}})()`,
-    );
-    metrics.push({ actor, route, width, ...data });
-    assert.ok(!data.missing, JSON.stringify(data));
-    assert.ok(
-      data.main.right <= data.viewport && data.scroll <= data.viewport,
-      JSON.stringify({ actor, route, width, data }),
-    );
-    assert.deepEqual(data.overflow, [], JSON.stringify({ actor, route, width, data }));
-    if (width < 1024) {
-      assert.equal(data.sidebarVisible, 'hidden');
-      assert.ok(data.sidebarInert);
-      assert.equal(data.main.left, 0);
-    } else {
-      assert.equal(data.sidebarVisible, 'visible');
-      assert.equal(data.sidebarInert, false);
-    }
-    if (
-      [320, 768, 1280].includes(width) &&
-      [
-        '/ctsv/work?view=actionable',
-        '/ctsv/activities?view=club&source=mock',
-        '/ctsv/clubs/1?view=overview',
-        '/ctsv/clubs/1?view=bonus',
-        '/admin/accounts?view=accounts',
-      ].includes(route)
-    ) {
-      const shot = await call('Page.captureScreenshot', {
-        format: 'png',
-        captureBeyondViewport: false,
-      });
-      await fs.writeFile(
-        `${directory}/${route.replaceAll(/[^a-z0-9]/gi, '-')}-${width}.png`,
-        Buffer.from(shot.data, 'base64'),
+  if (!process.env.UI_SMOKE_ONLY_GUIDE) {
+    const widths = [320, 375, 414, 768, 1280];
+    const legacyStaffRoutes = [
+      'overview',
+      'clubs',
+      'declarations',
+      'engagement',
+      'quests',
+      'rubrics',
+      'seasons',
+      'anomalies',
+      'reports',
+      'activity-approvals',
+      'activity-dossiers',
+      'club-requests',
+      'student-roster',
+      'rollover',
+      'leadership',
+      'club-bonuses',
+      'global-activities',
+      'experience-audit',
+    ].map((slug) => `/ctsv/${slug}`);
+    const legacyAdminRoutes = [
+      'accounts',
+      'roles',
+      'integrations',
+      'settings',
+      'health',
+      'audit',
+    ].map((slug) => `/admin/${slug}`);
+    const routeTabs = (items) =>
+      items.flatMap((item) =>
+        item.tabs?.length ? item.tabs.map((tab) => `${item.path}?view=${tab.id}`) : [item.path],
       );
-    }
-    console.log(`PASS route ${actor} ${route} ${width}`);
-  }
-  if (metrics.length)
-    await fs.writeFile(
-      `${directory}/${process.env.UI_SMOKE_FROM_ROUTE ? 'metrics-resumed' : 'metrics'}.json`,
-      JSON.stringify(metrics, null, 2),
+    const staffRoutes = [
+      ...routeTabs(affairsNav),
+      '/ctsv/activities?view=club&source=mock',
+      '/ctsv/monitoring?view=anomalies&source=mock',
+      '/ctsv/monitoring?view=reconciliation&source=mock',
+      ...['overview', 'members', 'reports', 'activities', 'requests', 'leadership', 'bonus'].map(
+        (view) => `/ctsv/clubs/1?view=${view}`,
+      ),
+      '/ctsv/clubs/1?view=activities&source=mock',
+    ];
+    const adminRoutes = [...routeTabs(adminNav), '/admin/operations?view=connections'];
+    const metrics = [];
+    const routeCases = [
+      ['staff', process.env.UI_SMOKE_ONLY_FLOWS ? [] : staffRoutes],
+      ['admin', process.env.UI_SMOKE_ONLY_FLOWS ? [] : adminRoutes],
+    ].flatMap(([actor, routes]) =>
+      routes.flatMap((route) => widths.map((width) => ({ actor, route, width }))),
     );
-  if (!process.env.UI_SMOKE_ONLY_FLOWS) {
-    for (const [actor, routes] of [
-      ['staff', legacyStaffRoutes],
-      ['admin', legacyAdminRoutes],
-    ])
-      for (const route of routes) {
-        await open(route, actor, 1280, '', true);
-        assert.ok(
-          (await evaluate('location.hash')).includes('?') ||
-            [
-              '/ctsv/declarations',
-              '/ctsv/clubs',
-              '/admin/accounts',
-              '/admin/audit',
-              '/admin/health',
-            ].includes(route),
+    const startIndex = process.env.UI_SMOKE_FROM_ROUTE
+      ? routeCases.findIndex((item) => item.route === process.env.UI_SMOKE_FROM_ROUTE)
+      : 0;
+    assert.ok(startIndex >= 0, 'Unknown resume route');
+    for (const { actor, route, width } of routeCases.slice(startIndex)) {
+      await open(route, actor, width, '', true);
+      const data = await evaluate(
+        `(()=>{const sidebar=document.querySelector('#app-sidebar'),main=document.querySelector('main');if(!main||!sidebar)return {missing:true,text:document.body.textContent,calls:window.__calls};const r=main.getBoundingClientRect();return {viewport:document.documentElement.clientWidth,title:document.querySelector('h1').textContent,scroll:document.documentElement.scrollWidth,main:{left:r.left,right:r.right},sidebarVisible:getComputedStyle(sidebar).visibility,sidebarInert:sidebar.inert,overflow:[...document.querySelectorAll('main *')].filter(e=>e instanceof HTMLElement&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden'&&!(()=>{for(let p=e;p&&p!==main.parentElement;p=p.parentElement){const s=getComputedStyle(p);if(['auto','scroll'].includes(s.overflowX)||s.pointerEvents==='none')return true;}return false;})()&&e.getBoundingClientRect().right>document.documentElement.clientWidth+1).slice(0,10).map(e=>({tag:e.tagName,cls:e.className,right:e.getBoundingClientRect().right}))}})()`,
+      );
+      metrics.push({ actor, route, width, ...data });
+      assert.ok(!data.missing, JSON.stringify(data));
+      assert.ok(
+        data.main.right <= data.viewport && data.scroll <= data.viewport,
+        JSON.stringify({ actor, route, width, data }),
+      );
+      assert.deepEqual(data.overflow, [], JSON.stringify({ actor, route, width, data }));
+      if (width < 1024) {
+        assert.equal(data.sidebarVisible, 'hidden');
+        assert.ok(data.sidebarInert);
+        assert.equal(data.main.left, 0);
+      } else {
+        assert.equal(data.sidebarVisible, 'visible');
+        assert.equal(data.sidebarInert, false);
+      }
+      if (
+        [320, 768, 1280].includes(width) &&
+        [
+          '/ctsv/work?view=actionable',
+          '/ctsv/activities?view=club&source=mock',
+          '/ctsv/clubs/1?view=overview',
+          '/ctsv/clubs/1?view=bonus',
+          '/admin/accounts?view=accounts',
+        ].includes(route)
+      ) {
+        const shot = await call('Page.captureScreenshot', {
+          format: 'png',
+          captureBeyondViewport: false,
+        });
+        await fs.writeFile(
+          `${directory}/${route.replaceAll(/[^a-z0-9]/gi, '-')}-${width}.png`,
+          Buffer.from(shot.data, 'base64'),
         );
       }
-  }
-  await open('/admin/accounts', 'staff');
-  assert.equal(await evaluate(`location.hash`), '#/ctsv/work');
-  await open('/admin/accounts', 'student');
-  assert.ok(
-    await evaluate(`document.body.textContent.includes('Tài khoản chưa có quyền truy cập')`),
-  );
-  assert.equal(await evaluate(`!!document.querySelector('#app-sidebar')`), false);
-  await open('/login', 'guest', 320);
-  assert.ok(await evaluate(`document.body.textContent.includes('Đăng nhập')`));
-  assert.ok(await evaluate(`document.documentElement.scrollWidth<=innerWidth`));
-  const shot = await call('Page.captureScreenshot', { format: 'png' });
-  await fs.writeFile(`${directory}/login-320.png`, Buffer.from(shot.data, 'base64'));
-
-  await open('/ctsv/clubs', 'staff', 375);
-  await evaluate(
-    `document.querySelector('button[aria-label="Mở điều hướng"]').focus();document.querySelector('button[aria-label="Mở điều hướng"]').click()`,
-  );
-  await delay(100);
-  assert.equal(await evaluate(`document.querySelector('#app-sidebar').inert`), false);
-  assert.ok(
-    await evaluate(`document.querySelector('#app-sidebar').contains(document.activeElement)`),
-  );
-  await call('Input.dispatchKeyEvent', {
-    type: 'keyDown',
-    key: 'Escape',
-    code: 'Escape',
-    windowsVirtualKeyCode: 27,
-  });
-  await delay(100);
-  assert.ok(await evaluate(`document.querySelector('#app-sidebar').inert`));
-  assert.equal(
-    await evaluate(`document.activeElement.getAttribute('aria-label')`),
-    'Mở điều hướng',
-  );
-  await evaluate(
-    `document.querySelector('button[aria-label="Mở điều hướng"]').focus();document.querySelector('button[aria-label="Mở điều hướng"]').click()`,
-  );
-  await delay(100);
-  await evaluate(`document.querySelector('#app-sidebar a[href="#/ctsv/semesters"]').click()`);
-  await delay(200);
-  assert.ok(await evaluate(`document.querySelector('#app-sidebar').inert`));
-  console.log('PASS access guards and mobile drawer');
-
-  await open('/ctsv/rubrics', 'staff', 375, 'benchmark');
-  assert.ok(await evaluate(`document.body.textContent.includes('Lỗi API kiểm thử')`));
-  assert.ok(
-    await evaluate(
-      `[...document.querySelectorAll('button')].find(e=>e.textContent.includes('Tạo Benchmark mới')).disabled`,
-    ),
-  );
-  await open('/ctsv/clubs', 'staff', 375, 'semesters');
-  assert.ok(await evaluate(`document.body.textContent.includes('Không thể tải học kỳ')`));
-  await open('/ctsv/clubs', 'staff', 375);
-  await evaluate(`document.querySelector('button[aria-label="Thông báo cần xử lý"]').click()`);
-  await delay(200);
-  assert.ok(
-    await evaluate(
-      `document.querySelector('dialog[open]')?.textContent.includes('Thông báo kiểm thử')`,
-    ),
-  );
-  console.log('PASS API error states and notification modal');
-
-  // CSS utilities must win over base rules after the Tailwind v4 migration.
-  await open('/login', 'guest', 320);
-  assert.equal(
-    await evaluate(`getComputedStyle(document.querySelector('button[aria-pressed="true"]')).color`),
-    'rgb(255, 255, 255)',
-  );
-
-  await open('/ctsv/rubrics', 'staff', 375);
-  await evaluate(
-    `[...document.querySelectorAll('button')].find(e=>e.textContent.includes('Tạo Benchmark mới')).click()`,
-  );
-  await delay(100);
-  assert.ok(await evaluate(`!!document.querySelector('dialog[open] form')`));
-  assert.deepEqual(runtimeErrors, []);
-  const weights = await evaluate(
-    `[...document.querySelectorAll('dialog input[type="number"]')].slice(0,6).map(e=>Number(e.value))`,
-  );
-  assert.equal(weights.length, 6);
-  assert.equal(
-    weights.reduce((sum, value) => sum + value, 0),
-    100,
-  );
-
-  await open('/ctsv/seasons', 'staff', 375, 'save');
-  await evaluate(
-    `[...document.querySelectorAll('button')].find(e=>e.textContent.includes('Thêm học kỳ')).click()`,
-  );
-  await delay(100);
-  for (const [selector, value] of [
-    ['dialog input:not([type])', 'SPRING2028'],
-    ['dialog input[type="date"]:first-of-type', '2028-01-01'],
-  ]) {
-    // Date fields live in separate labels; fill them by their index below.
-    if (selector.includes('date')) continue;
-    await evaluate(
-      `(()=>{const e=document.querySelector('${selector}');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'${value}');e.dispatchEvent(new Event('input',{bubbles:true}));})()`,
+      console.log(`PASS route ${actor} ${route} ${width}`);
+    }
+    if (metrics.length)
+      await fs.writeFile(
+        `${directory}/${process.env.UI_SMOKE_FROM_ROUTE ? 'metrics-resumed' : 'metrics'}.json`,
+        JSON.stringify(metrics, null, 2),
+      );
+    if (!process.env.UI_SMOKE_ONLY_FLOWS) {
+      for (const [actor, routes] of [
+        ['staff', legacyStaffRoutes],
+        ['admin', legacyAdminRoutes],
+      ])
+        for (const route of routes) {
+          await open(route, actor, 1280, '', true);
+          assert.ok(
+            (await evaluate('location.hash')).includes('?') ||
+              [
+                '/ctsv/declarations',
+                '/ctsv/clubs',
+                '/admin/accounts',
+                '/admin/audit',
+                '/admin/health',
+              ].includes(route),
+          );
+        }
+    }
+    await open('/admin/accounts', 'staff');
+    assert.equal(await evaluate(`location.hash`), '#/ctsv/work');
+    await open('/admin/accounts', 'student');
+    assert.ok(
+      await evaluate(`document.body.textContent.includes('Tài khoản chưa có quyền truy cập')`),
     );
-    await delay(50);
-  }
-  for (const [index, value] of [
-    [0, '2028-01-01'],
-    [1, '2028-04-30'],
-  ]) {
+    assert.equal(await evaluate(`!!document.querySelector('#app-sidebar')`), false);
+    await open('/login', 'guest', 320);
+    assert.ok(await evaluate(`document.body.textContent.includes('Đăng nhập')`));
+    assert.ok(await evaluate(`document.documentElement.scrollWidth<=innerWidth`));
+    const shot = await call('Page.captureScreenshot', { format: 'png' });
+    await fs.writeFile(`${directory}/login-320.png`, Buffer.from(shot.data, 'base64'));
+
+    await open('/ctsv/clubs', 'staff', 375);
     await evaluate(
-      `(()=>{const e=document.querySelectorAll('dialog input[type="date"]')[${index}];Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'${value}');e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+      `document.querySelector('button[aria-label="Mở điều hướng"]').focus();document.querySelector('button[aria-label="Mở điều hướng"]').click()`,
     );
-    await delay(50);
+    await delay(100);
+    assert.equal(await evaluate(`document.querySelector('#app-sidebar').inert`), false);
+    assert.ok(
+      await evaluate(`document.querySelector('#app-sidebar').contains(document.activeElement)`),
+    );
+    await call('Input.dispatchKeyEvent', {
+      type: 'keyDown',
+      key: 'Escape',
+      code: 'Escape',
+      windowsVirtualKeyCode: 27,
+    });
+    await delay(100);
+    assert.ok(await evaluate(`document.querySelector('#app-sidebar').inert`));
+    assert.equal(
+      await evaluate(`document.activeElement.getAttribute('aria-label')`),
+      'Mở điều hướng',
+    );
+    await evaluate(
+      `document.querySelector('button[aria-label="Mở điều hướng"]').focus();document.querySelector('button[aria-label="Mở điều hướng"]').click()`,
+    );
+    await delay(100);
+    await evaluate(`document.querySelector('#app-sidebar a[href="#/ctsv/semesters"]').click()`);
+    await delay(200);
+    assert.ok(await evaluate(`document.querySelector('#app-sidebar').inert`));
+    console.log('PASS access guards and mobile drawer');
+
+    await open('/ctsv/rubrics', 'staff', 375, 'benchmark');
+    assert.ok(await evaluate(`document.body.textContent.includes('Lỗi API kiểm thử')`));
+    assert.ok(
+      await evaluate(
+        `[...document.querySelectorAll('button')].find(e=>e.textContent.includes('Tạo Benchmark mới')).disabled`,
+      ),
+    );
+    await open('/ctsv/clubs', 'staff', 375, 'semesters');
+    assert.ok(await evaluate(`document.body.textContent.includes('Không thể tải học kỳ')`));
+    await open('/ctsv/clubs', 'staff', 375);
+    await evaluate(`document.querySelector('button[aria-label="Thông báo cần xử lý"]').click()`);
+    await delay(200);
+    assert.ok(
+      await evaluate(
+        `document.querySelector('dialog[open]')?.textContent.includes('Thông báo kiểm thử')`,
+      ),
+    );
+    console.log('PASS API error states and notification modal');
+
+    // CSS utilities must win over base rules after the Tailwind v4 migration.
+    await open('/login', 'guest', 320);
+    assert.equal(
+      await evaluate(
+        `getComputedStyle(document.querySelector('button[aria-pressed="true"]')).color`,
+      ),
+      'rgb(255, 255, 255)',
+    );
+
+    await open('/ctsv/rubrics', 'staff', 375);
+    await evaluate(
+      `[...document.querySelectorAll('button')].find(e=>e.textContent.includes('Tạo Benchmark mới')).click()`,
+    );
+    await delay(100);
+    assert.ok(await evaluate(`!!document.querySelector('dialog[open] form')`));
+    assert.deepEqual(runtimeErrors, []);
+    const weights = await evaluate(
+      `[...document.querySelectorAll('dialog input[type="number"]')].slice(0,6).map(e=>Number(e.value))`,
+    );
+    assert.equal(weights.length, 6);
+    assert.equal(
+      weights.reduce((sum, value) => sum + value, 0),
+      100,
+    );
+
+    await open('/ctsv/seasons', 'staff', 375, 'save');
+    await evaluate(
+      `[...document.querySelectorAll('button')].find(e=>e.textContent.includes('Thêm học kỳ')).click()`,
+    );
+    await delay(100);
+    for (const [selector, value] of [
+      ['dialog input:not([type])', 'SPRING2028'],
+      ['dialog input[type="date"]:first-of-type', '2028-01-01'],
+    ]) {
+      // Date fields live in separate labels; fill them by their index below.
+      if (selector.includes('date')) continue;
+      await evaluate(
+        `(()=>{const e=document.querySelector('${selector}');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'${value}');e.dispatchEvent(new Event('input',{bubbles:true}));})()`,
+      );
+      await delay(50);
+    }
+    for (const [index, value] of [
+      [0, '2028-01-01'],
+      [1, '2028-04-30'],
+    ]) {
+      await evaluate(
+        `(()=>{const e=document.querySelectorAll('dialog input[type="date"]')[${index}];Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'${value}');e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+      );
+      await delay(50);
+    }
+    await evaluate(`document.querySelector('dialog form').requestSubmit()`);
+    await delay(150);
+    assert.ok(await evaluate(`window.__calls.some(item=>item.key==='seasons.create')`));
+    assert.ok(await evaluate(`!!document.querySelector('dialog[open]')`));
+    assert.ok(
+      await evaluate(
+        `document.querySelector('dialog [role="alert"]')?.textContent.includes('Lỗi API kiểm thử')`,
+      ),
+    );
+    assert.ok(
+      await evaluate(
+        `document.body.textContent.includes('Lỗi API kiểm thử')&&!document.body.textContent.includes('Đã lưu cấu hình học kỳ.')`,
+      ),
+    );
+
+    await open('/ctsv/clubs', 'staff', 375);
+    await evaluate(
+      `document.querySelector('button[aria-label="Mở điều hướng"]').focus();document.querySelector('button[aria-label="Mở điều hướng"]').click()`,
+    );
+    await delay(100);
+    await evaluate(
+      `window.dispatchEvent(new KeyboardEvent('keydown', {key:'k',ctrlKey:true,bubbles:true}))`,
+    );
+    await delay(100);
+    assert.ok(await evaluate(`!!document.querySelector('dialog[open]')`));
+    await call('Input.dispatchKeyEvent', {
+      type: 'keyDown',
+      key: 'Escape',
+      code: 'Escape',
+      windowsVirtualKeyCode: 27,
+    });
+    await delay(150);
+    assert.equal(await evaluate(`document.body.style.overflow`), '');
+    assert.ok(await evaluate(`document.querySelector('#app-sidebar').inert`));
+    console.log('PASS CSS cascade, benchmark draft, failed save and nested overlay cleanup');
+
+    await (
+      await import('./account-table-ui-checks.mjs')
+    ).checkAccountTable({ open, evaluate, delay, call, directory });
+    await (
+      await import('./workflow-ui-checks.mjs')
+    ).checkWorkflows({ open, evaluate, delay, call, directory });
+    assert.deepEqual(runtimeErrors, []);
   }
-  await evaluate(`document.querySelector('dialog form').requestSubmit()`);
-  await delay(150);
-  assert.ok(await evaluate(`window.__calls.some(item=>item.key==='seasons.create')`));
-  assert.ok(await evaluate(`!!document.querySelector('dialog[open]')`));
-  assert.ok(
-    await evaluate(
-      `document.querySelector('dialog [role="alert"]')?.textContent.includes('Lỗi API kiểm thử')`,
-    ),
-  );
-  assert.ok(
-    await evaluate(
-      `document.body.textContent.includes('Lỗi API kiểm thử')&&!document.body.textContent.includes('Đã lưu cấu hình học kỳ.')`,
-    ),
-  );
-
-  await open('/ctsv/clubs', 'staff', 375);
-  await evaluate(
-    `document.querySelector('button[aria-label="Mở điều hướng"]').focus();document.querySelector('button[aria-label="Mở điều hướng"]').click()`,
-  );
-  await delay(100);
-  await evaluate(
-    `window.dispatchEvent(new KeyboardEvent('keydown', {key:'k',ctrlKey:true,bubbles:true}))`,
-  );
-  await delay(100);
-  assert.ok(await evaluate(`!!document.querySelector('dialog[open]')`));
-  await call('Input.dispatchKeyEvent', {
-    type: 'keyDown',
-    key: 'Escape',
-    code: 'Escape',
-    windowsVirtualKeyCode: 27,
-  });
-  await delay(150);
-  assert.equal(await evaluate(`document.body.style.overflow`), '');
-  assert.ok(await evaluate(`document.querySelector('#app-sidebar').inert`));
-  console.log('PASS CSS cascade, benchmark draft, failed save and nested overlay cleanup');
-
   await (
-    await import('./account-table-ui-checks.mjs')
-  ).checkAccountTable({ open, evaluate, delay, call, directory });
-  await (
-    await import('./workflow-ui-checks.mjs')
-  ).checkWorkflows({ open, evaluate, delay, call, directory });
-  assert.deepEqual(runtimeErrors, []);
+    await import('./guided-help-ui-checks.mjs')
+  ).checkGuidedHelp({ open, evaluate, delay, call });
   await call('Browser.close');
   ws.close();
 } finally {

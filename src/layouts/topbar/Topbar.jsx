@@ -2,6 +2,7 @@ import './Topbar.css';
 import { Bell, ChevronRight, Command, Menu, Search } from 'lucide-react';
 import { IconButton } from '../../components/ui/index.js';
 import ContextBar from '../context-bar/ContextBar.jsx';
+import { useAuth, CAMPUS_OPTIONS } from '../../context/AuthContext.jsx';
 
 export default function Topbar({
   admin,
@@ -12,6 +13,8 @@ export default function Topbar({
   onOpenSearch,
   onOpenNotifications,
 }) {
+  const { user } = useAuth();
+  const campus = CAMPUS_OPTIONS.find((item) => item.code === user?.campusCode);
   return (
     <header className="topbar-header">
       {/* Breadcrumb */}
@@ -50,7 +53,7 @@ export default function Topbar({
         {/* Campus */}
         <span className="topbar-text-5">
           <span className="topbar-text-6" />
-          FPTU HCM
+          {campus ? (campus.code === 'GLOBAL' ? campus.name : `FPTU ${campus.shortName}`) : 'Campus chưa cập nhật'}
         </span>
       </div>
     </header>

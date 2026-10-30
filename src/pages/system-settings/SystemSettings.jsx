@@ -199,8 +199,8 @@ export function SystemSettings({ type, integrationSection = 'all', healthSection
                       <strong className="system-settings-value">{title}</strong>
                       <small className="system-settings-caption">{desc}</small>
                     </div>
-                    <Badge tone={healthEndpoint ? 'green' : 'neutral'}>
-                      {healthEndpoint ? 'Hoạt động' : 'Chưa kết nối'}
+                    <Badge tone="neutral">
+                      {healthEndpoint ? 'Chưa kiểm tra' : 'Chưa tích hợp'}
                     </Badge>
                   </div>
                 ))}
