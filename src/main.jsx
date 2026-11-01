@@ -11,7 +11,6 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { WorkspaceProvider } from './context/WorkspaceContext.jsx';
 import { session } from './services/api.js';
 import { createBrowserSession } from './services/browser-session.js';
-import { watchSessionRedirect } from './services/session-client.js';
 
 const runtime = import.meta.hot?.data.authRuntime || { generation: 0, root: null, stop: null };
 if (import.meta.hot) {
@@ -41,15 +40,11 @@ async function start() {
   const generation = ++runtime.generation;
   const isCurrent = () => runtime.generation === generation;
   let stopBrowserSession;
-  const clubHubUrl = import.meta.env.VITE_CLUBHUB_APP_URL
-    || (import.meta.env.DEV ? 'http://localhost:5173/v2' : 'https://fptux-clubhub-ui.pages.dev/v2');
-  const signedOutUrl = new URL('/v2', clubHubUrl).href;
   try {
     const browserSession = createBrowserSession({ session, isCurrent });
-    const authenticated = await browserSession.bootstrap();
+    await browserSession.bootstrap();
     if (!isCurrent()) return;
-    // ClubHub owns sign-in. Admin redirects only after Auth confirms there is no session.
-    if (!authenticated) { window.location.replace(signedOutUrl); return; }
+    // Missing/expired cookies render Admin's own login without leaving this route.
     stopBrowserSession = browserSession.watch();
   } catch {
     if (!isCurrent()) return;
@@ -61,8 +56,7 @@ async function start() {
     return;
   }
   if (!isCurrent()) return;
-  const stopRedirect = watchSessionRedirect(session, { destination: signedOutUrl });
-  runtime.stop = () => { stopBrowserSession?.(); stopRedirect(); };
+  runtime.stop = () => { stopBrowserSession?.(); };
   renderApplication();
 }
 start();
