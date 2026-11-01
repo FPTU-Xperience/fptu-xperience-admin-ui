@@ -32,6 +32,19 @@ jobs:
           VITE_STAFF_SSO_ENABLED: ${{ vars.VITE_STAFF_SSO_ENABLED || 'true' }}
           VITE_LOGIN_ACCOUNT_SHORTCUTS: ${{ vars.VITE_LOGIN_ACCOUNT_SHORTCUTS || 'false' }}
 
+      - name: Set selected branch as Cloudflare production branch
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_DEPLOYMENT_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT_NAME: fptux-admin-ui
+          PRODUCTION_BRANCH: ${{ github.ref_name }}
+        run: |
+          curl --fail-with-body --silent --show-error --request PATCH \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${PROJECT_NAME}" \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data "{\"production_branch\":\"${PRODUCTION_BRANCH}\"}"
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         env:
