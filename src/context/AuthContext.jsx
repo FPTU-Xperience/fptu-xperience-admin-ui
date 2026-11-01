@@ -2,6 +2,7 @@ import { isAdmin, isCTSV, isAdminUser } from '../utils/access.js';
 import { createContext, useContext, useEffect, useState } from 'react';
 import api, { session } from '../services/api.js';
 import { observeSession } from '../services/session-client.js';
+import { verifyBrowserLogin } from '../services/browser-session.js';
 
 const AuthContext = createContext(null);
 
@@ -70,7 +71,8 @@ export function AuthProvider({ children }) {
       try {
         const response = await action();
         const actor = response?.user || response?.actor;
-        session.acceptLogin({ ...response, accessToken: response?.accessToken || response?.token, user: actor }, version);
+        const verified = await verifyBrowserLogin(session, { ...response, accessToken: response?.accessToken || response?.token, user: actor });
+        session.acceptLogin(verified, version);
         return normalizeActor(actor);
       } catch (err) {
         setError(err.message || fallbackMessage);

@@ -10,7 +10,7 @@ import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { WorkspaceProvider } from './context/WorkspaceContext.jsx';
 import { session } from './services/api.js';
-import { createStaffSso } from './services/staff-sso.js';
+import { createBrowserSession } from './services/browser-session.js';
 import { watchSessionRedirect } from './services/session-client.js';
 
 const runtime = import.meta.hot?.data.authRuntime || { generation: 0, root: null, stop: null };
@@ -36,22 +36,33 @@ function renderApplication() {
 }
 
 async function start() {
+  runtime.stop?.();
+  runtime.stop = null;
   const generation = ++runtime.generation;
   const isCurrent = () => runtime.generation === generation;
-  let stopSso;
+  let stopBrowserSession;
   const clubHubUrl = import.meta.env.VITE_CLUBHUB_APP_URL
     || (import.meta.env.DEV ? 'http://localhost:5173/v2' : 'https://fptux-clubhub-ui.pages.dev/v2');
   const signedOutUrl = new URL('/v2', clubHubUrl).href;
-  if (import.meta.env.VITE_STAFF_SSO_ENABLED !== 'false') {
-    try {
-      const sso = createStaffSso({ session, isCurrent, peerUrl: clubHubUrl, signedOutUrl });
-      if (await sso.bootstrap() || !isCurrent()) return;
-      stopSso = sso.watch();
-    } catch (error) { console.error('Không thể khởi tạo SSO:', error); }
+  try {
+    const browserSession = createBrowserSession({ session, isCurrent });
+    const authenticated = await browserSession.bootstrap();
+    if (!isCurrent()) return;
+    // ClubHub owns sign-in. Admin redirects only after Auth confirms there is no session.
+    if (!authenticated) { window.location.replace(signedOutUrl); return; }
+    stopBrowserSession = browserSession.watch();
+  } catch {
+    if (!isCurrent()) return;
+    runtime.root ||= ReactDOM.createRoot(document.getElementById('root'));
+    runtime.root.render(<main role="alert" style={{ padding: 40 }}>
+      <p>Không thể kiểm tra phiên đăng nhập. Vui lòng thử lại.</p>
+      <button type="button" onClick={start}>Thử lại</button>
+    </main>);
+    return;
   }
   if (!isCurrent()) return;
   const stopRedirect = watchSessionRedirect(session, { destination: signedOutUrl });
-  runtime.stop = () => { stopSso?.(); stopRedirect(); };
+  runtime.stop = () => { stopBrowserSession?.(); stopRedirect(); };
   renderApplication();
 }
 start();

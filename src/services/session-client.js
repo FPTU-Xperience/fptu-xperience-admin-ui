@@ -29,7 +29,7 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
     finally { release(); }
   }
   async function fetchAuth(input, options) {
-    try { return await fetcher(input, options); }
+    try { return await fetcher(input, { ...options, credentials: 'include' }); }
     catch (error) {
       if (error.name === 'TimeoutError') throw Object.assign(
         new Error('Máy chủ xác thực phản hồi quá chậm. Vui lòng thử lại.'), { status: 504 });
@@ -56,7 +56,8 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
   function save(data, previous = null) {
     if (!data?.accessToken) throw new Error('Phản hồi đăng nhập thiếu access token.');
     const record = { id: previous?.id || crypto.randomUUID(), accessToken: data.accessToken,
-      refreshToken: data.refreshToken || (previous ? previous.refreshToken : null), user: data.user || previous?.user || null };
+      refreshToken: data.refreshToken || (previous ? previous.refreshToken : null), user: data.user || previous?.user || null,
+      ...((data.browserSessionId || previous?.browserSessionId) ? { browserSessionId: data.browserSessionId || previous.browserSessionId } : {}) };
     // The record is the authoritative atomic write; legacy keys serve existing readers only.
     if (!previous) storage.setItem(GENERATION_KEY, record.id);
     storage.setItem('accessToken', record.accessToken);
@@ -161,14 +162,14 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
     clear();
     // Revocation works even after access-token expiry, without restoring local state.
     let credentials = current;
-    const revoke = () => fetcher(url('/api/auth/logout'), { method: 'POST',
+    const revoke = () => fetcher(url('/api/auth/logout'), { method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${credentials?.accessToken}` },
       body: JSON.stringify({ refreshToken: credentials?.refreshToken || '' }), signal: AbortSignal.timeout(10000) });
     try {
       if (!current) return;
       const result = await revoke();
       if (result.status === 401 && current.refreshToken) {
-        const rotated = await fetcher(url('/api/auth/refresh'), { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        const rotated = await fetcher(url('/api/auth/refresh'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ refreshToken: current.refreshToken }), signal: AbortSignal.timeout(10000) });
         if (rotated.ok) { credentials = await rotated.json(); await revoke(); }
       }
