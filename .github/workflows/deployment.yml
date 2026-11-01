@@ -2,6 +2,15 @@ name: Deploy to Cloudflare Pages
 
 on:
   workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: Deployment target
+        type: choice
+        required: true
+        default: preview
+        options:
+          - preview
+          - production
 
 permissions:
   contents: read
@@ -22,6 +31,9 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Test Frontend
+        run: npm test
+
       - name: Build Frontend
         run: npm run build
         env:
@@ -31,6 +43,38 @@ jobs:
           VITE_STAFF_SSO_ENABLED: ${{ vars.VITE_STAFF_SSO_ENABLED || 'true' }}
           VITE_LOGIN_ACCOUNT_SHORTCUTS: ${{ vars.VITE_LOGIN_ACCOUNT_SHORTCUTS || 'false' }}
 
+      - name: Resolve deployment branch
+        id: target
+        env:
+          DEPLOY_TARGET: ${{ inputs.deploy_target || 'preview' }}
+          SOURCE_BRANCH: ${{ github.ref_name }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_DEPLOYMENT_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${DEPLOY_TARGET}" in
+            preview)
+              deploy_branch="${SOURCE_BRANCH}"
+              ;;
+            production)
+              deploy_branch="$(
+                curl --fail --silent --show-error \
+                  "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/fptux-admin-ui" \
+                  --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+                  | jq -er 'select(.success == true) | .result.production_branch | select(type == "string" and length > 0)'
+              )"
+              ;;
+            *)
+              echo "Unsupported deployment target" >&2
+              exit 1
+              ;;
+          esac
+          [[ "${deploy_branch}" =~ ^[a-zA-Z0-9_./-]+$ ]]
+          git check-ref-format --branch "${deploy_branch}" >/dev/null
+          printf 'branch=%s\n' "${deploy_branch}" >> "${GITHUB_OUTPUT}"
+          printf 'Deploying %s to %s (%s)\n' "${GITHUB_SHA}" "${DEPLOY_TARGET}" "${deploy_branch}"
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         env:
@@ -39,4 +83,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_DEPLOYMENT_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           gitHubToken: ${{ github.token }}
-          command: pages deploy ./dist --project-name=${{ env.PROJECT_NAME }} --branch=${{ github.ref_name }} --commit-dirty=true
+          command: pages deploy ./dist --project-name=${{ env.PROJECT_NAME }} --branch=${{ steps.target.outputs.branch }} --commit-dirty=true
