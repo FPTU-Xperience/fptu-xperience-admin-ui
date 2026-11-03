@@ -1,3 +1,4 @@
+import { errorMessage } from '../services/error-message.js';
 import { isAdmin, isCTSV, isAdminUser } from '../utils/access.js';
 import { createContext, useContext, useEffect, useState } from 'react';
 import api, { session } from '../services/api.js';
@@ -59,7 +60,7 @@ export function AuthProvider({ children }) {
         setIsLoading(loading);
         if (actor) setError(null);
       },
-      onError: (error) => setError(error.message),
+      onError: (error) => setError(errorMessage(error)),
     });
   }, []);
 
@@ -75,7 +76,7 @@ export function AuthProvider({ children }) {
         session.acceptLogin(verified, version);
         return normalizeActor(actor);
       } catch (err) {
-        setError(err.message || fallbackMessage);
+        setError(errorMessage(err, fallbackMessage));
         throw err;
       } finally {
         setIsSigningIn(false);

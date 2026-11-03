@@ -1,3 +1,4 @@
+import { errorMessage } from '../../services/error-message.js';
 import './Login.css';
 import { AlertCircle, LoaderCircle, ShieldCheck, Users } from 'lucide-react';
 import { Button, Field } from '../../components/ui/index.js';
@@ -116,7 +117,7 @@ export default function Login() {
     navigate(defaultPathFor(userData), { replace: true });
   }
 
-  const displayError = localError || error;
+  const displayError = localError || error ? errorMessage(localError || error) : '';
 
   return (
     <main className="login-page login-main">

@@ -1,6 +1,6 @@
 import './Sidebar.css';
 import { useEffect, useRef } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { navigationItemFor } from '../../../routes/navigation.js';
 import { LogOut, X } from 'lucide-react';
 import Brand from '../brand/Brand.jsx';
@@ -10,8 +10,9 @@ import { ROLE_LABELS } from '../../../context/AuthContext.jsx';
 
 export default function Sidebar({ nav, mobile, onClose }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const current = navigationItemFor(location.pathname, location.state);
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { role } = useWorkspace();
 
   const sidebarRef = useRef(null);
@@ -60,7 +61,7 @@ export default function Sidebar({ nav, mobile, onClose }) {
     } catch {
       /* ignore */
     }
-    await logout();
+    navigate('/logout');
   }
 
   const displayName = user?.fullName || user?.name || user?.username || 'Người dùng';

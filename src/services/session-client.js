@@ -7,6 +7,8 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
   locks = globalThis.navigator?.locks, fetcher = (...args) => fetch(...args), authTimeoutMs = 20000 }) {
   let refreshing = null;
   let loggingOut = false;
+  let pendingLogout = null;
+  let logoutRequest = null;
   let authenticating = 0;
   function beginAuthentication(timeoutMs = 300000) {
     authenticating++;
@@ -156,25 +158,32 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
     }
     return response;
   }
-  async function logout() {
-    const current = read();
+  function logout() {
+    if (logoutRequest) return logoutRequest;
+    const current = read() || pendingLogout;
     loggingOut = true;
+    pendingLogout = current;
     clear();
-    // Revocation works even after access-token expiry, without restoring local state.
-    let credentials = current;
-    const revoke = () => fetcher(url('/api/auth/logout'), { method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${credentials?.accessToken}` },
-      body: JSON.stringify({ refreshToken: credentials?.refreshToken || '' }), signal: AbortSignal.timeout(10000) });
-    try {
-      if (!current) return;
-      const result = await revoke();
-      if (result.status === 401 && current.refreshToken) {
-        const rotated = await fetcher(url('/api/auth/refresh'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken: current.refreshToken }), signal: AbortSignal.timeout(10000) });
-        if (rotated.ok) { credentials = await rotated.json(); await revoke(); }
-      }
-    } catch { /* The browser session stays signed out when the server is unreachable. */ }
-    finally { loggingOut = false; notify(); }
+    logoutRequest = Promise.resolve().then(async () => {
+      let credentials = current;
+      const revoke = () => fetcher(url('/api/auth/logout'), { method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${credentials?.accessToken}` },
+        body: JSON.stringify({ refreshToken: credentials?.refreshToken || '' }), signal: AbortSignal.timeout(10000) });
+      try {
+        if (!current) return { confirmed: true };
+        let result = await revoke();
+        if (result.status === 401 && current.refreshToken) {
+          const rotated = await fetcher(url('/api/auth/refresh'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: current.refreshToken }), signal: AbortSignal.timeout(10000) });
+          if (rotated.ok) { credentials = await rotated.json(); pendingLogout = credentials; result = await revoke(); }
+        }
+        if (!result.ok) return { confirmed: false };
+        pendingLogout = null;
+        return { confirmed: true };
+      } catch { return { confirmed: false }; }
+      finally { loggingOut = Boolean(pendingLogout); logoutRequest = null; notify(); }
+    });
+    return logoutRequest;
   }
   const version = () => `${storage.getItem(GENERATION_KEY)}:${read()?.id || ''}`;
   const acceptLogin = (data, expectedVersion) => {
@@ -194,7 +203,7 @@ export function watchSessionRedirect(client, { destination, location = globalThi
     hadSession = false;
     pending = true;
     // Finish server revocation before the initiating tab navigates away.
-    if (!client.isLoggingOut()) { pending = false; location.replace(destination); }
+    if (!client.isLoggingOut()) { pending = false; if (!/\/logout$/.test(location.pathname || '')) location.replace(destination); }
   });
 }
 

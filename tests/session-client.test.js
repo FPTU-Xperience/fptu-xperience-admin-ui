@@ -265,3 +265,13 @@ test('initiating logout completes server revocation before redirecting to ClubHu
   gate.resolve(response(204)); await signingOut;
   assert.deepEqual(visited, ['https://fptux-clubhub-ui.pages.dev/v2']); stop();
 });
+
+test('logout confirms revocation only on server success and retries failed revocation', async () => {
+  let count = 0;
+  const { client } = fixture(async () => response(++count === 1 ? 503 : 204));
+  client.save(credentials('a'));
+  assert.equal((await client.logout()).confirmed, false);
+  assert.equal(client.read(), null);
+  assert.equal((await client.logout()).confirmed, true);
+  assert.equal(count, 2);
+});

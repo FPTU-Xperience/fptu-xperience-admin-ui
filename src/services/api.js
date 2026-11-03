@@ -1,3 +1,4 @@
+import { errorMessage } from './error-message.js';
 /**
  * API client cho FPTU Xperience Admin UI.
  * Kết nối đến ClubReportHub Backend API (port 7000).
@@ -70,7 +71,7 @@ async function downloadBlob(endpoint, defaultFileName) {
     let errorMessage = `Download failed with status ${response.status}`
     try {
       const data = await response.json()
-      errorMessage = data.message || errorMessage
+      errorMessage = typeof data.message === 'string' ? data.message : errorMessage
     } catch {
       const text = await response.text()
       if (text) errorMessage = text
@@ -131,7 +132,7 @@ async function downloadBytes(endpoint) {
     let errorMessage = `Download failed with status ${response.status}`
     try {
       const data = await response.json()
-      errorMessage = data.message || errorMessage
+      errorMessage = typeof data.message === 'string' ? data.message : errorMessage
     } catch {
       const text = await response.text()
       if (text) errorMessage = text
@@ -195,7 +196,7 @@ async function request(path, options = {}) {
   if (!response.ok) {
     let message = ''
     if (data && typeof data === 'object') {
-      message = data.message || data.error || data.detail || JSON.stringify(data)
+      message = errorMessage(data, `API ${response.status}`)
     } else {
       message = text || `API ${response.status}`
     }
