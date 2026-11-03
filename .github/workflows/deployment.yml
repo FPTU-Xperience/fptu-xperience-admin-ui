@@ -1,6 +1,9 @@
 name: Deploy to Cloudflare Pages
 
 on:
+  push:
+    branches: [fix/approved-issues-20261103]
+    paths: [.github/workflows/deployment.yml]
   workflow_dispatch:
 
 permissions:
