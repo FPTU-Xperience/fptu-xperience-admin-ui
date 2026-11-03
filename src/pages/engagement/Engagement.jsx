@@ -1,3 +1,4 @@
+import { studentRadarView } from '../../services/student-profile-view.js';
 import { systemRolesFor } from '../../utils/roles.js';
 import './Engagement.css';
 import { useWorkspace } from '../../context/WorkspaceContext.jsx';
@@ -94,7 +95,8 @@ export function Engagement({ reports = false }) {
           email: u.email || '',
           major: u.major || '',
           cohort: u.cohort || '',
-          clubIds: Array.isArray(u.clubIds) ? u.clubIds : [],
+          clubIds: Array.isArray(u.clubIds) ? u.clubIds.map(String) : [],
+          clubMembershipAvailable: Array.isArray(u.clubIds),
         })),
       );
 
@@ -153,21 +155,23 @@ export function Engagement({ reports = false }) {
       setRadarData(null);
       return;
     }
+    let active = true;
     async function fetchRadar() {
+      setRadarData(null);
       setRadarLoading(true);
       setRadarError(null);
       try {
         const data = await api.studentAffairs.students.radar(detail.id, { semesterCode: season });
-        setRadarData(data);
+        if (active) setRadarData(studentRadarView(data, detail.id));
       } catch (err) {
         console.error('Failed to fetch radar:', err);
-        setRadarError(err.message);
-        setRadarData(null);
+        if (active) { setRadarError(err.message); setRadarData(null); }
       } finally {
-        setRadarLoading(false);
+        if (active) setRadarLoading(false);
       }
     }
     fetchRadar();
+    return () => { active = false; };
   }, [detail, season]);
 
   async function exportData() {
@@ -398,8 +402,8 @@ export function Engagement({ reports = false }) {
       {/* Detail Modal */}
       {detail && (
         <Modal
-          title={detail.fullName}
-          description={`${detail.username} · ${detail.email}`}
+          title={radarData?.studentName || detail.fullName}
+          description={`${detail.username} · ${radarData?.studentEmail || detail.email}`}
           wide
           onClose={() => setDetail(null)}
         >
@@ -407,7 +411,7 @@ export function Engagement({ reports = false }) {
             {/* Student Club Card */}
             <div className="engagement-content-13">
               <UsersRound size={25} />
-              <strong className="engagement-value-2">{detail.clubIds?.length || 0}</strong>
+              <strong className="engagement-value-2">{detail.clubMembershipAvailable ? detail.clubIds.length : '—'}</strong>
               <span className="engagement-text-7">Câu lạc bộ đã tham gia</span>
             </div>
 
@@ -431,7 +435,7 @@ export function Engagement({ reports = false }) {
                 Đang tải biểu đồ…
               </div>
             ) : radarError || !radarData ? (
-              <div className="engagement-content-18">Chưa có dữ liệu radar cho học kỳ này.</div>
+              <div className="engagement-content-18">{radarError || 'Chưa có dữ liệu radar cho học kỳ này.'}</div>
             ) : (
               <>
                 {/* Radar */}
@@ -458,17 +462,17 @@ export function Engagement({ reports = false }) {
                     {[
                       {
                         label: 'Chỉ số đa dạng (D)',
-                        value: radarData.stats.diversityIndex || radarData.stats.D,
+                        value: radarData.stats.diversityIndex ?? radarData.stats.D,
                       },
                       {
                         label: 'Độ đều Shannon (J)',
-                        value: radarData.stats.evenness || radarData.stats.J,
+                        value: radarData.stats.evenness ?? radarData.stats.J,
                       },
                       {
                         label: 'Hệ số đòn bẩy (M)',
-                        value: radarData.stats.leverage || radarData.stats.M,
+                        value: radarData.stats.leverage ?? radarData.stats.M,
                       },
-                      { label: 'ERI', value: radarData.stats.eri || radarData.stats.ERI },
+                      { label: 'ERI', value: radarData.stats.eri ?? radarData.stats.ERI },
                     ].map((stat) => (
                       <div key={stat.label} className="engagement-content-21">
                         <p className="engagement-description">{stat.label}</p>
@@ -498,7 +502,7 @@ export function Engagement({ reports = false }) {
                 {detail.clubIds
                   ?.map((id) => clubs.find((c) => c.id === id)?.name)
                   .filter(Boolean)
-                  .join(', ') || 'Chưa tham gia câu lạc bộ'}
+                  .join(', ') || (detail.clubMembershipAvailable ? 'Chưa tham gia câu lạc bộ' : 'Nguồn danh sách chưa cung cấp dữ liệu thành viên CLB')}
               </p>
             </div>
           </div>
