@@ -6,6 +6,7 @@ const SESSION_EVENT = 'fptux:session-changed';
 export function createSessionClient({ baseUrl, storage = globalThis.localStorage, target = globalThis.window,
   locks = globalThis.navigator?.locks, fetcher = (...args) => fetch(...args), authTimeoutMs = 20000 }) {
   let refreshing = null;
+  let expired = false;
   let loggingOut = false;
   let pendingLogout = null;
   let logoutRequest = null;
@@ -57,6 +58,7 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
   const notify = () => target?.dispatchEvent(new Event(SESSION_EVENT));
   function save(data, previous = null) {
     if (!data?.accessToken) throw new Error('Phản hồi đăng nhập thiếu access token.');
+    expired = false;
     const record = { id: previous?.id || crypto.randomUUID(), accessToken: data.accessToken,
       refreshToken: data.refreshToken || (previous ? previous.refreshToken : null), user: data.user || previous?.user || null,
       ...((data.browserSessionId || previous?.browserSessionId) ? { browserSessionId: data.browserSessionId || previous.browserSessionId } : {}) };
@@ -79,6 +81,16 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
     storage.removeItem(SESSION_KEY);
     notify();
   }
+  function expire(expectedId) {
+    const current = read();
+    if (!current || expectedId && current.id !== expectedId || expired) return;
+    expired = true;
+    clear(current.id);
+  }
+  function acknowledgeExpiry() {
+    expired = false;
+    notify();
+  }
   function subscribe(callback) {
     const changed = (event) => {
       if (event.type === 'storage' && event.key !== SESSION_KEY && event.key !== null) return;
@@ -99,7 +111,7 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
       const current = read();
       if (!initial || current?.id !== initial.id) throw error(401);
       if (current.accessToken && current.accessToken !== rejectedToken) return current.accessToken;
-      if (!current.refreshToken) { clear(current.id); throw error(401); }
+      if (!current.refreshToken) { expire(current.id); throw error(401); }
       const response = await fetchAuth(url('/api/auth/refresh'), { method: 'POST',
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: current.refreshToken }),
         signal: AbortSignal.timeout(authTimeoutMs) });
@@ -109,7 +121,7 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
       if (latest.refreshToken !== current.refreshToken) return latest.accessToken;
       if (!response.ok) {
         console.warn('[auth] Refresh rejected:', response.status);
-        if (response.status === 401 || response.status === 403) clear(current.id);
+        if (response.status === 401 || response.status === 403) expire(current.id);
         throw error(response.status);
       }
       const data = await response.json();
@@ -122,6 +134,7 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
     return refreshing;
   }
   async function authFetch(input, options = {}, { anonymous = false, bodyFactory } = {}) {
+    if (!anonymous && expired) throw error(401);
     const initial = read();
     const send = (token) => {
       const headers = new Headers(options.headers);
@@ -154,12 +167,13 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
         } catch { /* An unavailable identity service is not a definitive session rejection. */ }
       }
       const latest = read();
-      if (identityRejected && latest?.id === initial.id && latest.accessToken === token) clear(initial.id);
+      if (identityRejected && latest?.id === initial.id && latest.accessToken === token) expire(initial.id);
     }
     return response;
   }
   function logout() {
     if (logoutRequest) return logoutRequest;
+    expired = false;
     const current = read() || pendingLogout;
     loggingOut = true;
     pendingLogout = current;
@@ -190,7 +204,7 @@ export function createSessionClient({ baseUrl, storage = globalThis.localStorage
     if (version() !== expectedVersion) throw error(409);
     return save(data);
   };
-  return { read, save, clear, subscribe, refresh, authFetch, logout, url, version, acceptLogin, authenticate, beginAuthentication,
+  return { read, save, clear, expire, acknowledgeExpiry, isExpired: () => expired, subscribe, refresh, authFetch, logout, url, version, acceptLogin, authenticate, beginAuthentication,
     isAuthenticating: () => authenticating > 0, isLoggingOut: () => loggingOut };
 }
 
@@ -198,6 +212,7 @@ export function watchSessionRedirect(client, { destination, location = globalThi
   let hadSession = Boolean(client.read());
   let pending = false;
   return client.subscribe(record => {
+    if (client.isExpired?.()) { hadSession = false; pending = false; return; }
     if (record) { hadSession = true; pending = false; return; }
     if (!hadSession && !pending) return;
     hadSession = false;
@@ -236,10 +251,9 @@ export function observeSession(client, { loadUser, onUser, onError = () => {}, t
     }
   };
   const unsubscribe = client.subscribe(sync);
-  const retry = () => { if (currentId === retryPending && !client.isAuthenticating()) sync(client.read()); };
-  target?.addEventListener('focus', retry);
+  // No focus polling: session changes and actual API requests own revalidation.
   // A distinct initial sentinel makes the anonymous state observable too.
   currentId = Symbol('initial');
   sync(client.read());
-  return () => { disposed = true; generation++; unsubscribe(); target?.removeEventListener('focus', retry); };
+  return () => { disposed = true; generation++; unsubscribe(); };
 }

@@ -1,3 +1,4 @@
+import SessionExpiryGuard from './components/auth/SessionExpiryGuard';
 import './index.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -24,11 +25,13 @@ function renderApplication() {
   runtime.root.render(
   <React.StrictMode>
     <HashRouter>
+      <SessionExpiryGuard session={session} loginTo="/login">
       <AuthProvider>
         <WorkspaceProvider>
           <App />
         </WorkspaceProvider>
       </AuthProvider>
+      </SessionExpiryGuard>
     </HashRouter>
   </React.StrictMode>,
 );
@@ -39,13 +42,11 @@ async function start() {
   runtime.stop = null;
   const generation = ++runtime.generation;
   const isCurrent = () => runtime.generation === generation;
-  let stopBrowserSession;
   try {
     const browserSession = createBrowserSession({ session, isCurrent });
     await browserSession.bootstrap();
     if (!isCurrent()) return;
     // Missing/expired cookies render Admin's own login without leaving this route.
-    stopBrowserSession = browserSession.watch();
   } catch {
     if (!isCurrent()) return;
     runtime.root ||= ReactDOM.createRoot(document.getElementById('root'));
@@ -56,7 +57,7 @@ async function start() {
     return;
   }
   if (!isCurrent()) return;
-  runtime.stop = () => { stopBrowserSession?.(); };
+  runtime.stop = () => {};
   renderApplication();
 }
 start();

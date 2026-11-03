@@ -1,0 +1,8 @@
+.session-expiry-content { display: contents; }
+.session-expiry-backdrop { position: fixed; inset: 0; z-index: 2147483640; display: grid; place-items: center; padding: 24px; background: rgba(15,23,42,.58); backdrop-filter: blur(4px); }
+.session-expiry-dialog { width: min(100%,440px); box-sizing: border-box; border-radius: 20px; padding: 32px; background: #fff; color: #172033; text-align: center; box-shadow: 0 24px 80px rgba(0,0,0,.25); font-family: inherit; }
+.session-expiry-icon { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #fff1e8; color: #c44b12; font-size: 28px; font-weight: 700; }
+.session-expiry-dialog h1 { margin: 18px 0 12px; font-size: 23px; line-height: 1.35; font-weight: 700; }
+.session-expiry-dialog p { margin: 0 0 24px; line-height: 1.6; color: #64748b; }
+.session-expiry-dialog button { width: 100%; border: 0; border-radius: 10px; padding: 13px 18px; background: #ed641c; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.session-expiry-dialog button:focus-visible { outline: 3px solid #fdba74; outline-offset: 3px; }

@@ -196,7 +196,7 @@ test('refresh-only changes do not repeatedly load the current user', async () =>
   assert.equal(loads, 1); stop();
 });
 
-test('a retained stale identity cannot unmount Google login by retrying on popup focus', async () => {
+test('focus never retries identity validation after a transient error', async () => {
   const { client, target } = fixture(async () => response(200));
   client.save(credentials('retained'));
   let loads = 0;
@@ -209,7 +209,7 @@ test('a retained stale identity cannot unmount Google login by retrying on popup
   target.dispatchEvent(new Event('focus')); await tick();
   assert.equal(loads, 1);
   release(); target.dispatchEvent(new Event('focus')); await tick();
-  assert.equal(loads, 2); stop();
+  assert.equal(loads, 1); stop();
 });
 
 test('logout with expired access revokes the rotated refresh token without saving it locally', async () => {
@@ -246,7 +246,7 @@ test('stale legacy tokens and an old atomic record cannot revive the logout tomb
   assert.equal(client.read(), null);
 });
 
-test('session expiry redirects to /v2, but initial anonymous state does not navigate', () => {
+test('manual session clearing redirects, but initial anonymous state does not navigate', () => {
   const { client } = fixture(async () => response(204));
   const visited = [];
   const stop = watchSessionRedirect(client, { destination: '/v2', location: { replace: path => visited.push(path) } });
@@ -274,4 +274,58 @@ test('logout confirms revocation only on server success and retries failed revoc
   assert.equal(client.read(), null);
   assert.equal((await client.logout()).confirmed, true);
   assert.equal(count, 2);
+});
+
+test('expired session is detected on the next API call, signals once and waits for login acknowledgement', async () => {
+  let requests = 0, signals = 0;
+  const { client } = fixture(async () => { requests++; return response(401); });
+  client.save(credentials('idle'));
+  const visited = [];
+  const stopRedirect = watchSessionRedirect(client, { destination: '/v2', location: { replace: path => visited.push(path) } });
+  const stop = client.subscribe(() => { if (client.isExpired()) signals++; });
+  assert.equal(requests, 0);
+  await assert.rejects(client.authFetch('/protected'));
+  assert.equal(client.read(), null);
+  assert.equal(client.isExpired(), true);
+  assert.equal(signals, 1);
+  assert.deepEqual(visited, []);
+  const count = requests;
+  await assert.rejects(client.authFetch('/another-protected'));
+  assert.equal(requests, count);
+  client.acknowledgeExpiry();
+  assert.equal(client.isExpired(), false);
+  assert.deepEqual(visited, []);
+  client.save(credentials('new-login'));
+  assert.equal(client.isExpired(), false);
+  stop(); stopRedirect();
+});
+
+test('resource 403 and server errors are not session-expired signals', async () => {
+  for (const status of [403, 500, 503]) {
+    const { client } = fixture(async () => response(status));
+    client.save(credentials('valid'));
+    assert.equal((await client.authFetch('/protected')).status, status);
+    assert.equal(client.isExpired(), false);
+    assert.equal(client.read().user.id, 'valid');
+  }
+});
+
+test('unavailable refresh service retains credentials and does not require login', async () => {
+  const { client } = fixture(async url => response(url.endsWith('/refresh') ? 503 : 401));
+  client.save(credentials('valid'));
+  await assert.rejects(client.authFetch('/protected'));
+  assert.equal(client.isExpired(), false);
+  assert.equal(client.read().user.id, 'valid');
+});
+
+test('concurrent rejected requests share refresh and produce a single expiry signal', async () => {
+  let rotations = 0, signals = 0;
+  const { client } = fixture(async url => { if (url.endsWith('/refresh')) rotations++; return response(401); });
+  client.save(credentials('old'));
+  const stop = client.subscribe(() => { if (client.isExpired()) signals++; });
+  await Promise.allSettled([client.authFetch('/one'), client.authFetch('/two'), client.authFetch('/three')]);
+  assert.equal(rotations, 1);
+  assert.equal(signals, 1);
+  assert.equal(client.isExpired(), true);
+  stop();
 });

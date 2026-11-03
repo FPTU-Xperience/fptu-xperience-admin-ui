@@ -13,22 +13,24 @@ async function request(session, method, fetcher) {
     return data;
 }
 
-export async function verifyBrowserLogin(session, data, fetcher = (...args) => fetch(...args)) {
-    const status = await request(session, 'GET', fetcher);
-    if (!status || String(status.user.id) !== String(data.user?.id))
-        throw new Error('Không thể lưu phiên đăng nhập trên trình duyệt này. Vui lòng thử lại hoặc liên hệ hỗ trợ.');
-    return { ...data, browserSessionId: status.browserSessionId };
+export async function verifyBrowserLogin(session, data) {
+    // The authenticated login response is authoritative. Cookie discovery is optional SSO,
+    // not a second gate which can reject a valid login with an origin/cookie 403.
+    if (!data?.accessToken || data.user?.id == null)
+        throw new Error('Phản hồi đăng nhập không hợp lệ.');
+    return data;
 }
 
 export function createBrowserSession({ session, fetcher = (...args) => fetch(...args),
-    target = window, document = window.document, isCurrent = () => true }) {
+    isCurrent = () => true }) {
     let checking;
     async function sync() {
-        if (!isCurrent() || session.isAuthenticating() || session.isLoggingOut()) return Boolean(session.read());
+        if (!isCurrent() || session.isAuthenticating() || session.isLoggingOut() || session.isExpired?.())
+            return Boolean(session.read());
         if (checking) return checking;
         const version = session.version();
         const current = () => isCurrent() && version === session.version()
-            && !session.isAuthenticating() && !session.isLoggingOut();
+            && !session.isAuthenticating() && !session.isLoggingOut() && !session.isExpired?.();
         checking = (async () => {
             const status = await request(session, 'GET', fetcher);
             if (!current()) return Boolean(session.read());
@@ -51,18 +53,18 @@ export function createBrowserSession({ session, fetcher = (...args) => fetch(...
         })().finally(() => { checking = null; });
         return checking;
     }
-    function watch() {
-        const check = () => {
-            if (document?.visibilityState !== 'hidden') sync().catch(() => {});
-        };
-        target.addEventListener('focus', check);
-        document?.addEventListener('visibilitychange', check);
-        const interval = target.setInterval(check, 15000);
-        return () => {
-            target.removeEventListener('focus', check);
-            document?.removeEventListener('visibilitychange', check);
-            target.clearInterval(interval);
-        };
+    async function bootstrap() {
+        // Existing credentials are validated by the next protected API request.
+        if (session.read()) return true;
+        try { return await sync(); }
+        catch (error) {
+            // A rejected optional cookie-discovery origin must not block explicit token login.
+            // Do not grant a session, alter the backend allow-list, or retry in the background.
+            if (error.status === 403) return false;
+            throw error;
+        }
     }
-    return { bootstrap: sync, sync, watch };
+    // Compatibility surface only: no timers, focus/visibility handlers or background requests.
+    const watch = () => () => {};
+    return { bootstrap, sync, watch };
 }

@@ -99,12 +99,45 @@ test('cookie checks cannot resurrect a session after logout or replace a login i
     release();
 });
 
-test('sign-in verifies that the browser accepted the cookie before saving a local session', async () => {
-    const jar = { id: 'staff' };
-    const local = app(jar);
+test('explicit sign-in accepts the authenticated response without an extra cookie probe', async () => {
+    const local = app({});
     const data = { accessToken: 'token', user: { id: 'staff' } };
-    assert.equal((await verifyBrowserLogin(local.session, data, local.fetcher)).browserSessionId, 'browser-staff');
-    jar.id = null;
-    await assert.rejects(verifyBrowserLogin(local.session, data, local.fetcher), /phiên đăng nhập/);
+    assert.equal(await verifyBrowserLogin(local.session, data, local.fetcher), data);
+    assert.deepEqual(local.calls, []);
+    await assert.rejects(verifyBrowserLogin(local.session, { user: { id: 'staff' } }), /hợp lệ/);
+});
+
+test('existing local session skips cookie discovery, even if discovery would fail', async () => {
+    const local = app({ error: true });
+    local.session.save({ accessToken: 'existing', refreshToken: 'refresh', user: { id: 'staff' } });
+    assert.equal(await local.browser.bootstrap(), true);
+    assert.deepEqual(local.calls, []);
+});
+
+test('idle time, focus and visibility changes do not poll or validate a session', async () => {
+    const local = app({});
+    local.target.setInterval = () => { throw new Error('No polling timers allowed'); };
+    await local.browser.bootstrap();
+    const stop = local.browser.watch();
+    for (let i = 0; i < 20; i++) {
+        local.target.dispatchEvent(new Event('focus'));
+        local.document.dispatchEvent(new Event('visibilitychange'));
+        local.poll();
+    }
+    await Promise.resolve();
+    assert.deepEqual(local.calls, ['GET']);
+    stop();
+});
+
+test('403 from optional initial cookie discovery leaves the app anonymous and does not loop', async () => {
+    const local = app({});
+    let calls = 0;
+    const browser = createBrowserSession({ session: local.session,
+        fetcher: async () => { calls++; return new Response(null, { status: 403 }); } });
+    assert.equal(await browser.bootstrap(), false);
+    const stop = browser.watch();
+    local.target.dispatchEvent(new Event('focus'));
+    assert.equal(calls, 1);
     assert.equal(local.session.read(), null);
+    stop();
 });
