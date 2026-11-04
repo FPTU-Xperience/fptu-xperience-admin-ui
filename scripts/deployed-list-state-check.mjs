@@ -10,6 +10,7 @@ const users = Array.from({ length: 32 }, (_, i) => ({
   email: 's' + i + '@example.test',
   roles: ['STUDENT'],
   isActive: true,
+  campusCode: 'HAN',
   clubIds: [],
   major: i % 2 ? 'Trí tuệ nhân tạo' : 'Kỹ thuật phần mềm',
   cohort: i % 2 ? 'K21' : 'K20',
@@ -56,6 +57,7 @@ try {
             isActive: true,
             campusCode: 'HAN',
           });
+        if (path === '/api/v1/student-affairs/campuses') return ok({ actorId: 999999, campusCode: 'HAN', canSelectCampus: role === 'SYSTEM_ADMIN', campuses: [{ code: 'HAN', name: 'Hà Nội' }] });
         if (path === '/api/users') {
           const page = Number(url.searchParams.get('page') || 1),
             pageSize = Number(url.searchParams.get('pageSize') || 500);
@@ -92,13 +94,14 @@ try {
       await page.reload();
       await page.getByText('Trang 3 / 4', { exact: true }).waitFor();
       if (role === 'STUDENT_AFFAIR') {
-        await page.getByLabel('Ngành học', { exact: true }).selectOption('Kỹ thuật phần mềm');
-        await page.getByLabel('Khóa sinh viên', { exact: true }).selectOption('K20');
+        assert.equal(await page.getByLabel('Ngành học', { exact: true }).isDisabled(), true);
+        assert.equal(await page.getByLabel('Khóa sinh viên', { exact: true }).isDisabled(), true);
+        await page.getByPlaceholder('Tìm tên, tài khoản, email…').fill('Student 1');
         await page.getByText('Trang 1 / 2', { exact: true }).waitFor();
         await page.getByRole('button', { name: 'Trang sau', exact: true }).click();
         await page.getByText('Trang 2 / 2', { exact: true }).waitFor();
         const saved = page.url();
-        await page.getByPlaceholder('Tìm sinh viên, MSSV, email…').fill('missing');
+        await page.getByPlaceholder('Tìm tên, tài khoản, email…').fill('missing');
         await page.getByText('Không có sinh viên phù hợp', { exact: true }).waitFor();
         await page.goBack();
         await page.getByText('Trang 2 / 2', { exact: true }).waitFor();
@@ -106,10 +109,10 @@ try {
         await page.reload();
         await page.getByText('Trang 2 / 2', { exact: true }).waitFor();
         assert.equal(
-          await page.getByLabel('Ngành học', { exact: true }).inputValue(),
-          'Kỹ thuật phần mềm',
+          await page.getByPlaceholder('Tìm tên, tài khoản, email…').inputValue(),
+          'Student 1',
         );
-        assert.equal(await page.getByLabel('Khóa sinh viên', { exact: true }).inputValue(), 'K20');
+        assert.equal(await page.getByLabel('Campus', { exact: true }).inputValue(), 'HAN');
         assert.ok(page.url().includes('season=FALL2026'));
         assert.ok(page.url().includes('keep=yes'));
       } else

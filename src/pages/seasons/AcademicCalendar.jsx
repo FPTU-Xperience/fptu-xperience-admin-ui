@@ -2,12 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import api from '../../services/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Button, Field, Panel } from '../../components/ui/index.js';
+import { useCampusScope } from '../../hooks/useCampusScope.js';
+import { selectedCampus } from '../../services/campus-scope.js';
+import CampusField from '../../components/operations/CampusField.jsx';
 
 export default function AcademicCalendar() {
   const { user } = useAuth();
   const [year, setYear] = useState(new Date().getFullYear()),
     [term, setTerm] = useState('FA');
-  const [campus, setCampus] = useState(user?.campusCode === 'GLOBAL' ? '' : user?.campusCode || '');
+  const [requestedCampus, setCampus] = useState('');
+  const campusAuthority = useCampusScope(user);
+  const campus = selectedCampus(campusAuthority.data, requestedCampus);
   const [draft, setDraft] = useState(null),
     [revision, setRevision] = useState(0);
   const [busy, setBusy] = useState(false),
@@ -16,8 +21,8 @@ export default function AcademicCalendar() {
   const ticket = useRef(0),
     lock = useRef(false),
     pending = useRef(null);
-  const canSelectCampus = user?.roles?.some((role) => ['SYSTEM_ADMIN', 'ADMIN'].includes(role));
   const path = `/api/academic-calendar/${year}/${term}`;
+  const context = `${user?.id}:${path}:${campus}`;
   useEffect(() => {
     setCampus(user?.campusCode === 'GLOBAL' ? '' : user?.campusCode || '');
   }, [user?.id, user?.campusCode]);
@@ -31,9 +36,9 @@ export default function AcademicCalendar() {
       api
         .get(path, { campusCode: campus })
         .then((value) => {
-          if (typeof value?.version !== 'string')
+          if (typeof value?.version !== 'string' || value.campusCode !== campus || value.year !== year || value.term !== term)
             throw new Error('Không đọc được phiên bản lịch học kỳ.');
-          if (current === ticket.current) setDraft(value);
+          if (current === ticket.current) setDraft({ ...value, context });
         })
         .catch((issue) => {
           if (current === ticket.current) setError(issue.message);
@@ -44,7 +49,7 @@ export default function AcademicCalendar() {
   }, [path, campus, revision, user?.id]);
   const save = async (event) => {
     event.preventDefault();
-    if (lock.current || !draft?.canWrite) return;
+    if (lock.current || draft?.context !== context || !draft?.canWrite) return;
     lock.current = true;
     setBusy(true);
     setError('');
@@ -67,7 +72,9 @@ export default function AcademicCalendar() {
         headers: { 'Idempotency-Key': pending.current.key },
       });
       if (current === ticket.current) {
-        setDraft(value);
+        if (value?.campusCode !== campus || value.year !== year || value.term !== term || typeof value.version !== 'string')
+          throw new Error('Máy chủ chưa xác nhận lịch đúng campus/học kỳ.');
+        setDraft({ ...value, context });
         setNotice('Đã lưu lịch học kỳ.');
       }
     } catch (issue) {
@@ -97,18 +104,7 @@ export default function AcademicCalendar() {
             ))}
           </select>
         </Field>
-        <Field label="Campus">
-          <select
-            value={campus}
-            disabled={busy || !canSelectCampus}
-            onChange={(e) => setCampus(e.target.value)}
-          >
-            <option value="">Chọn campus</option>
-            {['HAN', 'HCM', 'DAN', 'CAN', 'QNH'].map((value) => (
-              <option key={value}>{value}</option>
-            ))}
-          </select>
-        </Field>
+        <CampusField scope={campusAuthority} value={campus} onChange={setCampus} busy={busy} />
       </div>
       <p>
         Chọn kỳ đã liên kết với học kỳ chính thức. Ngày bắt đầu kỳ phải khớp nguồn; hai block bắt
@@ -116,7 +112,7 @@ export default function AcademicCalendar() {
       </p>
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
-      {draft && (
+      {draft?.context === context && (
         <form onSubmit={save}>
           {Object.entries({
             termStartDate: 'Bắt đầu học kỳ',

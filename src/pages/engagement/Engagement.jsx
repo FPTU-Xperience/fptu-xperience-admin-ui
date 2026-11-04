@@ -1,4 +1,7 @@
-import { studentRadarView } from '../../services/student-profile-view.js';
+import { directoryStudent, studentInspectionView, studentRadarView } from '../../services/student-profile-view.js';
+import { useCampusScope } from '../../hooks/useCampusScope.js';
+import { selectedCampus } from '../../services/campus-scope.js';
+import CampusField from '../../components/operations/CampusField.jsx';
 import { useListQuery } from '../../hooks/useListQuery.js';
 import { loadUserDirectory } from '../../services/user-directory.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -40,10 +43,9 @@ import {
   StatCard,
 } from '../../components/ui/index.js';
 
-const DEFAULT_THRESHOLD = 200;
-
 export function Engagement({ reports = false }) {
   const { user } = useAuth();
+  const campusAuthority = useCampusScope(user);
   const requestSequence = useRef(0);
   const run = useAction();
   const [params] = useSearchParams();
@@ -55,19 +57,23 @@ export function Engagement({ reports = false }) {
     if (requested && workspaceState.seasons.some((item) => item.id === requested))
       setSeason(requested);
   }, [params, workspaceState.seasons, setSeason]);
-  const threshold = DEFAULT_THRESHOLD;
 
   // Data state
   const [students, setStudents] = useState([]);
-  const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Filter state
-  const { query, setQuery, group, setGroup, major, setMajor, cohort, setCohort, page, setPage } =
-    useListQuery({ query: '', group: 'all', major: 'all', cohort: 'all', page: 1 });
+  const { query, setQuery, group, setGroup, major, setMajor, cohort, setCohort, campus: requestedCampus, setCampus, page, setPage } =
+    useListQuery({ query: '', group: 'all', major: 'all', cohort: 'all', campus: '', page: 1 });
+  const campus = selectedCampus(campusAuthority.data, requestedCampus);
   const [detail, setDetail] = useState(null);
-  const [radarData, setRadarData] = useState(null);
+  const [inspection, setInspection] = useState(null);
+  const detailContext = `${user?.id}:${campus}:${season}:${detail?.id}`;
+  const profile = inspection?.context === detailContext ? inspection.data : null;
+  const profileError = inspection?.context === detailContext ? inspection.error : null;
+  const [radarResult, setRadarData] = useState(null);
+  const radarData = radarResult?.context === detailContext ? radarResult : null;
   const [radarLoading, setRadarLoading] = useState(false);
   const [radarError, setRadarError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -77,40 +83,23 @@ export function Engagement({ reports = false }) {
     const current = ++requestSequence.current;
     setLoading(true);
     setError(null);
+    setStudents([]);
+    setDetail(null);
+    if (!campus) { setLoading(false); return; }
     try {
-      const [usersResponse, clubsResponse] = await Promise.all([
-        loadUserDirectory(api),
-        api.clubs.list({ page: 1, pageSize: 100 }),
-      ]);
+      const usersResponse = await loadUserDirectory(api, { campus });
       if (current !== requestSequence.current) return;
 
       // Students are system actors; club membership is a separate relation.
       const users = Array.isArray(usersResponse) ? usersResponse : usersResponse?.items || [];
+      if (users.some((item) => item.campusCode !== campus)) throw new Error('Danh sách tài khoản không khớp campus đang chọn.');
       const clubMembers = users.filter((u) => {
         return systemRolesFor(u).includes('STUDENT');
       });
 
       // Map students
       setStudents(
-        clubMembers.map((u) => ({
-          id: String(u.id),
-          username: u.username || u.studentCode || '',
-          fullName: u.fullName || u.name || '',
-          email: u.email || '',
-          major: u.major || '',
-          cohort: u.cohort || '',
-          clubIds: Array.isArray(u.clubIds) ? u.clubIds.map(String) : [],
-          clubMembershipAvailable: Array.isArray(u.clubIds),
-        })),
-      );
-
-      // Map clubs
-      const clubsData = Array.isArray(clubsResponse) ? clubsResponse : clubsResponse?.items || [];
-      setClubs(
-        clubsData.map((c) => ({
-          id: String(c.id),
-          name: c.name || '',
-        })),
+        clubMembers.map(directoryStudent),
       );
     } catch (err) {
       if (current !== requestSequence.current) return;
@@ -126,32 +115,35 @@ export function Engagement({ reports = false }) {
     return () => {
       requestSequence.current++;
     };
-  }, [user?.id]);
+  }, [user?.id, campus]);
 
   // Filter students
   const filtered = students.filter((s) => {
-    const hasClub = s.clubIds?.length > 0;
     return (
       normalize(`${s.fullName} ${s.username} ${s.email}`).includes(normalize(query)) &&
       (major === 'all' || s.major === major) &&
       (cohort === 'all' || s.cohort === cohort) &&
-      (group === 'all' ||
-        (group === 'unengaged' && !hasClub) ||
-        (group === 'no-club' && !hasClub) ||
-        (group === 'low' && hasClub) ||
-        (group === 'high' && hasClub))
+      group === 'all'
     );
   });
 
   const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 8)));
 
   // Calculate unengaged count
-  const unengagedCount = students.filter((s) => !s.clubIds?.length).length;
-  const lowEngagementCount = students.filter((s) => s.clubIds?.length > 0).length;
+
+  useEffect(() => {
+    let active = true;
+    setInspection(null);
+    if (detail?.actorId === user?.id && detail?.campus === campus)
+      api.studentAffairs.students.profile(detail.id, { semester: season || undefined })
+        .then((raw) => { if (active) setInspection({ context: detailContext, data: studentInspectionView(raw, detail.id, season) }); })
+        .catch((error) => { if (active) setInspection({ context: detailContext, error: error.message }); });
+    return () => { active = false; };
+  }, [detailContext]);
 
   // Fetch radar data when student is selected
   useEffect(() => {
-    if (!detail) {
+    if (!detail || detail.actorId !== user?.id || detail.campus !== campus) {
       setRadarData(null);
       return;
     }
@@ -162,7 +154,7 @@ export function Engagement({ reports = false }) {
       setRadarError(null);
       try {
         const data = await api.studentAffairs.students.radar(detail.id, { semesterCode: season });
-        if (active) setRadarData(studentRadarView(data, detail.id));
+        if (active) setRadarData({ ...studentRadarView(data, detail.id), context: detailContext });
       } catch (err) {
         console.error('Failed to fetch radar:', err);
         if (active) {
@@ -177,23 +169,23 @@ export function Engagement({ reports = false }) {
     return () => {
       active = false;
     };
-  }, [detail, season]);
+  }, [detail, season, user?.id, campus]);
 
   async function exportData() {
     setBusy(true);
     await run(async () => {
       const buffer = await createWorkbookBuffer(
         'GanKet',
-        ['MSSV', 'Họ tên', 'Email', 'Ngành', 'Khóa', 'Số CLB', 'Học kỳ', 'Gắn kết'],
+        ['Tài khoản', 'Họ tên', 'Email', 'Ngành', 'Khóa', 'Số CLB', 'Học kỳ', 'Gắn kết'],
         filtered.map((s) => [
           s.username,
           s.fullName,
           s.email,
-          s.major || 'Chưa cập nhật',
-          s.cohort || 'Chưa cập nhật',
-          s.clubIds?.length || 0,
+          s.major || 'Chưa có nguồn dữ liệu',
+          s.cohort || 'Chưa có nguồn dữ liệu',
+          'Chưa có nguồn tổng hợp',
           season,
-          s.clubIds?.length > 0 ? 'Đang tham gia' : 'Chưa tham gia',
+          'Chưa có nguồn tổng hợp',
         ]),
       );
       downloadBuffer(buffer, `FPTU_Gan_ket_${season}.xlsx`);
@@ -235,46 +227,18 @@ export function Engagement({ reports = false }) {
         />
         <StatCard
           label="Chưa có đóng góp xác thực"
-          value={loading ? '-' : unengagedCount}
-          note={`Trong học kỳ ${seasonLabel(season)}`}
+          value="—"
+          note="Chưa có nguồn tổng hợp đóng góp của toàn bộ danh sách"
           icon={UsersRound}
         />
         <StatCard
           label="Cần thêm cơ hội kết nối"
-          value={loading ? '-' : lowEngagementCount}
-          note={`Dưới ngưỡng ${threshold} Xperience Point của học kỳ`}
+          value="—"
+          note="Chưa có nguồn tổng hợp điểm; không suy ra từ membership"
           icon={Sparkles}
           tone="purple"
         />
       </div>
-
-      {/* Major Bars - Reports Only */}
-      {reports && (
-        <Panel
-          title="Độ phủ theo ngành học"
-          description="Tỷ lệ sinh viên có ít nhất một đóng góp xác thực trong học kỳ."
-        >
-          <div className="engagement-content-3">
-            {MAJORS.map((m) => {
-              const all = students.filter((s) => s.major === m);
-              const active = all.filter((s) => s.clubIds?.length > 0).length;
-              const ratio = all.length ? Math.round((active / all.length) * 100) : 0;
-              return (
-                <div key={m} className="engagement-content-4">
-                  <span className="engagement-text-2">{m}</span>
-                  <div className="engagement-content-5">
-                    <i className="engagement-indicator" style={{ width: `${ratio}%` }} />
-                  </div>
-                  <b className="engagement-b">{ratio}%</b>
-                  <small className="engagement-caption">
-                    {active}/{all.length} SV
-                  </small>
-                </div>
-              );
-            })}
-          </div>
-        </Panel>
-      )}
 
       {/* Student List */}
       <Panel className="engagement-panel">
@@ -289,15 +253,17 @@ export function Engagement({ reports = false }) {
 
         {/* Toolbar */}
         <div className="engagement-content-7">
+          <CampusField scope={campusAuthority} value={campus} onChange={setCampus} busy={loading || busy} />
           <SearchBox
             value={query}
             onChange={setQuery}
-            placeholder="Tìm sinh viên, MSSV, email…"
+            placeholder="Tìm tên, tài khoản, email…"
             className="engagement-search-box"
           />
           <select
             className="engagement-select"
             aria-label="Nhóm gắn kết"
+            disabled
             value={group}
             onChange={(e) => setGroup(e.target.value)}
           >
@@ -310,6 +276,7 @@ export function Engagement({ reports = false }) {
           <select
             className="engagement-select"
             aria-label="Ngành học"
+            disabled
             value={major}
             onChange={(e) => setMajor(e.target.value)}
           >
@@ -321,6 +288,7 @@ export function Engagement({ reports = false }) {
           <select
             className="engagement-select"
             aria-label="Khóa sinh viên"
+            disabled
             value={cohort}
             onChange={(e) => setCohort(e.target.value)}
           >
@@ -330,6 +298,11 @@ export function Engagement({ reports = false }) {
             ))}
           </select>
         </div>
+        <p>Ngành, khóa và nhóm gắn kết chưa có nguồn tổng hợp chính thức. Mở chi tiết để đọc membership hiện tại và radar của từng sinh viên.</p>
+        {(group !== 'all' || major !== 'all' || cohort !== 'all') && <p role="status">
+          Bộ lọc đang lưu cần nguồn dữ liệu chưa khả dụng. <Button onClick={() => { setGroup('all'); setMajor('all'); setCohort('all'); }}>Xóa bộ lọc chưa hỗ trợ</Button>
+        </p>}
+        {!campus && <p role="status">Chọn campus đã được máy chủ xác nhận để tải danh sách.</p>}
 
         {/* Loading State */}
         {loading ? (
@@ -364,26 +337,25 @@ export function Engagement({ reports = false }) {
                         </div>
                       </td>
                       <td className="engagement-cell-2">
-                        {s.major || 'Chưa cập nhật'}
-                        <span className="engagement-text-5">{s.cohort || 'Chưa cập nhật'}</span>
+                        Chưa có nguồn dữ liệu
                       </td>
                       <td className="engagement-cell-2">
                         {hasClub ? (
                           `${s.clubIds.length} câu lạc bộ`
                         ) : (
-                          <span className="engagement-text-6">Chưa tham gia</span>
+                          <span className="engagement-text-6">Chưa có nguồn tổng hợp</span>
                         )}
                       </td>
                       <td className="engagement-cell">
-                        <Badge tone={hasClub ? 'green' : 'orange'}>
-                          {hasClub ? 'Đang tham gia' : 'Chưa tham gia'}
+                        <Badge tone="gray">
+                          Chưa có nguồn tổng hợp
                         </Badge>
                       </td>
                       <td className="engagement-cell">
                         <button
                           className="engagement-button-2"
                           aria-label={`Chi tiết ${s.username}`}
-                          onClick={() => setDetail(s)}
+                          onClick={() => setDetail({ ...s, actorId: user?.id, campus })}
                         >
                           <ChevronRight size={17} />
                         </button>
@@ -405,10 +377,10 @@ export function Engagement({ reports = false }) {
       </Panel>
 
       {/* Detail Modal */}
-      {detail && (
+      {detail?.actorId === user?.id && detail?.campus === campus && (
         <Modal
-          title={radarData?.studentName || detail.fullName}
-          description={`${detail.username} · ${radarData?.studentEmail || detail.email}`}
+          title={profile?.fullName || detail.fullName}
+          description={`${profile?.studentCode || 'Chưa có MSSV từ roster'} · ${profile?.email || detail.email}`}
           wide
           onClose={() => setDetail(null)}
         >
@@ -417,19 +389,19 @@ export function Engagement({ reports = false }) {
             <div className="engagement-content-13">
               <UsersRound size={25} />
               <strong className="engagement-value-2">
-                {detail.clubMembershipAvailable ? detail.clubIds.length : '—'}
+                {profile?.clubs ? profile.clubs.length : '—'}
               </strong>
-              <span className="engagement-text-7">Câu lạc bộ đã tham gia</span>
+              <span className="engagement-text-7">Câu lạc bộ đang tham gia</span>
             </div>
 
             <div className="engagement-content-14">
               <div className="engagement-content-15">
                 <dt className="engagement-term">Ngành học</dt>
-                <dd className="engagement-definition">{detail.major || 'Chưa cập nhật'}</dd>
+                <dd className="engagement-definition">{profile?.major || 'Chưa có nguồn dữ liệu chính thức'}</dd>
               </div>
               <div className="engagement-content-15">
                 <dt className="engagement-term">Khóa</dt>
-                <dd className="engagement-definition">{detail.cohort || 'Chưa cập nhật'}</dd>
+                <dd className="engagement-definition">{profile?.cohort || 'Chưa có nguồn dữ liệu chính thức'}</dd>
               </div>
             </div>
 
@@ -508,13 +480,9 @@ export function Engagement({ reports = false }) {
             <div className="engagement-content-23">
               <h4 className="engagement-h4">Câu lạc bộ tham gia</h4>
               <p className="engagement-description-3">
-                {detail.clubIds
-                  ?.map((id) => clubs.find((c) => c.id === id)?.name)
-                  .filter(Boolean)
-                  .join(', ') ||
-                  (detail.clubMembershipAvailable
-                    ? 'Chưa tham gia câu lạc bộ'
-                    : 'Nguồn danh sách chưa cung cấp dữ liệu thành viên CLB')}
+                {profileError || (!inspection ? 'Đang tải hồ sơ…' : profile?.clubs
+                  ? profile.clubs.map((club) => club.name).join(', ') || 'Chưa tham gia câu lạc bộ'
+                  : 'Nguồn membership hiện chưa khả dụng. Không thể kết luận sinh viên chưa tham gia.')}
               </p>
             </div>
           </div>

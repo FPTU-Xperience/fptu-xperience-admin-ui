@@ -44,3 +44,8 @@ test('directory rejects changed totals or duplicate pages instead of presenting 
     await assert.rejects(loadUserDirectory(api));
   }
 });
+test('directory retains campus filter across every fetched page', async () => {
+  const calls = [];
+  await loadUserDirectory({ users: { list: async (params) => { calls.push(params); return { page: params.page, pageSize: 1, total: 2, items: [{ id: params.page }] }; } } }, { campus: 'HCM' });
+  assert.deepEqual(calls.map((value) => value.campus), ['HCM', 'HCM']);
+});

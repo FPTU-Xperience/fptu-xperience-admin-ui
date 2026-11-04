@@ -14,7 +14,7 @@ import ClubDetail from '/src/pages/club-detail/ClubDetail.jsx';
 import '/src/index.css';
 const user={id:1,fullName:'UI reviewer',roles:['SYSTEM_ADMIN','STUDENT_AFFAIR'],campusCode:'HAN'};
 window.__qaUser=user; window.__calls=[];
-const users=Array.from({length:32},(_,i)=>({id:i+10,username:'SE'+String(i+1).padStart(3,'0'),fullName:'Student '+String(i+1).padStart(2,'0'),email:'s'+i+'@example.test',roles:['STUDENT'],isActive:true,clubIds:[],major:i%2?'Trí tuệ nhân tạo':'Kỹ thuật phần mềm',cohort:i%2?'K21':'K20'}));
+const users=Array.from({length:32},(_,i)=>({id:i+10,username:'SE'+String(i+1).padStart(3,'0'),fullName:'Student '+String(i+1).padStart(2,'0'),email:'s'+i+'@example.test',roles:['STUDENT'],isActive:true,campusCode:'HAN'}));
 const clubs=Array.from({length:24},(_,i)=>({id:i+1,name:'Club '+(i+1),code:'CLB'+(i+1),category:'Công nghệ',isActive:true}));
 const proxy=(parts=[])=>new Proxy(function(){},{get:(_,key)=>key==='then'?undefined:proxy([...parts,key]),apply:(_,self,args)=>{
 const key=parts.join('.');window.__calls.push({key,args});
@@ -22,6 +22,7 @@ if(key==='users.list')return Promise.resolve({items:users,totalItems:users.lengt
 if(key==='clubs.list')return Promise.resolve(clubs);
 if(key==='clubs.getById')return Promise.resolve(clubs.find(c=>c.id===Number(args[0])));
 if(key==='clubs.members.list'){const page=args[1].page;return Promise.resolve({items:Array.from({length:20},(_,i)=>({id:page*20+i,userId:page*20+i,fullName:'Member '+page+'-'+i,email:'member@example.test',role:'MEMBER',status:'APPROVED'})),totalItems:60,totalPages:3,page});}
+if(key==='get'&&args[0]==='/api/v1/student-affairs/campuses')return Promise.resolve({actorId:1,campusCode:'HAN',canSelectCampus:true,campuses:[{code:'HAN',name:'Hà Nội'},{code:'HCM',name:'Hồ Chí Minh'}]});
 if(key==='get')return Promise.resolve(Array.from({length:32},(_,i)=>({id:i+1,actorName:'Student '+i,action:'Updated',detail:'Audit record',area:'admin'})));
 if(key==='clubs.categories.list')return Promise.resolve([{id:1,name:'Công nghệ'}]);
 return Promise.resolve([]);
@@ -94,13 +95,14 @@ try {
     await page.getByText('Trang 3 / 4', { exact: true }).waitFor();
     await page.reload();
     await page.getByText('Trang 3 / 4', { exact: true }).waitFor();
-    await page.getByLabel('Ngành học', { exact: true }).selectOption('Kỹ thuật phần mềm');
-    await page.getByLabel('Khóa sinh viên', { exact: true }).selectOption('K20');
+    assert.equal(await page.getByLabel('Ngành học', { exact: true }).isDisabled(), true);
+    assert.equal(await page.getByLabel('Khóa sinh viên', { exact: true }).isDisabled(), true);
+    await page.getByPlaceholder('Tìm tên, tài khoản, email…').fill('Student 1');
     await page.getByText('Trang 1 / 2', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Trang sau', exact: true }).click();
     await page.getByText('Trang 2 / 2', { exact: true }).waitFor();
     const saved = page.url();
-    await page.getByPlaceholder('Tìm sinh viên, MSSV, email…').fill('missing');
+    await page.getByPlaceholder('Tìm tên, tài khoản, email…').fill('missing');
     await page.getByText('Không có sinh viên phù hợp', { exact: true }).waitFor();
     assert.equal(new URLSearchParams(page.url().split('?').at(-1)).get('page'), null);
     await page.goBack();
@@ -109,10 +111,10 @@ try {
     await page.reload();
     await page.getByText('Trang 2 / 2', { exact: true }).waitFor();
     assert.equal(
-      await page.getByLabel('Ngành học', { exact: true }).inputValue(),
-      'Kỹ thuật phần mềm',
+      await page.getByPlaceholder('Tìm tên, tài khoản, email…').inputValue(),
+      'Student 1',
     );
-    assert.equal(await page.getByLabel('Khóa sinh viên', { exact: true }).inputValue(), 'K20');
+    assert.equal(await page.getByLabel('Campus', { exact: true }).inputValue(), 'HAN');
     assert.ok(page.url().includes('season=FA2026'));
     assert.ok(page.url().includes('keep=yes'));
     await page.screenshot({

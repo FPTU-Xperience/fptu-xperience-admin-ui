@@ -8,12 +8,15 @@ import api from '../../services/api.js';
 import { createImplementedContracts } from '../../services/implemented-contracts.js';
 import { Button, Field, PageHeader, Panel } from '../../components/ui/index.js';
 import { PageNavigation } from '../../components/operations/operation-state/OperationState.jsx';
+import { useCampusScope } from '../../hooks/useCampusScope.js';
+import { selectedCampus } from '../../services/campus-scope.js';
+import CampusField from '../../components/operations/CampusField.jsx';
 
 const contracts = createImplementedContracts(api);
 export function StudentRoster() {
   const { user } = useAuth();
   const { season } = useWorkspace();
-  const canSelectCampus = user?.roles?.some((role) => ['SYSTEM_ADMIN', 'ADMIN'].includes(role));
+  const campusAuthority = useCampusScope(user);
   const defaultCampus = user?.campusCode === 'GLOBAL' ? '' : user?.campusCode || '';
   const {
     campus: requestedCampus,
@@ -21,7 +24,8 @@ export function StudentRoster() {
     page,
     setPage,
   } = useListQuery({ campus: defaultCampus, page: 1 });
-  const campus = canSelectCampus ? requestedCampus : defaultCampus;
+  const campus = selectedCampus(campusAuthority.data, requestedCampus);
+  const context = `${user?.id}:${season}:${campus}:${page}`;
   const [result, setResult] = useState(null),
     [preview, setPreview] = useState(null);
   const [revision, setRevision] = useState(0);
@@ -50,7 +54,10 @@ export function StudentRoster() {
       contracts.roster
         .get(season, { campusCode: campus, page, pageSize: 20 })
         .then((value) => {
-          if (ticket.current === current) setResult(value);
+          if (ticket.current === current) {
+            if (value.campusCode !== campus || value.semesterId !== season) throw new Error('Roster không khớp campus/học kỳ đang chọn.');
+            setResult({ ...value, context });
+          }
         })
         .catch((issue) => {
           if (ticket.current === current) setError(issue.message);
@@ -60,7 +67,7 @@ export function StudentRoster() {
     };
   }, [season, campus, page, revision, user?.id]);
   const upload = async (file) => {
-    if (!file || !result || lock.current) return;
+    if (!file || result?.context !== context || lock.current) return;
     lock.current = true;
     setBusy(true);
     setPreview(null);
@@ -70,7 +77,7 @@ export function StudentRoster() {
     try {
       const value = await contracts.roster.preview(season, file, result.version, campus);
       if (ticket.current === current) {
-        setPreview(value);
+        setPreview({ ...value, context });
         commitKey.current = crypto.randomUUID();
       }
     } catch (issue) {
@@ -81,7 +88,7 @@ export function StudentRoster() {
     }
   };
   const commit = async () => {
-    if (!preview?.canCommit || lock.current || Date.parse(preview.expiresAt) <= Date.now()) return;
+    if (preview?.context !== context || !preview?.canCommit || lock.current || Date.parse(preview.expiresAt) <= Date.now()) return;
     lock.current = true;
     setBusy(true);
     setError('');
@@ -121,18 +128,7 @@ export function StudentRoster() {
         <Button onClick={template}>Tải mẫu CSV</Button>
       </PageHeader>
       <Panel title={`Danh sách chính thức · ${season || 'Chưa chọn học kỳ'}`}>
-        <Field label="Campus">
-          <select
-            value={campus}
-            disabled={busy || !canSelectCampus}
-            onChange={(e) => setCampus(e.target.value)}
-          >
-            <option value="">Chọn campus</option>
-            {['HAN', 'HCM', 'DAN', 'CAN', 'QNH'].map((code) => (
-              <option key={code}>{code}</option>
-            ))}
-          </select>
-        </Field>
+        <CampusField scope={campusAuthority} value={campus} onChange={setCampus} busy={busy} />
         {error && <p role="alert">{error}</p>}
         {notice && <p role="status">{notice}</p>}
         {!season || !campus ? (
@@ -140,7 +136,7 @@ export function StudentRoster() {
         ) : !result && !error ? (
           <p role="status">Đang tải roster…</p>
         ) : null}
-        {result && (
+        {result?.context === context && (
           <>
             <p role="status">
               {result.availability === 'AVAILABLE'
@@ -192,7 +188,7 @@ export function StudentRoster() {
             </Field>
           </>
         )}
-        {preview && (
+        {preview?.context === context && (
           <section>
             <h3>Xem trước thay thế toàn bộ roster</h3>
             <p>

@@ -124,6 +124,7 @@ export function Seasons({ section = 'all' }) {
                 Xperience Point cạnh tranh và xếp hạng được tính riêng mỗi học kỳ. Hồ sơ đóng góp và lịch sử xác
                 thực được giữ lâu dài.
               </p>
+              <p className="seasons-description">Danh mục học kỳ dùng chung toàn trường. Lịch học và roster được quản lý theo campus của tài khoản; không gán campus giả cho học kỳ.</p>
             </div>
           </div>
 

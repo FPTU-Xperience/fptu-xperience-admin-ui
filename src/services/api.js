@@ -577,6 +577,7 @@ export const api = {
     },
     // Student radar
     students: {
+      profile: (id, params) => api.get(`/api/v1/student-affairs/students/${encodeURIComponent(id)}/profile`, params),
       radar: (id, params) =>
         api.get(`/api/v1/student-affairs/students/${id}/radar`, {
           ...params, semester: params?.semester || params?.semesterCode,
