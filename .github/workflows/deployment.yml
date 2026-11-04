@@ -68,14 +68,27 @@ jobs:
           printf 'branch=%s\n' "${branch}" >> "${GITHUB_OUTPUT}"
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
         env:
           PROJECT_NAME: fptux-admin-ui
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_DEPLOYMENT_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PRODUCTION_BRANCH: ${{ steps.deployment.outputs.branch }}
+        run: |
+          set -euo pipefail
+          npm install --prefix "${RUNNER_TEMP}/admin-pages-deploy" --no-audit --no-fund wrangler@3.90.0
+          node "${RUNNER_TEMP}/admin-pages-deploy/node_modules/wrangler/bin/wrangler.js" pages deploy ./dist \
+            --project-name="${PROJECT_NAME}" --branch="${PRODUCTION_BRANCH}" --commit-dirty=true
+
+      - name: Verify deployed list state with isolated API traffic
+        run: node scripts/deployed-list-state-check.mjs
+
+      - name: Save deployed list screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_DEPLOYMENT_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          gitHubToken: ${{ github.token }}
-          command: pages deploy ./dist --project-name=${{ env.PROJECT_NAME }} --branch=${{ steps.deployment.outputs.branch }} --commit-dirty=true
+          name: admin-deployed-list-state
+          path: TestResults/list-state-online
+          if-no-files-found: ignore
 
       - name: Verify production assets and API health
         run: |
