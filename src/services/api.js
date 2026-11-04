@@ -363,10 +363,9 @@ export const api = {
       myApplications: () => api.get('/api/clubs/applications/me'),
       getById: (id) => api.get(`/api/clubs/applications/${id}`),
       update: (id, payload) => api.put(`/api/clubs/applications/${id}`, payload),
-      approve: (id, payload) => api.post(`/api/clubs/applications/${id}/approve`, payload),
-      requestRevision: (id, review) =>
-        api.post(`/api/clubs/applications/${id}/request-revision`, review),
-      reject: (id, payload) => api.post(`/api/clubs/applications/${id}/reject`, payload),
+      approve: (id, body, key) => api.request(`/api/clubs/applications/${id}/approve`, { method: 'POST', body, headers: { 'Idempotency-Key': key } }),
+      requestRevision: (id, body, key) => api.request(`/api/clubs/applications/${id}/request-revision`, { method: 'POST', body, headers: { 'Idempotency-Key': key } }),
+      reject: (id, body, key) => api.request(`/api/clubs/applications/${id}/reject`, { method: 'POST', body, headers: { 'Idempotency-Key': key } }),
     },
 
     disbandRequests: {

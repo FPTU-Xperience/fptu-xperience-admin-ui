@@ -1,6 +1,13 @@
 import './Clubs.css';
 import { useListQuery } from '../../hooks/useListQuery.js';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { loadUserDirectory } from '../../services/user-directory.js';
+import {
+  mapFormationApplications,
+  formationReviewBody,
+  formationStatusLabels,
+} from '../../utils/club-formation.js';
 import { useSearchParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Activity,
@@ -33,6 +40,16 @@ import {
 // Default club types from backend
 
 export function Clubs() {
+  const { user } = useAuth();
+  const actorRef = useRef(user?.id);
+  actorRef.current = user?.id;
+  const sequence = useRef(0),
+    reviewLock = useRef(false),
+    reviewKey = useRef(null);
+  const [managerId, setManagerId] = useState(''),
+    [candidates, setCandidates] = useState(null),
+    [candidateError, setCandidateError] = useState(''),
+    [reviewBusy, setReviewBusy] = useState(false);
   const run = useAction();
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -63,6 +80,7 @@ export function Clubs() {
 
   // Fetch data from API
   async function fetchData() {
+    const ticket = ++sequence.current;
     setLoading(true);
     setError(null);
     try {
@@ -71,6 +89,7 @@ export function Clubs() {
         api.clubs.applications.list({ page: 1, pageSize: 100 }),
         api.clubs.categories.list(),
       ]);
+      if (sequence.current !== ticket) return;
 
       const failure = [clubsResponse, appsResponse, categoriesResponse].find(
         (item) => item.status === 'rejected',
@@ -87,7 +106,7 @@ export function Clubs() {
           : [];
 
       const mappedClubs = mapClubsFromApi(clubsData);
-      const mappedApps = mapApplicationsFromApi(appsData);
+      const mappedApps = mapFormationApplications(appsData);
 
       setClubs(mappedClubs);
       setLocalApplications(mappedApps);
@@ -97,18 +116,47 @@ export function Clubs() {
         setTypes(catList.map((c) => c.name || c.code));
       }
     } catch (err) {
+      if (sequence.current !== ticket) return;
       console.error('Failed to fetch clubs:', err);
       setError(err.message || 'Không thể tải danh sách câu lạc bộ');
       setClubs([]);
       setLocalApplications([]);
     } finally {
-      setLoading(false);
+      if (sequence.current === ticket) setLoading(false);
     }
   }
 
   useEffect(() => {
     fetchData();
-  }, []);
+    setReview(null);
+    return () => {
+      sequence.current++;
+    };
+  }, [user?.id]);
+  useEffect(() => {
+    let active = true;
+    setCandidates(null);
+    setCandidateError('');
+    if (review?.status === 'pending')
+      loadUserDirectory(api)
+        .then((rows) => {
+          if (active)
+            setCandidates(
+              rows.filter(
+                (row) =>
+                  row.isActive === true &&
+                  row.isLocked !== true &&
+                  row.campusCode === review.campusCode,
+              ),
+            );
+        })
+        .catch((issue) => {
+          if (active) setCandidateError(issue.message);
+        });
+    return () => {
+      active = false;
+    };
+  }, [review?.id, user?.id]);
 
   useEffect(() => {
     if (params.get('club')) {
@@ -129,34 +177,56 @@ export function Clubs() {
   );
 
   // Review application
-  async function decide(approved) {
+  async function decide(approved, revision = false) {
+    if (reviewLock.current) return;
     if (note.trim().length < 5) {
       run(() => {
         throw new Error('Vui lòng nhập nhận xét ít nhất 5 ký tự.');
       });
       return;
     }
+    reviewLock.current = true;
+    setReviewBusy(true);
+    const actorId = user?.id;
+    const ticket = sequence.current;
     const ok = await run(
       async () => {
-        const payload = { note: note.trim() };
+        const payload = formationReviewBody(review, note, approved ? managerId : null);
+        if (approved && !candidates?.some((row) => row.id === Number(managerId)))
+          throw new Error('Chọn chủ nhiệm từ danh sách tài khoản cùng cơ sở.');
+        const fingerprint = JSON.stringify([review.id, approved, revision, payload]);
+        if (reviewKey.current?.fingerprint !== fingerprint)
+          reviewKey.current = { fingerprint, key: crypto.randomUUID() };
+        let saved;
         if (approved) {
-          await api.clubs.applications.approve(review.id, payload);
+          saved = await api.clubs.applications.approve(review.id, payload, reviewKey.current.key);
+        } else if (revision) {
+          saved = await api.clubs.applications.requestRevision(
+            review.id,
+            payload,
+            reviewKey.current.key,
+          );
         } else {
-          await api.clubs.applications.reject(review.id, payload);
+          saved = await api.clubs.applications.reject(review.id, payload, reviewKey.current.key);
         }
-
-        // Also update local state for the table
-        setLocalApplications((prev) =>
-          prev.map((a) =>
-            a.id === review.id
-              ? { ...a, status: approved ? 'approved' : 'rejected', note: note.trim() }
-              : a,
-          ),
-        );
+        if (
+          String(saved?.id) !== review.id ||
+          saved.status !== (approved ? 'Approved' : revision ? 'NeedsRevision' : 'Rejected') ||
+          saved.version === review.version ||
+          (approved && saved.approvedManagerUserId !== Number(managerId))
+        )
+          throw new Error('Chưa xác nhận được kết quả. Tải lại hồ sơ trước khi xử lý tiếp.');
+        if (ticket === sequence.current) await fetchData();
       },
-      approved ? 'Đã phê duyệt đơn thành lập CLB.' : 'Đã từ chối đơn thành lập CLB.',
+      approved
+        ? 'Đã phê duyệt đơn thành lập CLB.'
+        : revision
+          ? 'Đã yêu cầu bổ sung hồ sơ.'
+          : 'Đã từ chối đơn thành lập CLB.',
     );
-    if (ok) {
+    reviewLock.current = false;
+    setReviewBusy(false);
+    if (ok && actorRef.current === actorId) {
       setReview(null);
       setNote('');
     }
@@ -378,17 +448,14 @@ export function Clubs() {
                                 : 'red'
                           }
                         >
-                          {a.status === 'pending'
-                            ? 'Chờ phê duyệt'
-                            : a.status === 'approved'
-                              ? 'Đã duyệt'
-                              : 'Từ chối'}
+                          {formationStatusLabels[a.status]}
                         </Badge>
                       </td>
                       <td className="clubs-cell">
                         <Button
                           onClick={() => {
                             setReview(a);
+                            setManagerId(String(a.requesterUserId));
                             setNote('');
                           }}
                         >
@@ -430,7 +497,7 @@ export function Clubs() {
         <Modal
           title={review.name}
           description="Hồ sơ đề xuất thành lập câu lạc bộ"
-          onClose={() => setReview(null)}
+          onClose={() => !reviewBusy && setReview(null)}
         >
           <div className="clubs-content-13">
             <div className="clubs-content-16">
@@ -444,9 +511,37 @@ export function Clubs() {
               </div>
             </div>
             <h3 className="clubs-subheading-2">Mục đích hoạt động</h3>
+            <p>
+              Cơ sở: {review.campusCode} · Viết tắt: {review.code}
+            </p>
             <p className="clubs-description-2">{review.purpose}</p>
             <h3 className="clubs-subheading-2">Kế hoạch dự kiến</h3>
             <p className="clubs-description-2">{review.plan}</p>
+            <p>
+              Tần suất: {review.activityFrequency} · Liên hệ: {review.contactEmail} ·{' '}
+              {review.contactPhone}
+            </p>
+            {review.status === 'pending' && (
+              <Field label="Chủ nhiệm CLB">
+                <select
+                  aria-label="Chủ nhiệm CLB"
+                  value={managerId}
+                  disabled={reviewBusy || !candidates}
+                  onChange={(event) => setManagerId(event.target.value)}
+                >
+                  <option value="">Chọn tài khoản cùng cơ sở</option>
+                  {candidates?.map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {row.fullName} · {row.email}
+                    </option>
+                  ))}
+                </select>
+                {candidateError && <p role="alert">{candidateError}</p>}
+              </Field>
+            )}
+            {review.status === 'approved' && (
+              <p>Chủ nhiệm đã duyệt: {review.approvedManagerName || 'Xem trong CLB'}</p>
+            )}
             {review.status === 'pending' ? (
               <Field label="Nhận xét phê duyệt *">
                 <textarea
@@ -460,21 +555,34 @@ export function Clubs() {
               </Field>
             ) : (
               <div className="clubs-content-17">
-                <b className="clubs-b">
-                  {review.status === 'approved' ? 'Đã phê duyệt' : 'Đã từ chối'}
-                </b>
+                <b className="clubs-b">{formationStatusLabels[review.status]}</b>
                 <p className="clubs-description-3">{review.note}</p>
               </div>
             )}
           </div>
           <div className="clubs-content-15">
-            <Button onClick={() => setReview(null)}>Đóng</Button>
+            <Button disabled={reviewBusy} onClick={() => setReview(null)}>
+              Đóng
+            </Button>
             {review.status === 'pending' && (
               <>
-                <Button variant="danger-soft" icon={X} onClick={() => decide(false)}>
+                <Button
+                  disabled={reviewBusy}
+                  variant="danger-soft"
+                  icon={X}
+                  onClick={() => decide(false)}
+                >
                   Từ chối
                 </Button>
-                <Button variant="primary" icon={Check} onClick={() => decide(true)}>
+                <Button disabled={reviewBusy} onClick={() => decide(false, true)}>
+                  Yêu cầu bổ sung
+                </Button>
+                <Button
+                  disabled={reviewBusy || !candidates || !managerId}
+                  variant="primary"
+                  icon={Check}
+                  onClick={() => decide(true)}
+                >
                   Phê duyệt thành lập
                 </Button>
               </>

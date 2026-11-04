@@ -1,6 +1,9 @@
 name: Deploy to Cloudflare Pages
 
 on:
+  push:
+    branches: [fix/approved-issues-20261103]
+    paths: [.github/workflows/deployment.yml]
   workflow_dispatch:
 
 permissions:
@@ -40,6 +43,17 @@ jobs:
       - name: Validate list state in actual components
         run: node scripts/list-state-browser-check.mjs
 
+      - name: Validate club formation review in actual components
+        run: node scripts/club-formation-browser-check.mjs
+
+      - name: Save formation review screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-club-formation
+          path: TestResults/formation
+          if-no-files-found: ignore
+
       - name: Save list state screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -78,6 +92,17 @@ jobs:
 
       - name: Verify deployed list state with isolated API traffic
         run: node scripts/deployed-list-state-check.mjs
+
+      - name: Verify deployed formation with isolated API traffic
+        run: node scripts/deployed-club-formation-check.mjs
+
+      - name: Save deployed formation screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-deployed-formation
+          path: TestResults/formation-online
+          if-no-files-found: ignore
 
       - name: Save deployed list screenshots
         if: always()
