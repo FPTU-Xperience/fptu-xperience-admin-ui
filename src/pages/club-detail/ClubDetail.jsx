@@ -1,3 +1,4 @@
+import ClubViceReview from './ClubViceReview.jsx';
 import { isCTSV } from '../../utils/access.js';
 import { useListQuery, usePageBound } from '../../hooks/useListQuery.js';
 import './ClubDetail.css';
@@ -161,6 +162,7 @@ function ClubRecord({ clubId }) {
               )}
               {active === 'leadership' && (
                 <>
+                  <ClubViceReview clubId={clubId} />
                   <Panel title="Chủ nhiệm hiện tại">
                     <WorkflowBody>
                       <p>{club.leader || 'Chưa có thông tin chủ nhiệm.'}</p>

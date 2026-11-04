@@ -37,6 +37,9 @@ jobs:
           npm install --no-save --package-lock=false playwright
           npx playwright install --with-deps chromium
 
+      - name: Validate CTSV vice appointment review in browser
+        run: node scripts/governance-browser-check.mjs
+
       - name: Validate list state in actual components
         run: node scripts/list-state-browser-check.mjs
 
@@ -89,6 +92,9 @@ jobs:
 
       - name: Verify deployed list state with isolated API traffic
         run: node scripts/deployed-list-state-check.mjs
+
+      - name: Verify deployed governance with isolated API traffic
+        run: node scripts/deployed-governance-check.mjs
 
       - name: Verify deployed formation with isolated API traffic
         run: node scripts/deployed-club-formation-check.mjs
