@@ -1,7 +1,8 @@
 import { isCTSV } from '../../utils/access.js';
+import { useListQuery, usePageBound } from '../../hooks/useListQuery.js';
 import './ClubDetail.css';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Pencil, RefreshCw } from 'lucide-react';
 import api from '../../services/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -45,6 +46,12 @@ export default function ClubDetail() {
   return <ClubRecord key={clubId} clubId={clubId} />;
 }
 function ClubRecord({ clubId }) {
+  const location = useLocation();
+  const returnTo = location.state?.returnTo;
+  const listPath =
+    typeof returnTo === 'string' && /^\/ctsv\/clubs(?:\?|$)/.test(returnTo)
+      ? returnTo
+      : '/ctsv/clubs?view=registry';
   const { user } = useAuth();
   const active = useFeatureView(clubDetailTabs);
   const [editing, setEditing] = useState(false);
@@ -65,7 +72,7 @@ function ClubRecord({ clubId }) {
   const root = `/ctsv/clubs/${encodeURIComponent(clubId)}`;
   return (
     <div className="club-detail">
-      <Link to="/ctsv/clubs?view=registry" className="club-detail-back">
+      <Link to={listPath} className="club-detail-back">
         <ArrowLeft size={16} /> Danh sách câu lạc bộ
       </Link>
       <FeatureWorkspace
@@ -215,9 +222,7 @@ function ClubScenario({ club, children }) {
     <MockBoundary>
       <Panel title={`Mô phỏng riêng · ${club.name}`}>
         <WorkflowBody>
-          <p>
-            Thành viên và ngân sách ở đây là dữ liệu mô phỏng.
-          </p>
+          <p>Thành viên và ngân sách ở đây là dữ liệu mô phỏng.</p>
           {!exists && (
             <Button
               disabled={!canWrite}
@@ -236,8 +241,7 @@ function ClubScenario({ club, children }) {
 }
 function ClubMembers({ clubId }) {
   const { user } = useAuth();
-  const [search, setSearch] = useState(''),
-    [page, setPage] = useState(1);
+  const { search, setSearch, page, setPage } = useListQuery({ search: '', page: 1 }, 'members_');
   const result = useOperationQuery(
     async () => {
       const data = await api.clubs.members.list(clubId, { page, pageSize: 20, search });
@@ -247,6 +251,7 @@ function ClubMembers({ clubId }) {
     },
     JSON.stringify([user.id, clubId, page, search]),
   );
+  usePageBound(page, result.data?.totalPages, !result.loading && Boolean(result.data), setPage);
   const roles = {
     CLUB_MANAGER: 'Chủ nhiệm',
     CLUB_VICE_MANAGER: 'Phó chủ nhiệm',
@@ -263,10 +268,7 @@ function ClubMembers({ clubId }) {
     INVITED: 'Đã mời',
   };
   return (
-    <Panel
-      title="Thành viên CLB"
-      description="Danh sách thành viên hiện tại."
-    >
+    <Panel title="Thành viên CLB" description="Danh sách thành viên hiện tại.">
       <WorkflowBody>
         <WorkflowActions>
           <Field label="Tìm thành viên">

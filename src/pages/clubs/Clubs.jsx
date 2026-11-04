@@ -1,6 +1,7 @@
 import './Clubs.css';
+import { useListQuery } from '../../hooks/useListQuery.js';
 import { useEffect, useState } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Activity,
   ArrowRight,
@@ -23,6 +24,7 @@ import {
   Modal,
   PageHeader,
   Panel,
+  Pagination,
   SearchBox,
   StatCard,
   Tabs,
@@ -34,6 +36,7 @@ export function Clubs() {
   const run = useAction();
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Server-backed list state.
   const [clubs, setClubs] = useState([]);
@@ -46,9 +49,12 @@ export function Clubs() {
   const applications = localApplications;
 
   // UI State
-  const [tab, setTab] = useState(params.get('tab') || 'registry');
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('all');
+  const { tab, setTab, query, setQuery, category, setCategory, page, setPage } = useListQuery({
+    tab: 'registry',
+    query: '',
+    category: 'all',
+    page: 1,
+  });
   const [edit, setEdit] = useState(null);
   const [review, setReview] = useState(null);
   const [note, setNote] = useState('');
@@ -108,7 +114,6 @@ export function Clubs() {
     if (params.get('club')) {
       navigate(`/ctsv/clubs/${encodeURIComponent(params.get('club'))}`, { replace: true });
     }
-    if (params.get('tab')) setTab(params.get('tab'));
   }, [params, navigate]);
 
   // Filter clubs
@@ -118,6 +123,10 @@ export function Clubs() {
       (category === 'all' || club.category === category),
   );
   const pending = applications.filter((a) => a.status === 'pending');
+  const safePage = Math.min(
+    page,
+    Math.max(1, Math.ceil((tab === 'registry' ? filtered.length : localApplications.length) / 8)),
+  );
 
   // Review application
   async function decide(approved) {
@@ -269,11 +278,12 @@ export function Clubs() {
           ) : (
             /* Club Grid */
             <div className="clubs-content-7">
-              {filtered.map((club) => (
+              {filtered.slice((safePage - 1) * 8, safePage * 8).map((club) => (
                 <Link
                   key={club.id}
                   className="clubs-card"
                   to={`/ctsv/clubs/${encodeURIComponent(club.id)}`}
+                  state={{ returnTo: location.pathname + location.search }}
                   aria-label={`Quản lý ${club.name}`}
                 >
                   <div className="clubs-content-8">
@@ -323,6 +333,7 @@ export function Clubs() {
             </div>
           )}
           {!loading && !filtered.length && <Empty />}
+          {!loading && <Pagination page={safePage} total={filtered.length} onChange={setPage} />}
         </>
       ) : (
         <Panel
@@ -347,7 +358,7 @@ export function Clubs() {
                   </tr>
                 </thead>
                 <tbody>
-                  {localApplications.map((a) => (
+                  {localApplications.slice((safePage - 1) * 8, safePage * 8).map((a) => (
                     <tr key={a.id}>
                       <td className="clubs-cell">
                         <strong className="clubs-value">{a.name}</strong>
@@ -390,6 +401,9 @@ export function Clubs() {
                 </tbody>
               </table>
             </div>
+          )}
+          {!loading && (
+            <Pagination page={safePage} total={localApplications.length} onChange={setPage} />
           )}
         </Panel>
       )}

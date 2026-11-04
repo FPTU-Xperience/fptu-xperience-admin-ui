@@ -36,7 +36,11 @@ export default function FeatureWorkspace({
             aria-current={active === tab.id ? 'page' : undefined}
             to={{
               pathname: location.pathname,
-              search: new URLSearchParams({ view: tab.id }).toString(),
+              search: (() => {
+                const next = new URLSearchParams(location.search);
+                next.set('view', tab.id);
+                return next.toString();
+              })(),
             }}
           >
             {tab.label}

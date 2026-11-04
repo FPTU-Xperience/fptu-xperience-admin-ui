@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useListQuery, usePageBound } from '../../hooks/useListQuery.js';
 import api from '../../services/api.js';
 import { createImplementedContracts } from '../../services/implemented-contracts.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -8,23 +9,25 @@ import { PageNavigation } from '../../components/operations/operation-state/Oper
 const contracts = createImplementedContracts(api);
 export default function ActivityApplications() {
   const { user } = useAuth();
-  const [clubs, setClubs] = useState([]),
-    [clubId, setClubId] = useState('');
+  const [clubs, setClubs] = useState([]);
+  const { clubId, setClubId, page, setPage } = useListQuery(
+    { clubId: '', page: 1 },
+    'applications_',
+  );
   const [list, setList] = useState(null),
     [detail, setDetail] = useState(null),
     [history, setHistory] = useState([]);
-  const [page, setPage] = useState(1),
-    [revision, setRevision] = useState(0),
+  const [revision, setRevision] = useState(0),
     [reason, setReason] = useState('');
   const [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
+  usePageBound(page, list?.totalPages, Boolean(list), setPage);
   const ticket = useRef(0),
     lock = useRef(false),
     pending = useRef(null);
   useEffect(() => {
     let active = true;
     setClubs([]);
-    setClubId('');
     api.clubs
       .list()
       .then((value) => {

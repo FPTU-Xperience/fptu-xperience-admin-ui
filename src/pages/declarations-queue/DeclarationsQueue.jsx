@@ -1,4 +1,5 @@
 import './DeclarationsQueue.css';
+import { useListQuery, usePageBound } from '../../hooks/useListQuery.js';
 import { useEffect, useRef, useState } from 'react';
 import { ExternalLink, FileCheck2, ShieldAlert, ShieldCheck, X } from 'lucide-react';
 import api from '../../services/api.js';
@@ -55,8 +56,11 @@ export function DeclarationsQueue() {
   const [error, setError] = useState(null);
 
   // Filters
-  const [tab, setTab] = useState('SUBMITTED');
-  const [query, setQuery] = useState('');
+  const { tab, setTab, query, setQuery, page, setPage } = useListQuery({
+    tab: 'SUBMITTED',
+    query: '',
+    page: 1,
+  });
 
   // Review modal
   const [review, setReview] = useState(null);
@@ -64,8 +68,8 @@ export function DeclarationsQueue() {
   const [reviewDecision, setReviewDecision] = useState('APPROVED');
   const [submitting, setSubmitting] = useState(false);
   const [reviewAttributes, setReviewAttributes] = useState(null);
-  const [page, setPage] = useState(1),
-    [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  usePageBound(page, totalPages, !loading && !error, setPage);
   const requestVersion = useRef(0);
 
   async function fetchData() {
@@ -216,7 +220,7 @@ export function DeclarationsQueue() {
             />
             <input
               className="declarations-queue-input"
-              placeholder="Tìm sinh viên, mã SV, trải nghiệm…"
+              placeholder="Tìm sinh viên, mã SV, trải nghiệm trong trang này…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -519,9 +523,7 @@ export function DeclarationsQueue() {
                       </Field>
                     </div>
                   ))}
-                  <p>
-                    Kiểm tra thuộc tính và minh chứng; tổng tỷ trọng phải bằng 1.
-                  </p>
+                  <p>Kiểm tra thuộc tính và minh chứng; tổng tỷ trọng phải bằng 1.</p>
                 </fieldset>
               )}
               {review.status === 'SUBMITTED' ? (

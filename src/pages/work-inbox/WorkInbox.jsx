@@ -1,7 +1,7 @@
 import { featureTabs } from '../../routes/navigation.js';
 import './WorkInbox.css';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useListQuery } from '../../hooks/useListQuery.js';
+import { Link, useLocation } from 'react-router-dom';
 import { RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useWorkspace } from '../../context/WorkspaceContext.jsx';
@@ -13,7 +13,7 @@ import { useOperationQuery } from '../../hooks/useOperationQuery.js';
 import FeatureWorkspace, {
   useFeatureView,
 } from '../../components/workflow/feature-workspace/FeatureWorkspace.jsx';
-import { Badge, Button, Field, Panel } from '../../components/ui/index.js';
+import { Badge, Button, Field, Panel, Pagination } from '../../components/ui/index.js';
 import {
   WorkflowActions,
   WorkflowBody,
@@ -26,10 +26,9 @@ export default function WorkInbox({ overview }) {
     { user } = useAuth(),
     { season, semesterStatus } = useWorkspace(),
     { scope } = useWorkflow();
-  const [query, setQuery] = useState(''),
-    [source, setSource] = useState('all'),
-    [kind, setKind] = useState('all'),
-    [urgent, setUrgent] = useState(false);
+  const { query, setQuery, source, setSource, kind, setKind, urgent, setUrgent, page, setPage } =
+    useListQuery({ query: '', source: 'all', kind: 'all', urgent: false, page: 1 });
+  const location = useLocation();
   const ready = active !== 'overview' && !['idle', 'loading'].includes(semesterStatus);
   const live = useOperationQuery(
     () =>
@@ -48,6 +47,7 @@ export default function WorkInbox({ overview }) {
       `${r.title} ${r.owner}`.toLowerCase().includes(query.toLowerCase()) &&
       (!urgent || (r.deadline && Date.parse(r.deadline) < Date.now())),
   );
+  const safePage = Math.min(page, Math.max(1, Math.ceil(items.length / 20)));
   return (
     <FeatureWorkspace
       title="Việc cần xử lý"
@@ -117,7 +117,7 @@ export default function WorkInbox({ overview }) {
               label="Hàng chờ công việc"
               columns={['Hồ sơ', 'Nguồn & loại', 'Phụ trách / hạn', 'Trạng thái', 'Thao tác']}
             >
-              {items.map((row) => (
+              {items.slice((safePage - 1) * 20, safePage * 20).map((row) => (
                 <tr key={row.id}>
                   <td>
                     <strong>{row.title}</strong>
@@ -136,7 +136,7 @@ export default function WorkInbox({ overview }) {
                   </td>
                   <td>{row.status}</td>
                   <td>
-                    <Link to={row.path} state={{ returnTo: `/ctsv/work?view=${active}` }}>
+                    <Link to={row.path} state={{ returnTo: location.pathname + location.search }}>
                       Mở hồ sơ →
                     </Link>
                   </td>
@@ -148,6 +148,7 @@ export default function WorkInbox({ overview }) {
                 </tr>
               )}
             </WorkflowTable>
+            <Pagination page={safePage} total={items.length} pageSize={20} onChange={setPage} />
           </Panel>
           <WorkflowActions>
             {(live.data || []).map((s) => (

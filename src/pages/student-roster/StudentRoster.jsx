@@ -1,4 +1,5 @@
 import './StudentRoster.css';
+import { useListQuery, usePageBound } from '../../hooks/useListQuery.js';
 import '../../components/operations/Operations.css';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -13,11 +14,18 @@ export function StudentRoster() {
   const { user } = useAuth();
   const { season } = useWorkspace();
   const canSelectCampus = user?.roles?.some((role) => ['SYSTEM_ADMIN', 'ADMIN'].includes(role));
-  const [campus, setCampus] = useState(user?.campusCode === 'GLOBAL' ? '' : user?.campusCode || '');
+  const defaultCampus = user?.campusCode === 'GLOBAL' ? '' : user?.campusCode || '';
+  const {
+    campus: requestedCampus,
+    setCampus,
+    page,
+    setPage,
+  } = useListQuery({ campus: defaultCampus, page: 1 });
+  const campus = canSelectCampus ? requestedCampus : defaultCampus;
   const [result, setResult] = useState(null),
     [preview, setPreview] = useState(null);
-  const [page, setPage] = useState(1),
-    [revision, setRevision] = useState(0);
+  const [revision, setRevision] = useState(0);
+  usePageBound(page, result?.totalPages, Boolean(result), setPage);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [notice, setNotice] = useState('');
@@ -25,11 +33,10 @@ export function StudentRoster() {
     lock = useRef(false),
     commitKey = useRef(null),
     input = useRef(null);
+  const previousSeason = useRef(season);
   useEffect(() => {
-    setCampus(user?.campusCode === 'GLOBAL' ? '' : user?.campusCode || '');
-  }, [user?.id, user?.campusCode]);
-  useEffect(() => {
-    setPage(1);
+    if (previousSeason.current && previousSeason.current !== season) setPage(1);
+    previousSeason.current = season;
     setPreview(null);
     commitKey.current = null;
     if (input.current) input.current.value = '';

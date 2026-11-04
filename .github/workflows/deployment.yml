@@ -1,6 +1,9 @@
 name: Deploy to Cloudflare Pages
 
 on:
+  push:
+    branches: [fix/approved-issues-20261103]
+    paths: [.github/workflows/deployment.yml]
   workflow_dispatch:
 
 permissions:
@@ -32,18 +35,37 @@ jobs:
           VITE_STAFF_SSO_ENABLED: ${{ vars.VITE_STAFF_SSO_ENABLED || 'true' }}
           VITE_LOGIN_ACCOUNT_SHORTCUTS: ${{ vars.VITE_LOGIN_ACCOUNT_SHORTCUTS || 'false' }}
 
-      - name: Set selected branch as Cloudflare production branch
+      - name: Install browser validation dependencies
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+
+      - name: Validate list state in actual components
+        run: node scripts/list-state-browser-check.mjs
+
+      - name: Save list state screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-list-state
+          path: TestResults/list-state
+          if-no-files-found: ignore
+
+      - name: Resolve configured Cloudflare production branch
+        id: deployment
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_DEPLOYMENT_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PROJECT_NAME: fptux-admin-ui
-          PRODUCTION_BRANCH: ${{ github.ref_name }}
         run: |
-          curl --fail-with-body --silent --show-error --request PATCH \
+          set -euo pipefail
+          branch="$(curl --fail --silent --show-error \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${PROJECT_NAME}" \
             --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            --header "Content-Type: application/json" \
-            --data "{\"production_branch\":\"${PRODUCTION_BRANCH}\"}"
+            | jq -er 'select(.success == true) | .result.production_branch | select(type == "string" and length > 0)')"
+          [[ "${branch}" =~ ^[a-zA-Z0-9_./-]+$ ]]
+          git check-ref-format --branch "${branch}" >/dev/null
+          printf 'branch=%s\n' "${branch}" >> "${GITHUB_OUTPUT}"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
@@ -53,4 +75,27 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_DEPLOYMENT_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           gitHubToken: ${{ github.token }}
-          command: pages deploy ./dist --project-name=${{ env.PROJECT_NAME }} --branch=${{ github.ref_name }} --commit-dirty=true
+          command: pages deploy ./dist --project-name=${{ env.PROJECT_NAME }} --branch=${{ steps.deployment.outputs.branch }} --commit-dirty=true
+
+      - name: Verify production assets and API health
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          import { createHash } from 'node:crypto';
+          const base = 'https://fptux-admin-ui.pages.dev';
+          const asset = fs.readFileSync('dist/index.html','utf8').match(/src="([^"]+\.js)"/)?.[1];
+          assert.ok(asset);
+          let live;
+          for (let attempt=0; attempt<12; attempt++) {
+            const response=await fetch(base+'/?verification='+Date.now()); assert.equal(response.status,200);
+            live=await response.text(); if(live.includes(asset))break;
+            await new Promise(resolve=>setTimeout(resolve,5000));
+          }
+          assert.ok(live.includes(asset),'Production serves this build');
+          const response=await fetch(new URL(asset,base));assert.equal(response.status,200);
+          const digest=data=>createHash('sha256').update(data).digest('hex');
+          assert.equal(digest(Buffer.from(await response.arrayBuffer())),digest(fs.readFileSync('dist'+asset)));
+          assert.equal((await fetch('https://clubreporthub.duckdns.org/health')).status,200);
+          console.log('ADMIN_ONLINE_SMOKE_OK',asset,'bundle hash matches build; API health 200');
+          NODE

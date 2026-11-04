@@ -1,8 +1,9 @@
 import { isCTSV } from '../../utils/access.js';
+import { useListQuery } from '../../hooks/useListQuery.js';
 import './ClubRequests.css';
 import '../../components/operations/Operations.css';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useWorkspace } from '../../context/WorkspaceContext.jsx';
@@ -21,16 +22,18 @@ const states = { PENDING: 'Chờ duyệt', APPROVED: 'Đã duyệt', REJECTED: '
 export function ClubRequests({ clubId: fixedClubId } = {}) {
   const { user } = useAuth();
   const { notify } = useWorkspace();
-  const [params, setParams] = useSearchParams();
+  const { params, query, setQuery, status, setStatus, page, setPage, update } = useListQuery({
+    type: 'disband',
+    query: '',
+    status: 'PENDING',
+    page: 1,
+  });
   const kind = params.get('type') === 'transfer' ? 'transfer' : 'disband';
   const service = kind === 'disband' ? api.clubs.disbandRequests : api.clubs.transferRequests;
   const result = useOperationQuery(
     async () => clubRequestRows(await service.list()),
     `${user?.id}:${kind}`,
   );
-  const [query, setQuery] = useState(''),
-    [status, setStatus] = useState('PENDING'),
-    [page, setPage] = useState(1);
   const [review, setReview] = useState(null),
     [decision, setDecision] = useState(''),
     [note, setNote] = useState('');
@@ -56,14 +59,8 @@ export function ClubRequests({ clubId: fixedClubId } = {}) {
   const totalPages = Math.max(1, Math.ceil(rows.length / 20)),
     currentPage = Math.min(page, totalPages);
   const choose = (value) => {
-    setParams((previous) => {
-      const next = new URLSearchParams(previous);
-      next.set('type', value);
-      return next;
-    });
-    setPage(1);
+    update({ type: value, query: '', page: 1 });
     setReview(null);
-    setQuery('');
     setError('');
   };
   const submit = async (event) => {

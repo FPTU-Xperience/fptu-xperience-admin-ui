@@ -1,4 +1,6 @@
 import { systemRolesFor } from '../../utils/roles.js';
+import { useListQuery } from '../../hooks/useListQuery.js';
+import { loadUserDirectory } from '../../services/user-directory.js';
 import './Accounts.css';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -50,37 +52,53 @@ const statusLabel = (value) =>
 
 export default function Accounts() {
   const { user } = useAuth();
+  const requestSequence = useRef(0);
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState('all');
-  const [query, setQuery] = useState('');
-  const [status, setStatus] = useState('all');
-  const [sort, setSort] = useState({ key: null, direction: 'asc' });
-  const [page, setPage] = useState(1);
+  const {
+    tab,
+    setTab,
+    query,
+    setQuery,
+    status,
+    setStatus,
+    sortBy,
+    sortDir,
+    page,
+    setPage,
+    update,
+  } = useListQuery({ tab: 'all', query: '', status: 'all', sortBy: '', sortDir: 'asc', page: 1 });
+  const sort = {
+    key: accountColumns.some((column) => column.key === sortBy) ? sortBy : null,
+    direction: sortDir === 'desc' ? 'desc' : 'asc',
+  };
   const [creating, setCreating] = useState(false);
   async function fetchAccounts() {
+    const current = ++requestSequence.current;
     setLoading(true);
     setError(null);
     try {
-      const response = await api.users.list({ page: 1, pageSize: 500 });
+      const response = await loadUserDirectory(api);
+      if (current !== requestSequence.current) return;
       const items = response?.items || response;
       if (!Array.isArray(items)) throw new Error('Danh sách tài khoản trả về không hợp lệ.');
       setAccounts(items.map(mapUserToAccount));
     } catch (error) {
+      if (current !== requestSequence.current) return;
       setError(error.message || 'Không thể tải danh sách tài khoản.');
       setAccounts([]);
     } finally {
-      setLoading(false);
+      if (current === requestSequence.current) setLoading(false);
     }
   }
   useEffect(() => {
     fetchAccounts();
     setCreating(false);
+    return () => {
+      requestSequence.current++;
+    };
   }, [user?.id]);
-  useEffect(() => {
-    setPage(1);
-  }, [tab, status, query]);
   const filtered = accounts.filter(
     (a) =>
       (tab === 'all' || a.role === tab) &&
@@ -109,11 +127,7 @@ export default function Accounts() {
   const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 8)));
   const visible = sorted.slice((safePage - 1) * 8, safePage * 8);
   function changeSort(key) {
-    setSort((previous) => ({
-      key,
-      direction: previous.key === key && previous.direction === 'asc' ? 'desc' : 'asc',
-    }));
-    setPage(1);
+    update({ sortBy: key, sortDir: sort.key === key && sort.direction === 'asc' ? 'desc' : 'asc' });
   }
   return (
     <>

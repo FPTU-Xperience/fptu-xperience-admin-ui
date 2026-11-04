@@ -1,5 +1,6 @@
 import './Audit.css';
-import { useEffect, useState } from 'react';
+import { useListQuery, usePageBound } from '../../hooks/useListQuery.js';
+import { useEffect, useRef, useState } from 'react';
 import api from '../../services/api.js';
 import { date, normalize } from '../../utils/format.js';
 import { Empty, PageHeader, Pagination, Panel, SearchBox } from '../../components/ui/index.js';
@@ -8,42 +9,67 @@ export function Audit() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [total, setTotal] = useState(0);
+  const ticket = useRef(0);
 
   // Filter state
-  const [query, setQuery] = useState('');
-  const [area, setArea] = useState('all');
-  const [page, setPage] = useState(1);
+  const { query, setQuery, area, setArea, page, setPage } = useListQuery({
+    query: '',
+    area: 'all',
+    page: 1,
+  });
+  usePageBound(page, Math.ceil(total / 8), !loading && !error, setPage);
 
   // Fetch audit events from API
   async function fetchAuditLogs() {
+    const current = ++ticket.current;
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/api/v1/admin/audit-events');
+      const response = await api.get('/api/v1/admin/audit-events', {
+        page,
+        pageSize: 8,
+        search: query,
+        area,
+      });
+      if (current !== ticket.current) return;
       const data = Array.isArray(response) ? response : response?.items || [];
-      setAuditLogs(data.map(mapAuditFromApi));
+      if (Array.isArray(response)) {
+        const rows = data
+          .map(mapAuditFromApi)
+          .filter(
+            (row) =>
+              (area === 'all' || row.area === area) &&
+              normalize(`${row.actor} ${row.action} ${row.detail}`).includes(normalize(query)),
+          );
+        setTotal(rows.length);
+        setAuditLogs(rows.slice((page - 1) * 8, page * 8));
+      } else {
+        setTotal(response.totalItems ?? response.total ?? data.length);
+        setAuditLogs(data.map(mapAuditFromApi));
+      }
     } catch (err) {
+      if (current !== ticket.current) return;
       console.error('Failed to fetch audit logs:', err);
       setError(err.message || 'Không thể tải nhật ký hoạt động');
       // Use empty array instead of local data
       setAuditLogs([]);
     } finally {
-      setLoading(false);
+      if (current === ticket.current) setLoading(false);
     }
   }
 
   useEffect(() => {
     fetchAuditLogs();
-  }, []);
+    return () => {
+      ticket.current++;
+    };
+  }, [page, query, area]);
 
   // Filter logs
-  const filtered = auditLogs.filter(
-    (a) =>
-      (area === 'all' || a.area === area) &&
-      normalize(`${a.actor} ${a.action} ${a.detail}`).includes(normalize(query)),
-  );
+  const filtered = auditLogs;
 
-  const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 8)));
+  const safePage = Math.min(page, Math.max(1, Math.ceil(total / 8)));
 
   return (
     <>
@@ -110,7 +136,7 @@ export function Audit() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.slice((safePage - 1) * 8, safePage * 8).map((a) => (
+                {filtered.map((a) => (
                   <tr key={a.id}>
                     <td className="audit-cell">
                       <span className="audit-text-2">{date(a.at)}</span>
@@ -142,7 +168,7 @@ export function Audit() {
           />
         )}
 
-        <Pagination page={safePage} total={filtered.length} onChange={setPage} />
+        <Pagination page={safePage} total={total} onChange={setPage} />
       </Panel>
     </>
   );

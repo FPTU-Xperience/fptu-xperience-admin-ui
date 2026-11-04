@@ -1,8 +1,11 @@
 import { studentRadarView } from '../../services/student-profile-view.js';
+import { useListQuery } from '../../hooks/useListQuery.js';
+import { loadUserDirectory } from '../../services/user-directory.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { systemRolesFor } from '../../utils/roles.js';
 import './Engagement.css';
 import { useWorkspace } from '../../context/WorkspaceContext.jsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowDownToLine,
@@ -40,6 +43,8 @@ import {
 const DEFAULT_THRESHOLD = 200;
 
 export function Engagement({ reports = false }) {
+  const { user } = useAuth();
+  const requestSequence = useRef(0);
   const run = useAction();
   const [params] = useSearchParams();
 
@@ -59,11 +64,8 @@ export function Engagement({ reports = false }) {
   const [error, setError] = useState(null);
 
   // Filter state
-  const [query, setQuery] = useState('');
-  const [group, setGroup] = useState(params.get('group') || 'all');
-  const [major, setMajor] = useState('all');
-  const [cohort, setCohort] = useState('all');
-  const [page, setPage] = useState(1);
+  const { query, setQuery, group, setGroup, major, setMajor, cohort, setCohort, page, setPage } =
+    useListQuery({ query: '', group: 'all', major: 'all', cohort: 'all', page: 1 });
   const [detail, setDetail] = useState(null);
   const [radarData, setRadarData] = useState(null);
   const [radarLoading, setRadarLoading] = useState(false);
@@ -72,13 +74,15 @@ export function Engagement({ reports = false }) {
 
   // Fetch data from API
   async function fetchData() {
+    const current = ++requestSequence.current;
     setLoading(true);
     setError(null);
     try {
       const [usersResponse, clubsResponse] = await Promise.all([
-        api.users.list({ page: 1, pageSize: 500 }),
+        loadUserDirectory(api),
         api.clubs.list({ page: 1, pageSize: 100 }),
       ]);
+      if (current !== requestSequence.current) return;
 
       // Students are system actors; club membership is a separate relation.
       const users = Array.isArray(usersResponse) ? usersResponse : usersResponse?.items || [];
@@ -109,24 +113,20 @@ export function Engagement({ reports = false }) {
         })),
       );
     } catch (err) {
+      if (current !== requestSequence.current) return;
       console.error('Failed to fetch engagement data:', err);
       setError(err.message || 'Không thể tải dữ liệu sinh viên');
     } finally {
-      setLoading(false);
+      if (current === requestSequence.current) setLoading(false);
     }
   }
 
   useEffect(() => {
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    setPage(1);
-  }, [query, group, major, cohort]);
-
-  useEffect(() => {
-    setGroup(params.get('group') || 'all');
-  }, [params]);
+    return () => {
+      requestSequence.current++;
+    };
+  }, [user?.id]);
 
   // Filter students
   const filtered = students.filter((s) => {
@@ -165,13 +165,18 @@ export function Engagement({ reports = false }) {
         if (active) setRadarData(studentRadarView(data, detail.id));
       } catch (err) {
         console.error('Failed to fetch radar:', err);
-        if (active) { setRadarError(err.message); setRadarData(null); }
+        if (active) {
+          setRadarError(err.message);
+          setRadarData(null);
+        }
       } finally {
         if (active) setRadarLoading(false);
       }
     }
     fetchRadar();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [detail, season]);
 
   async function exportData() {
@@ -411,7 +416,9 @@ export function Engagement({ reports = false }) {
             {/* Student Club Card */}
             <div className="engagement-content-13">
               <UsersRound size={25} />
-              <strong className="engagement-value-2">{detail.clubMembershipAvailable ? detail.clubIds.length : '—'}</strong>
+              <strong className="engagement-value-2">
+                {detail.clubMembershipAvailable ? detail.clubIds.length : '—'}
+              </strong>
               <span className="engagement-text-7">Câu lạc bộ đã tham gia</span>
             </div>
 
@@ -435,7 +442,9 @@ export function Engagement({ reports = false }) {
                 Đang tải biểu đồ…
               </div>
             ) : radarError || !radarData ? (
-              <div className="engagement-content-18">{radarError || 'Chưa có dữ liệu radar cho học kỳ này.'}</div>
+              <div className="engagement-content-18">
+                {radarError || 'Chưa có dữ liệu radar cho học kỳ này.'}
+              </div>
             ) : (
               <>
                 {/* Radar */}
@@ -502,7 +511,10 @@ export function Engagement({ reports = false }) {
                 {detail.clubIds
                   ?.map((id) => clubs.find((c) => c.id === id)?.name)
                   .filter(Boolean)
-                  .join(', ') || (detail.clubMembershipAvailable ? 'Chưa tham gia câu lạc bộ' : 'Nguồn danh sách chưa cung cấp dữ liệu thành viên CLB')}
+                  .join(', ') ||
+                  (detail.clubMembershipAvailable
+                    ? 'Chưa tham gia câu lạc bộ'
+                    : 'Nguồn danh sách chưa cung cấp dữ liệu thành viên CLB')}
               </p>
             </div>
           </div>
