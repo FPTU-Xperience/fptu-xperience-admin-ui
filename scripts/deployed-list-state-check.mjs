@@ -48,7 +48,7 @@ try {
             contentType: 'application/json',
             body: JSON.stringify(body),
           });
-        if (path === '/api/v1/me')
+        if (path === '/api/users/me')
           return ok({
             id: 999999,
             fullName: 'Isolated list reviewer',

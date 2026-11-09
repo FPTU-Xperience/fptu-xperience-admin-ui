@@ -27,7 +27,7 @@ try{fs.mkdirSync('TestResults/governance-online',{recursive:true});
                 });
             if (!path.includes('/governance/')) {
                 if (req.method() !== 'GET') throw new Error('Unexpected production mutation blocked '+path);
-                if (path === '/api/v1/me') return ok({id:200,fullName:'Isolated CTSV',email:'reviewer@example.invalid',roles:['STUDENT_AFFAIR'],isActive:true,campusCode:'HAN'});
+                if (path === '/api/users/me') return ok({id:200,fullName:'Isolated CTSV',email:'reviewer@example.invalid',roles:['STUDENT_AFFAIR'],isActive:true,campusCode:'HAN'});
                 if (path === '/api/clubs/1') return ok({id:1,code:'TEST',name:'Isolated Club',category:'TECHNOLOGY',isActive:true,campusCode:'HAN',managers:[],members:[]});
                 const semester={semesterCode:'FALL2026',label:'Fall 2026',start:'2026-08-15',end:'2026-12-31',isActive:true};
                 if(path==='/api/v1/semesters')return ok([semester]);if(path==='/api/v1/semesters/active')return ok(semester);

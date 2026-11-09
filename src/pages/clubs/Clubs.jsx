@@ -286,8 +286,10 @@ export function Clubs() {
         />
         <StatCard
           label="Cần quan tâm"
-          value={clubs.filter((c) => (c.health || 0) < 50).length}
-          note="Chỉ số gắn kết minh họa dưới 50"
+          value={clubs.some((club) => club.health !== null)
+            ? clubs.filter((club) => club.health !== null && club.health < 50).length
+            : '—'}
+          note="CLB có chỉ số gắn kết dưới 50"
           icon={Activity}
           tone="purple"
         />
@@ -382,18 +384,20 @@ export function Clubs() {
                       </span>
                       <span
                         className={
-                          (club.health || 0) < 50 ? 'clubs-text-active' : 'clubs-text-inactive'
+                          club.health !== null && club.health < 50 ? 'clubs-text-active' : 'clubs-text-inactive'
                         }
                       >
-                        {club.health || 0}/100 gắn kết
+                        {club.health === null ? 'Chưa có dữ liệu gắn kết' : `${club.health}/100 gắn kết`}
                       </span>
                     </div>
-                    <div className="clubs-content-11">
-                      <i
-                        className="clubs-indicator-2"
-                        style={{ width: `${club.health || 0}%`, background: club.color }}
-                      />
-                    </div>
+                    {club.health !== null && (
+                      <div className="clubs-content-11">
+                        <i
+                          className="clubs-indicator-2"
+                          style={{ width: `${club.health}%`, background: club.color }}
+                        />
+                      </div>
+                    )}
                   </div>
                   <span className="clubs-button-2">
                     Quản lý câu lạc bộ <ArrowRight size={15} />
@@ -661,7 +665,7 @@ export function mapClubsFromApi(clubs) {
     status: club.isActive ? 'active' : 'paused',
     color: safeString(club.color, '#5c8d80'),
     symbol: safeString(club.code, 'CL').slice(0, 2).toUpperCase(),
-    health: safeNumber(club.healthScore || club.health, 0),
+    health: safeNumber(club.healthScore ?? club.health, null),
     email: safeString(club.contactEmail, ''),
     phone: safeString(club.contactPhone, ''),
     leader: safeString(club.managerName || club.leader, ''),
