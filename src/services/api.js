@@ -291,7 +291,7 @@ export const api = {
     logout: () => session.logout(),
     refresh: () => session.refresh(),
     // Get current user info
-    me: () => api.get('/api/v1/me'),
+    me: () => api.users.me(),
     adminMe: () => api.get('/api/v1/admin/me'),
     ctsvMe: () => api.get('/api/v1/student-affairs/me'),
   },
