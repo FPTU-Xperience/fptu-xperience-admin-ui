@@ -69,7 +69,7 @@
 }
 .booking-admin-notice[role='alert'] { background: #fff2e8; color: #883414; }
 .booking-admin-notice.booking-admin-success { background: #dcfce7; }
-.booking-admin-dialog { margin-top: .85rem; }
+.booking-admin-dialog { padding: .9rem clamp(.75rem, 3vw, 1.5rem) 1.25rem; }
 .booking-admin-dialog fieldset { margin: 0; }
 .booking-admin-dialog legend { padding-inline: .35rem; font-weight: 700; }
 .booking-admin-dialog > button { justify-self: start; }
