@@ -33,6 +33,7 @@ export const featureTabs = {
   ],
   activities: [
     { id: 'club', label: 'Hoạt động CLB' },
+    { id: 'bookings', label: 'Đặt địa điểm & thiết bị' },
     { id: 'school', label: 'Hoạt động cấp trường' },
     { id: 'quests', label: 'Nhiệm vụ & chiến dịch' },
   ],
