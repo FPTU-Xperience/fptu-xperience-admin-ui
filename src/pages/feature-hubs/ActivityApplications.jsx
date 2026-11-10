@@ -5,6 +5,10 @@ import { createImplementedContracts } from '../../services/implemented-contracts
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Button, Field, Panel } from '../../components/ui/index.js';
 import { PageNavigation } from '../../components/operations/operation-state/OperationState.jsx';
+import ActivityRescheduleReview from './ActivityRescheduleReview.jsx';
+import ActivityClosingReportReview, { ActivityClosingPolicy } from './ActivityClosingReportReview.jsx';
+import CampusActivities from './CampusActivities.jsx';
+import ActivityXpSetup from './ActivityXpSetup.jsx';
 
 const contracts = createImplementedContracts(api);
 export default function ActivityApplications() {
@@ -105,6 +109,7 @@ export default function ActivityApplications() {
   };
   return (
     <Panel title="Hồ sơ hoạt động CLB">
+      <CampusActivities clubs={clubs} />
       <Field label="Câu lạc bộ">
         <select
           value={clubId}
@@ -122,6 +127,7 @@ export default function ActivityApplications() {
           ))}
         </select>
       </Field>
+      {clubId && <ActivityClosingPolicy key={clubId} clubId={clubId} />}
       <p>Duyệt kế hoạch chỉ tạo hoạt động chưa công bố. Tính điểm và quyết toán đang tạm hoãn.</p>
       {error && <p role="alert">{error}</p>}
       {clubId && !list && !error && <p role="status">Đang tải hồ sơ…</p>}
@@ -199,6 +205,9 @@ export default function ActivityApplications() {
               </li>
             ))}
           </ul>
+          {detail.activityId && <ActivityRescheduleReview key={detail.activityId} activityId={detail.activityId} />}
+          {detail.activityId && <ActivityClosingReportReview key={`report-${detail.activityId}`} activityId={detail.activityId} />}
+          {detail.activityId && <ActivityXpSetup key={`xp-${detail.activityId}`} activityId={detail.activityId} semester={detail.period} />}
         </section>
       )}
       <Button disabled={busy || !clubId} onClick={() => setRevision((x) => x + 1)}>
