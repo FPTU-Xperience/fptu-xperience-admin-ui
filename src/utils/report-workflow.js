@@ -10,8 +10,8 @@ export const REPORT_STATUSES = {
 };
 
 export const REPORT_TYPES = {
-  FUTURE_EVENT: 'Đề xuất hoạt động',
-  CLUB_ACTIVITY: 'Tổng kết hoạt động',
+  FUTURE_EVENT: 'Kế hoạch mở hoạt động',
+  CLUB_ACTIVITY: 'Báo cáo kết thúc hoạt động',
   CLUB_TERM_START: 'Đầu kỳ CLB',
   CLUB_TERM_END: 'Cuối kỳ CLB',
 };
