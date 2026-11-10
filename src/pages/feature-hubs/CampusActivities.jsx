@@ -140,11 +140,11 @@ export default function CampusActivities({ clubs }) {
               save(reportPath, 'POST', { summary: new FormData(event.currentTarget).get('summary') }, setReport);
             }}>
               <Field label="Tổng kết"><textarea name="summary" maxLength={4000} required /></Field>
-              <Button type="submit" disabled={busy}>Tạo báo cáo</Button>
+              <Button type="submit" disabled={busy}>Tạo báo cáo kết thúc</Button>
             </form>
           )}
           {report?.status === 'DRAFT' && <Button type="button" disabled={busy}
-            onClick={() => save(`${reportPath}/finalize`, 'POST', { expectedVersion: report.version }, setReport)}>Chốt báo cáo</Button>}
+            onClick={() => save(`${reportPath}/finalize`, 'POST', { expectedVersion: report.version }, setReport)}>Chốt báo cáo kết thúc</Button>}
           {report?.status === 'FINALIZED' && <ClosingDutyXpReview activityId={row.id} />}
         </section>
       )}

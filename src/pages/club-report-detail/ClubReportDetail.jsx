@@ -368,7 +368,7 @@ function ClubReportView({ reportId }) {
                           setDecision('approve');
                         }}
                       >
-                        Phê duyệt{reportType(report) === 'FUTURE_EVENT' ? ' hoạt động' : ' báo cáo'}
+                        {reportType(report) === 'FUTURE_EVENT' ? 'Duyệt kế hoạch mở hoạt động' : 'Duyệt báo cáo'}
                       </Button>
                       <Button
                         disabled={busy}
