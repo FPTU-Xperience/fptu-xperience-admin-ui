@@ -204,6 +204,7 @@ async function request(path, options = {}) {
     // Create error with status for handling in components
     const err = new Error(message)
     err.status = response.status
+    err.code = data?.code
     throw err
   }
 

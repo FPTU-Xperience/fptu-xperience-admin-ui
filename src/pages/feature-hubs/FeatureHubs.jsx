@@ -34,6 +34,7 @@ import { SystemSettings } from '../system-settings/SystemSettings.jsx';
 import { Audit } from '../audit/Audit.jsx';
 import { StudentRoster } from '../student-roster/StudentRoster.jsx';
 import ActivityApplications from './ActivityApplications.jsx';
+import ActivityBookingDesk from './ActivityBookingDesk.jsx';
 import AcademicCalendar from '../seasons/AcademicCalendar.jsx';
 
 export function SourceSwitch({ realLabel = 'Hồ sơ', mockLabel = 'Thử quy trình', children }) {
@@ -151,6 +152,7 @@ export function ActivitiesHub() {
           <ActivityWorkflow school />
         </MockBoundary>
       )}
+      {active === 'bookings' && <ActivityBookingDesk />}
       {active === 'quests' && <Quests />}
     </FeatureWorkspace>
   );
