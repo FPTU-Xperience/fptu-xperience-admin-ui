@@ -27,4 +27,38 @@
   .activity-workflow-consent {
     @apply flex items-start gap-2 text-xs;
   }
+  .activity-workflow-school .activity-workflow-heading {
+    @apply items-center rounded-xl border border-border bg-white p-4 sm:p-5;
+  }
+  .activity-school-list {
+    @apply grid gap-3;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
+  }
+  .activity-school-list > li {
+    @apply grid min-w-0 justify-items-start gap-2 rounded-xl border border-border bg-white p-4 sm:p-5;
+    overflow-wrap: anywhere;
+  }
+  .activity-school-list h3 {
+    @apply text-base;
+  }
+  .activity-school-list small,
+  .activity-school-list p {
+    @apply text-xs text-slate-600;
+  }
+  .activity-school-points {
+    @apply my-1 grid w-full grid-cols-3 gap-2 rounded-lg bg-surface p-3;
+  }
+  .activity-school-points dt {
+    @apply text-xs text-slate-600;
+  }
+  .activity-school-points dd {
+    @apply mt-1 text-base font-semibold;
+  }
+  .activity-workflow-school .workflow-grid > div {
+    @apply min-w-0 rounded-lg border border-border bg-surface p-3;
+    overflow-wrap: anywhere;
+  }
+  .activity-workflow-school .workflow-grid h3 {
+    @apply mb-1;
+  }
 }

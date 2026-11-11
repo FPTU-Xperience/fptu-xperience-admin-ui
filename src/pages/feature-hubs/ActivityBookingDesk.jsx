@@ -333,7 +333,7 @@ function CampusDesk({ campus }) {
         <Button onClick={() => setEditor({ kind: 'cutoff', item: cutoff })}>Cấu hình hạn nhận</Button>
       </div>}
       {view === 'queue' ? (
-        <>
+        <section className="booking-admin-queue" aria-label="Hàng đợi theo tuần">
           <div className="booking-admin-toolbar booking-admin-week">
             <div className="booking-admin-row">
               <Button icon={ChevronLeft} onClick={() => setWeek(offsetDay(week, -7))}>Tuần trước</Button>
@@ -357,7 +357,7 @@ function CampusDesk({ campus }) {
                   ['Đã xử lý', rows.filter((row) => row.status === 'CONFIRMED').length], ['Gửi muộn', rows.filter((row) => row.isLate).length]]
                   .map(([label, count]) => <div key={label}><small>{label}</small><strong>{count}</strong></div>)}
               </div>
-              <Field label="Lọc yêu cầu"><select value={filter} onChange={(event) => setFilter(event.target.value)}>
+              <Field label="Lọc yêu cầu" className="booking-admin-filter"><select value={filter} onChange={(event) => setFilter(event.target.value)}>
                 <option value="">Tất cả trạng thái</option>
                 {Object.entries(statuses).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 <option value="LATE">Gửi sau cutoff</option>
@@ -378,7 +378,7 @@ function CampusDesk({ campus }) {
               )}
             </>
           )}
-        </>
+        </section>
       ) : data && (
         <div className="booking-admin-catalog">
           {[['venues', 'Địa điểm', Building2], ['equipment', 'Thiết bị', Package]].map(([kind, title, Icon]) => (
@@ -425,17 +425,24 @@ export default function ActivityBookingDesk() {
   const campus = selectedCampus(scope.data, choice);
   return (
     <Panel title="Đặt địa điểm và thiết bị" description="Xử lý yêu cầu của CLB theo tuần diễn ra phiên, quản lý phòng và thiết bị theo cơ sở.">
-      {scope.error ? (
-        <><p role="alert">{scope.error}</p><Button onClick={scope.retry}>Thử lại</Button></>
-      ) : !scope.data ? <p role="status">Đang kiểm tra quyền quản lý cơ sở…</p> : (
-        <div className="booking-admin">
-          <Field label="Cơ sở"><select value={campus} disabled={!scope.data.canSelectCampus} onChange={(event) => setChoice(event.target.value)}>
-            <option value="">Chọn cơ sở để xem yêu cầu</option>
-            {scope.data.campuses.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
-          </select></Field>
-          {campus && <CampusDesk key={`${user.id}:${campus}`} campus={campus} />}
-        </div>
-      )}
+      <div className="booking-admin booking-admin-body">
+        {scope.error ? (
+          <div className="booking-admin-row">
+            <p className="booking-admin-notice" role="alert">{scope.error}</p>
+            <Button onClick={scope.retry}>Thử lại</Button>
+          </div>
+        ) : !scope.data ? <p className="booking-admin-notice" role="status">Đang kiểm tra quyền quản lý cơ sở…</p> : (
+          <>
+            <Field label="Cơ sở" className="booking-admin-filter">
+              <select value={campus} disabled={!scope.data.canSelectCampus} onChange={(event) => setChoice(event.target.value)}>
+                <option value="">Chọn cơ sở để xem yêu cầu</option>
+                {scope.data.campuses.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
+              </select>
+            </Field>
+            {campus && <CampusDesk key={`${user.id}:${campus}`} campus={campus} />}
+          </>
+        )}
+      </div>
     </Panel>
   );
 }
