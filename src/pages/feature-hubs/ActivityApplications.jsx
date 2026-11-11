@@ -9,6 +9,7 @@ import ActivityRescheduleReview from './ActivityRescheduleReview.jsx';
 import ActivityClosingReportReview, { ActivityClosingPolicy } from './ActivityClosingReportReview.jsx';
 import CampusActivities from './CampusActivities.jsx';
 import ActivityXpSetup from './ActivityXpSetup.jsx';
+import './ActivityLifecycle.css';
 
 const contracts = createImplementedContracts(api);
 export default function ActivityApplications() {
@@ -109,110 +110,114 @@ export default function ActivityApplications() {
   };
   return (
     <Panel title="Hồ sơ hoạt động CLB">
-      <CampusActivities clubs={clubs} />
-      <Field label="Câu lạc bộ">
-        <select
-          value={clubId}
-          disabled={busy}
-          onChange={(e) => {
-            setClubId(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">Chọn CLB để tải hồ sơ</option>
-          {clubs.map((club) => (
-            <option key={club.id} value={club.id}>
-              {club.name}
-            </option>
-          ))}
-        </select>
-      </Field>
-      {clubId && <ActivityClosingPolicy key={clubId} clubId={clubId} />}
-      <p>Duyệt kế hoạch chỉ tạo hoạt động chưa công bố. Tính điểm và quyết toán đang tạm hoãn.</p>
-      {error && <p role="alert">{error}</p>}
-      {clubId && !list && !error && <p role="status">Đang tải hồ sơ…</p>}
-      {list && (
-        <>
-          <ul>
-            {list.items.map((row) => (
-              <li key={row.id}>
-                <Button disabled={busy} onClick={() => open(row.id)}>
-                  {row.title || `Hồ sơ ${row.id}`} · {row.status}
-                </Button>
-              </li>
+      <div className="activity-lifecycle">
+        <CampusActivities clubs={clubs} />
+        <Field label="Câu lạc bộ">
+          <select
+            value={clubId}
+            disabled={busy}
+            onChange={(e) => {
+              setClubId(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">Chọn CLB để tải hồ sơ</option>
+            {clubs.map((club) => (
+              <option key={club.id} value={club.id}>
+                {club.name}
+              </option>
             ))}
-          </ul>
-          {!list.items.length && <p>Không có hồ sơ trong CLB này.</p>}
-          <PageNavigation
-            page={page}
-            totalPages={Math.max(1, list.totalPages)}
-            total={list.totalItems}
-            onChange={setPage}
-          />
-        </>
-      )}
-      {detail && (
-        <section>
-          <h3>
-            {detail.title} · {detail.status}
-          </h3>
-          <p>{detail.description}</p>
-          <p>Mục tiêu: {detail.objective}</p>
-          <p>
-            {detail.period} · {detail.location} · {detail.startTimeUtc} — {detail.endTimeUtc}
-          </p>
-          <ul>
-            {detail.actions.map((action) => (
-              <li key={action.clientId}>
-                {action.name} · {action.expectedPeople} người · {action.verificationMethod}
-              </li>
-            ))}
-          </ul>
-          <p>
-            {detail.scoringStatus === 'DEFERRED_BY_PRODUCT_OWNER'
-              ? 'Chưa tính điểm; không cấp XP khi duyệt.'
-              : 'Xem chính sách nguồn trước khi xử lý điểm.'}
-          </p>
-          {detail.capabilities?.canReview && (
-            <>
-              <Field label="Lý do quyết định">
-                <textarea
-                  value={reason}
-                  maxLength={2000}
-                  disabled={busy}
-                  onChange={(e) => setReason(e.target.value)}
-                />
-              </Field>
-              <Button disabled={busy} onClick={() => review('APPROVED')}>
-                Duyệt kế hoạch
-              </Button>
-              <Button
-                disabled={busy || !reason.trim()}
-                onClick={() => review('REVISION_REQUESTED')}
-              >
-                Yêu cầu bổ sung
-              </Button>
-              <Button disabled={busy || !reason.trim()} onClick={() => review('REJECTED')}>
-                Từ chối
-              </Button>
-            </>
-          )}
-          <h4>Lịch sử hồ sơ</h4>
-          <ul>
-            {history.map((row, index) => (
-              <li key={row.id || index}>
-                {row.status} · phiên bản {row.version} · {row.reason || ''}
-              </li>
-            ))}
-          </ul>
-          {detail.activityId && <ActivityRescheduleReview key={detail.activityId} activityId={detail.activityId} />}
-          {detail.activityId && <ActivityClosingReportReview key={`report-${detail.activityId}`} activityId={detail.activityId} />}
-          {detail.activityId && <ActivityXpSetup key={`xp-${detail.activityId}`} activityId={detail.activityId} semester={detail.period} />}
-        </section>
-      )}
-      <Button disabled={busy || !clubId} onClick={() => setRevision((x) => x + 1)}>
-        Tải lại hồ sơ
-      </Button>
+          </select>
+        </Field>
+        {clubId && <ActivityClosingPolicy key={clubId} clubId={clubId} />}
+        <p>Duyệt kế hoạch chỉ tạo hoạt động chưa công bố. Tính điểm và quyết toán đang tạm hoãn.</p>
+        {error && <p role="alert">{error}</p>}
+        {clubId && !list && !error && <p role="status">Đang tải hồ sơ…</p>}
+        {list && (
+          <>
+            <ul>
+              {list.items.map((row) => (
+                <li key={row.id}>
+                  <Button disabled={busy} onClick={() => open(row.id)}>
+                    {row.title || `Hồ sơ ${row.id}`} · {row.status}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            {!list.items.length && <p>Không có hồ sơ trong CLB này.</p>}
+            <PageNavigation
+              page={page}
+              totalPages={Math.max(1, list.totalPages)}
+              total={list.totalItems}
+              onChange={setPage}
+            />
+          </>
+        )}
+        {detail && (
+          <section className="activity-lifecycle-section">
+            <h3>
+              {detail.title} · {detail.status}
+            </h3>
+            <p>{detail.description}</p>
+            <p>Mục tiêu: {detail.objective}</p>
+            <p>
+              {detail.period} · {detail.location} · {detail.startTimeUtc} — {detail.endTimeUtc}
+            </p>
+            <ul>
+              {detail.actions.map((action) => (
+                <li key={action.clientId}>
+                  {action.name} · {action.expectedPeople} người · {action.verificationMethod}
+                </li>
+              ))}
+            </ul>
+            <p>
+              {detail.scoringStatus === 'DEFERRED_BY_PRODUCT_OWNER'
+                ? 'Chưa tính điểm; không cấp XP khi duyệt.'
+                : 'Xem chính sách nguồn trước khi xử lý điểm.'}
+            </p>
+            {detail.capabilities?.canReview && (
+              <>
+                <Field label="Lý do quyết định">
+                  <textarea
+                    value={reason}
+                    maxLength={2000}
+                    disabled={busy}
+                    onChange={(e) => setReason(e.target.value)}
+                  />
+                </Field>
+                <div className="activity-lifecycle-actions">
+                  <Button variant="primary" disabled={busy} onClick={() => review('APPROVED')}>
+                    Duyệt kế hoạch
+                  </Button>
+                  <Button
+                    disabled={busy || !reason.trim()}
+                    onClick={() => review('REVISION_REQUESTED')}
+                  >
+                    Yêu cầu bổ sung
+                  </Button>
+                  <Button disabled={busy || !reason.trim()} onClick={() => review('REJECTED')}>
+                    Từ chối
+                  </Button>
+                </div>
+              </>
+            )}
+            <h4>Lịch sử hồ sơ</h4>
+            <ul>
+              {history.map((row, index) => (
+                <li key={row.id || index}>
+                  {row.status} · phiên bản {row.version} · {row.reason || ''}
+                </li>
+              ))}
+            </ul>
+            {detail.activityId && <ActivityRescheduleReview key={detail.activityId} activityId={detail.activityId} />}
+            {detail.activityId && <ActivityClosingReportReview key={`report-${detail.activityId}`} activityId={detail.activityId} />}
+            {detail.activityId && <ActivityXpSetup key={`xp-${detail.activityId}`} activityId={detail.activityId} semester={detail.period} />}
+          </section>
+        )}
+        <Button disabled={busy || !clubId} onClick={() => setRevision((x) => x + 1)}>
+          Tải lại hồ sơ
+        </Button>
+      </div>
     </Panel>
   );
 }

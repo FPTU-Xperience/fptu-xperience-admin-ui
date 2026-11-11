@@ -44,7 +44,7 @@ export default function ClosingDutyXpReview({ activityId }) {
     }
   };
   return (
-    <section>
+    <section className="activity-lifecycle-section">
       <h4>Xét XP Staff và Host</h4>
       <Button type="button" disabled={busy} onClick={() => setRevision((value) => value + 1)}>Tải lại hồ sơ XP</Button>
       {error && <p role="alert">{error}</p>}

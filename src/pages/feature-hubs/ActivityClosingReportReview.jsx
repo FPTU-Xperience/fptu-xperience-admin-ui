@@ -51,7 +51,7 @@ export function ActivityClosingPolicy({ clubId }) {
   const path = `/api/activities/closing-policy/${clubId}`;
   const { data, busy, error, save } = useClosingRequest(path);
   return (
-    <section>
+    <section className="activity-lifecycle-section">
       <h4>Hạn nộp báo cáo kết thúc</h4>
       {error && <p role="alert">{error}</p>}
       {data && (
@@ -76,7 +76,7 @@ export default function ActivityClosingReportReview({ activityId }) {
   const { data, busy, error, save } = useClosingRequest(path);
   const report = data?.report;
   return (
-    <section>
+    <section className="activity-lifecycle-section">
       <h4>Báo cáo kết thúc</h4>
       {error && <p role="alert">{error}</p>}
       {data && !data.available && <p>Báo cáo mở sau khi hoạt động hoàn thành.</p>}

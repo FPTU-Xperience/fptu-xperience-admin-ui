@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Button, Field } from '../../components/ui/index.js';
 
 const roles = { PARTICIPANT: 'Người tham gia', STAFF: 'Staff', HOST: 'Host', HOST_CLUB: 'CLB chủ trì' };
 const png = (file) => new Promise((resolve, reject) => {
@@ -48,18 +49,19 @@ export default function CertificateDefinitions({ api, activityId, organization =
     };
 
     return (
-        <section className="v2-activity-profile-panel">
-            <h3>Chứng chỉ và badge</h3>
+        <section className="activity-lifecycle-section">
+            <h4>Chứng chỉ và badge</h4>
             {error && <p role="alert">{error}</p>}
             {data?.items.map((item) => (
-                <p key={item.id}>{item.title} · {roles[item.role]}
+                <div key={item.id} className="activity-lifecycle-actions">
+                    <p>{item.title} · {roles[item.role]}</p>
                     {!data.locked && (item.role !== 'HOST_CLUB' || organization) && (
-                        <button type="button" disabled={busy} onClick={() => write('DELETE', item.id)}>Xóa cấu hình</button>
+                        <Button type="button" variant="danger-soft" disabled={busy} onClick={() => write('DELETE', item.id)}>Xóa cấu hình</Button>
                     )}
-                </p>
+                </div>
             ))}
             {data && !data.locked && (
-                <form className="v2-activity-recap-form" onSubmit={(event) => {
+                <form onSubmit={(event) => {
                     event.preventDefault();
                     const form = event.currentTarget;
                     const fields = new FormData(form);
@@ -68,14 +70,14 @@ export default function CertificateDefinitions({ api, activityId, organization =
                         badgePng: await png(fields.get('badge')), framePng: await png(fields.get('frame')),
                     }), form);
                 }}>
-                    <label>Tiêu đề<input name="title" required maxLength={200} /></label>
-                    <label>Vai trò<select name="role">
+                    <Field label="Tiêu đề"><input name="title" required maxLength={200} /></Field>
+                    <Field label="Vai trò"><select name="role">
                         {Object.entries(roles).filter(([role]) => organization || role !== 'HOST_CLUB')
                             .map(([role, label]) => <option value={role} key={role}>{label}</option>)}
-                    </select></label>
-                    <label>Badge PNG<input type="file" accept="image/png" name="badge" required /></label>
-                    <label>Khung avatar PNG (tùy chọn)<input type="file" accept="image/png" name="frame" /></label>
-                    <button type="submit" className="v2-button" disabled={busy}>Thêm chứng chỉ</button>
+                    </select></Field>
+                    <Field label="Badge PNG"><input type="file" accept="image/png" name="badge" required /></Field>
+                    <Field label="Khung avatar PNG (tùy chọn)"><input type="file" accept="image/png" name="frame" /></Field>
+                    <Button type="submit" disabled={busy}>Thêm chứng chỉ</Button>
                 </form>
             )}
         </section>

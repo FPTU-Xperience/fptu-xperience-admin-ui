@@ -65,7 +65,7 @@ export default function CampusActivities({ clubs }) {
   const draft = row && !row.clubId && row.publicationStatus === 'DRAFT' && row.handover?.status !== 'PENDING';
 
   return (
-    <section>
+    <section className="activity-lifecycle-section">
       <h3>Hoạt động do CTSV tạo</h3>
       {error && <p role="alert">{error}</p>}
       <Field label="Hoạt động">
@@ -76,7 +76,7 @@ export default function CampusActivities({ clubs }) {
       </Field>
       <Button type="button" disabled={busy} onClick={() => setRevision((value) => value + 1)}>Tải lại</Button>
       {(!row || (draft && !row.publishAtUtc)) && (
-        <form key={row?.version || 'new'} onSubmit={(event) => {
+        <form className="activity-lifecycle-draft" key={row?.version || 'new'} onSubmit={(event) => {
           event.preventDefault();
           const f = new FormData(event.currentTarget);
           save(row ? `${base}/${row.id}` : base, row ? 'PUT' : 'POST', {
@@ -86,13 +86,13 @@ export default function CampusActivities({ clubs }) {
           }, updateRow);
         }}>
           <Field label="Tên hoạt động"><input name="title" required maxLength={200} defaultValue={row?.title} /></Field>
-          <Field label="Mô tả"><textarea name="description" required maxLength={2000} defaultValue={row?.description} /></Field>
+          <Field label="Mô tả" className="activity-lifecycle-description"><textarea name="description" required maxLength={2000} defaultValue={row?.description} /></Field>
           <Field label="Địa điểm"><input name="location" required maxLength={200} defaultValue={row?.location} /></Field>
           <Field label="Mã học kỳ"><input name="semester" required maxLength={40} defaultValue={row?.semesterId} /></Field>
           <Field label="Bắt đầu (giờ Việt Nam)"><input name="start" type="datetime-local" required defaultValue={local(row?.startTimeUtc)} /></Field>
           <Field label="Kết thúc (giờ Việt Nam)"><input name="end" type="datetime-local" required defaultValue={local(row?.endTimeUtc)} /></Field>
           <Field label="Số chỗ"><input name="capacity" type="number" min={1} max={100000} defaultValue={row?.capacity ?? ''} /></Field>
-          <Button type="submit" disabled={busy}>{row ? 'Lưu bản nháp' : 'Tạo bản nháp'}</Button>
+          <Button type="submit" variant="primary" disabled={busy}>{row ? 'Lưu bản nháp' : 'Tạo bản nháp'}</Button>
         </form>
       )}
       {row?.handover && <p>Bàn giao cho {row.handover.clubName} · {offerLabels[row.handover.status]}</p>}
@@ -132,7 +132,7 @@ export default function CampusActivities({ clubs }) {
         </>
       )}
       {reportPath && (
-        <section>
+        <section className="activity-lifecycle-section">
           <h4>Báo cáo kết thúc</h4>
           {report ? <p>{report.summary} · {report.status === 'FINALIZED' ? 'Đã chốt' : 'Bản nháp'}</p> : (
             <form onSubmit={(event) => {

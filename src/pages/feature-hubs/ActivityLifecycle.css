@@ -1,0 +1,54 @@
+@reference '../../index.css';
+
+@layer components {
+  .activity-lifecycle {
+    @apply grid min-w-0 gap-4 px-[18px] pb-5 sm:px-[22px];
+  }
+
+  .activity-lifecycle-section {
+    @apply grid min-w-0 gap-3 rounded-lg border border-border p-3 sm:p-4;
+    overflow-wrap: anywhere;
+  }
+
+  .activity-lifecycle-section > :is(h3, h4) {
+    @apply text-sm font-semibold;
+  }
+
+  .activity-lifecycle-section form {
+    @apply grid min-w-0 items-end gap-3 rounded-lg bg-[#f8f9fb] p-3;
+  }
+
+  .activity-lifecycle-section .activity-lifecycle-draft {
+    @apply sm:grid-cols-2;
+  }
+
+  .activity-lifecycle-description,
+  .activity-lifecycle-draft > .button-root {
+    grid-column: 1 / -1;
+  }
+
+  .activity-lifecycle :is(input, select, textarea) {
+    @apply w-full;
+  }
+
+  .activity-lifecycle input[type='file'] {
+    @apply h-auto py-2;
+  }
+
+  .activity-lifecycle ul {
+    @apply grid gap-2;
+  }
+
+  .activity-lifecycle :is(form, section, li) > .button-root,
+  .activity-lifecycle > .button-root {
+    @apply justify-self-start;
+  }
+
+  .activity-lifecycle-actions {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .activity-lifecycle [role='alert'] {
+    @apply rounded-lg bg-red-50 px-3 py-2 text-red-800;
+  }
+}
