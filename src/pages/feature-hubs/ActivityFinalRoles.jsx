@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Button, Field } from '../../components/ui/index.js';
 
 const labels = { PARTICIPANT: 'Người tham gia', STAFF: 'Staff', HOST: 'Host' };
 
@@ -50,8 +51,8 @@ export default function ActivityFinalRoles({ api, activityId }) {
     };
 
     return (
-        <section className="v2-activity-profile-panel">
-            <h2>Vai trò cuối cùng</h2>
+        <section className="activity-lifecycle-section">
+            <h4>Vai trò cuối cùng</h4>
             {error && <p role="alert">{error}</p>}
             {data?.locked && <p>Vai trò và kết quả đã khóa.</p>}
             {data?.available && !data.items.length && <p>Chưa có kết quả để hiển thị.</p>}
@@ -59,20 +60,20 @@ export default function ActivityFinalRoles({ api, activityId }) {
                 <div key={item.userId}>
                     <strong>{item.displayName || `Sinh viên ${item.userId}`}</strong>
                     {data.canConfirm && item.eligibleRoles.length ? (
-                        <form key={item.version || 'new'} className="v2-activity-recap-form" onSubmit={(event) => save(event, item)}>
-                            <label>Vai trò đã xác nhận
+                        <form key={item.version || 'new'} onSubmit={(event) => save(event, item)}>
+                            <Field label="Vai trò đã xác nhận">
                                 <select name="role" defaultValue={item.eligibleRoles.includes(item.role) ? item.role : ''} required disabled={busy}>
                                     <option value="">Chọn một vai trò</option>
                                     {item.eligibleRoles.map((role) => <option value={role} key={role}>{labels[role]}</option>)}
                                 </select>
-                            </label>
-                            <button type="submit" className="v2-button" disabled={busy}>Xác nhận</button>
+                            </Field>
+                            <Button type="submit" disabled={busy}>Xác nhận</Button>
                         </form>
                     ) : <p>{labels[item.role] || 'Chưa đủ dữ liệu xác minh'}</p>}
                 </div>
             ))}
-            {page > 1 && <button type="button" className="v2-button" onClick={() => setPage(page - 1)}>Trang trước</button>}
-            {data?.hasMore && <button type="button" className="v2-button" onClick={() => setPage(page + 1)}>Trang sau</button>}
+            {page > 1 && <Button type="button" onClick={() => setPage(page - 1)}>Trang trước</Button>}
+            {data?.hasMore && <Button type="button" onClick={() => setPage(page + 1)}>Trang sau</Button>}
         </section>
     );
 }

@@ -51,7 +51,7 @@ export default function ActivityRescheduleReview({ activityId }) {
   };
 
   return (
-    <section>
+    <section className="activity-lifecycle-section">
       <h4>Yêu cầu dời lịch</h4>
       {error && <p role="alert">{error}</p>}
       {data?.items.length === 0 && <p>Chưa có yêu cầu dời lịch.</p>}

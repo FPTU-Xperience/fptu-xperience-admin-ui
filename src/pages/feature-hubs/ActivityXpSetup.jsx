@@ -62,7 +62,7 @@ export default function ActivityXpSetup({ activityId, semester, activity, onSave
 
   if (row && (row.isPublished === true || row.publishAtUtc || (row.publicationStatus && row.publicationStatus !== 'DRAFT'))) return null;
   return (
-    <section>
+    <section className="activity-lifecycle-section">
       <h4>Nguồn tính điểm XP</h4>
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
