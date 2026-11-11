@@ -88,7 +88,7 @@ export default function ActivityWorkflow({ school = false, clubId: fixedClubId }
       </Panel>
     );
   return (
-    <div className="activity-workflow">
+    <div className={school ? 'activity-workflow activity-workflow-school' : 'activity-workflow'}>
       {!activity ? (
         <>
           <div className="activity-workflow-heading">
@@ -100,11 +100,46 @@ export default function ActivityWorkflow({ school = false, clubId: fixedClubId }
                   : 'Một hồ sơ xuyên suốt hai lần duyệt. Công bố là bước riêng sau duyệt kế hoạch.'}
               </p>
             </div>
-            <Button icon={Plus} disabled={!canWrite} onClick={() => setCreating(true)}>
+            <Button
+              icon={Plus}
+              variant={school ? 'primary' : 'secondary'}
+              disabled={!canWrite}
+              onClick={() => setCreating(true)}
+            >
               {school ? 'Tạo hoạt động mô phỏng' : 'Mô phỏng CLB nộp kế hoạch'}
             </Button>
           </div>
-          {rows.length ? (
+          {rows.length && school ? (
+            <ul className="activity-school-list" aria-label="Hoạt động cấp trường mô phỏng">
+              {rows.map((a) => (
+                <li key={a.id}>
+                  <Badge tone={a.state === 'COMPLETED' ? 'green' : 'orange'}>
+                    {ACTIVITY_STATES[a.state]}
+                  </Badge>
+                  <h3>{a.title}</h3>
+                  <small>{a.id} · {a.semester}</small>
+                  <dl className="activity-school-points">
+                    <div>
+                      <dt>Ngân sách thô</dt>
+                      <dd>{a.baseBudget + a.bonus}</dd>
+                    </div>
+                    <div>
+                      <dt>Chờ ghi</dt>
+                      <dd>{pendingXp(a)}</dd>
+                    </div>
+                    <div>
+                      <dt>Đã ghi mô phỏng</dt>
+                      <dd>{effectiveRaw(scope, a.id)}</dd>
+                    </div>
+                  </dl>
+                  <p>{nextAction(a.state)}</p>
+                  <Button onClick={() => choose(a.id)} aria-label={`Mở hồ sơ ${a.title}`}>
+                    Mở hồ sơ
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : rows.length ? (
             <Panel>
               <WorkflowTable
                 label="Hoạt động mô phỏng"
