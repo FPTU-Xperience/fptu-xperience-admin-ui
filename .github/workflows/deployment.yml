@@ -93,6 +93,9 @@ jobs:
       - name: Verify deployed list state with isolated API traffic
         run: node scripts/deployed-list-state-check.mjs
 
+      - name: Verify deployed capture settings with isolated API traffic
+        run: node scripts/deployed-discovery-capture-check.mjs
+
       - name: Verify deployed governance with isolated API traffic
         run: node scripts/deployed-governance-check.mjs
 

@@ -7,6 +7,7 @@ import ActivityFinalRoles from './ActivityFinalRoles.jsx';
 import ActivityClosingReportReview from './ActivityClosingReportReview.jsx';
 import ActivityXpSetup from './ActivityXpSetup.jsx';
 import ClosingDutyXpReview from './ClosingDutyXpReview.jsx';
+import CampusActivityTags, { campusActivityTagSelection } from './CampusActivityTags.jsx';
 
 const base = '/api/activities/campus';
 const utc = (value) => new Date(`${value}:00+07:00`).toISOString();
@@ -63,6 +64,11 @@ export default function CampusActivities({ clubs }) {
     setSelected(saved.id);
   };
   const draft = row && !row.clubId && row.publicationStatus === 'DRAFT' && row.handover?.status !== 'PENDING';
+  const canEditDraft = !row || (draft && !row.publishAtUtc);
+  const readTagSelection = (fields) => {
+    try { return campusActivityTagSelection(fields); }
+    catch (issue) { setError(issue.message); return null; }
+  };
 
   return (
     <section className="activity-lifecycle-section">
@@ -75,14 +81,17 @@ export default function CampusActivities({ clubs }) {
         </select>
       </Field>
       <Button type="button" disabled={busy} onClick={() => setRevision((value) => value + 1)}>Tải lại</Button>
-      {(!row || (draft && !row.publishAtUtc)) && (
+      {canEditDraft && (
         <form className="activity-lifecycle-draft" key={row?.version || 'new'} onSubmit={(event) => {
           event.preventDefault();
           const f = new FormData(event.currentTarget);
+          const tagSelection = readTagSelection(f);
+          if (!tagSelection) return;
           save(row ? `${base}/${row.id}` : base, row ? 'PUT' : 'POST', {
             title: f.get('title'), description: f.get('description'), location: f.get('location'),
             semesterId: f.get('semester'), startTimeUtc: utc(f.get('start')), endTimeUtc: utc(f.get('end')),
             capacity: f.get('capacity') ? Number(f.get('capacity')) : null, expectedVersion: row?.version,
+            tagSelection,
           }, updateRow);
         }}>
           <Field label="Tên hoạt động"><input name="title" required maxLength={200} defaultValue={row?.title} /></Field>
@@ -92,7 +101,20 @@ export default function CampusActivities({ clubs }) {
           <Field label="Bắt đầu (giờ Việt Nam)"><input name="start" type="datetime-local" required defaultValue={local(row?.startTimeUtc)} /></Field>
           <Field label="Kết thúc (giờ Việt Nam)"><input name="end" type="datetime-local" required defaultValue={local(row?.endTimeUtc)} /></Field>
           <Field label="Số chỗ"><input name="capacity" type="number" min={1} max={100000} defaultValue={row?.capacity ?? ''} /></Field>
+          <CampusActivityTags selection={row?.tagSelection} />
           <Button type="submit" variant="primary" disabled={busy}>{row ? 'Lưu bản nháp' : 'Tạo bản nháp'}</Button>
+        </form>
+      )}
+      {row && !row.clubId && !canEditDraft && (
+        <form className="activity-lifecycle-draft" key={`tags-${row.version}`} onSubmit={(event) => {
+          event.preventDefault();
+          const tagSelection = readTagSelection(new FormData(event.currentTarget));
+          if (!tagSelection) return;
+          save(`/api/activities/${row.id}/discovery-tags`, 'PUT', { tagSelection, expectedVersion: row.version },
+            (saved) => updateRow({ ...row, ...saved }));
+        }}>
+          <CampusActivityTags selection={row.tagSelection} />
+          <Button type="submit" variant="primary" disabled={busy}>Lưu tag</Button>
         </form>
       )}
       {row?.handover && <p>Bàn giao cho {row.handover.clubName} · {offerLabels[row.handover.status]}</p>}

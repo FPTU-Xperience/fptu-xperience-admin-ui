@@ -1,5 +1,5 @@
 import './SystemSettings.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Activity,
   CalendarDays,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api.js';
 import { useAction } from '../../hooks/useAction.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { Badge, Button, Field, PageHeader, Panel, StatCard } from '../../components/ui/index.js';
 
 function Toggle({ label, description, checked, onChange }) {
@@ -51,7 +52,12 @@ const DEFAULT_SETTINGS = {
 
 export function SystemSettings({ type, integrationSection = 'all', healthSection = 'all' }) {
   const run = useAction();
+  const { isAdmin } = useAuth();
   const [form, setForm] = useState(DEFAULT_SETTINGS);
+  const [capture, setCapture] = useState(null);
+  const [savedCapture, setSavedCapture] = useState(null);
+  const saveLock = useRef(false);
+  const [saving, setSaving] = useState(false);
 
   // Data stats
   const [stats, setStats] = useState({
@@ -87,6 +93,8 @@ export function SystemSettings({ type, integrationSection = 'all', healthSection
         try {
           const s = await api.admin.settings.get();
           if (s) {
+            setCapture(s.discoveryCapture ?? null);
+            setSavedCapture(s.discoveryCapture ?? null);
             setForm({
               googleDomain: s.googleDomain || 'fpt.edu.vn',
               timetableUrl: s.timetableUrl || '',
@@ -107,9 +115,27 @@ export function SystemSettings({ type, integrationSection = 'all', healthSection
 
   async function submit(e) {
     e.preventDefault();
-    await run(async () => {
-      await api.admin.settings.update(form);
-    }, 'Đã lưu cấu hình nền tảng.');
+    if (saveLock.current) return;
+    saveLock.current = true;
+    setSaving(true);
+    try {
+      await run(async () => {
+        const body = { ...form };
+        if (isAdmin && type === 'settings' && capture && capture !== savedCapture) {
+          const { version, clickEnabled, viewEnabled, viewSeconds, visiblePercent } = capture;
+          body.discoveryCapture = { clickEnabled, viewEnabled, expectedVersion: version, viewSeconds: Number(viewSeconds),
+            visiblePercent: Number(visiblePercent) };
+        }
+        const result = await api.admin.settings.update(body);
+        if (result?.discoveryCapture) {
+          setCapture(result.discoveryCapture);
+          setSavedCapture(result.discoveryCapture);
+        }
+      }, 'Đã lưu cấu hình nền tảng.');
+    } finally {
+      saveLock.current = false;
+      setSaving(false);
+    }
   }
 
   const titles = {
@@ -341,14 +367,32 @@ export function SystemSettings({ type, integrationSection = 'all', healthSection
                   </div>
                 </div>
               </Panel>
+              {isAdmin && capture && (
+                <Panel title="Ghi nhận tương tác" description="Áp dụng cho lượt mở và xem thẻ CLB, hoạt động trên ClubHub.">
+                  <div className="system-settings-content-11">
+                    <Toggle label="Ghi nhận lượt click" description="Khi sinh viên mở CLB hoặc hoạt động."
+                      checked={capture.clickEnabled} onChange={(clickEnabled) => setCapture({ ...capture, clickEnabled })} />
+                    <Toggle label="Ghi nhận lượt xem" description="Khi sinh viên dừng cuộn và vẫn thấy mục đó."
+                      checked={capture.viewEnabled} onChange={(viewEnabled) => setCapture({ ...capture, viewEnabled })} />
+                    <Field label="Thời gian tối thiểu (giây)">
+                      <input type="number" required min={1} max={30} value={capture.viewSeconds}
+                        onChange={(e) => setCapture({ ...capture, viewSeconds: e.target.value })} />
+                    </Field>
+                    <Field label="Phần mục cần hiển thị (%)">
+                      <input type="number" required min={10} max={100} value={capture.visiblePercent}
+                        onChange={(e) => setCapture({ ...capture, visiblePercent: e.target.value })} />
+                    </Field>
+                  </div>
+                </Panel>
+              )}
             </div>
           )}
 
           {/* Footer */}
           <div className="system-settings-content-13">
             <span className="system-settings-text-5">Thay đổi được ghi vào nhật ký quản trị.</span>
-            <Button type="submit" variant="primary" icon={Save}>
-              Lưu cấu hình
+            <Button type="submit" variant="primary" icon={Save} disabled={saving}>
+              {saving ? 'Đang lưu…' : 'Lưu cấu hình'}
             </Button>
           </div>
         </form>
