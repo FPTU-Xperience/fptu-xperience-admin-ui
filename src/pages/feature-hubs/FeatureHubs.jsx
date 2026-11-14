@@ -132,7 +132,7 @@ export function ActivitiesHub() {
       active={active}
     >
       {active === 'club' && (
-        <SourceSwitch realLabel="Báo cáo hoạt động" mockLabel="Action & quyết toán">
+        <SourceSwitch realLabel="Hồ sơ & báo cáo hoạt động" mockLabel="Action & quyết toán">
           {(mock) =>
             mock ? (
               <MockBoundary>

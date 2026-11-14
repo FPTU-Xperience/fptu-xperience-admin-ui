@@ -68,6 +68,13 @@ export default function WorkInbox({ overview }) {
             }
           >
             <WorkflowBody>
+              {active === 'actionable' && (
+                <WorkflowActions>
+                  <Link to="/ctsv/activities?view=club&source=api">
+                    Hồ sơ hoạt động CLB chờ duyệt <span aria-hidden="true">→</span>
+                  </Link>
+                </WorkflowActions>
+              )}
               <div className="work-inbox-filters">
                 <Field label="Tìm hồ sơ / người phụ trách">
                   <input
