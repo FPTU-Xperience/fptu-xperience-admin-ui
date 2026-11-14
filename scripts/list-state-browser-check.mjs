@@ -45,7 +45,9 @@ const server = await createServer({
         if (path.endsWith('/src/services/api.js'))
           return `export default new Proxy(function(){},{get:(_,key)=>window.__api?.[key]}); export const workflowRequest=(...a)=>window.__api.workflowRequest(...a);export const session={read:()=>({user:window.__qaUser,accessToken:'fixture'}),subscribe:()=>()=>{}};`;
         if (path.endsWith('/context/AuthContext.jsx'))
-          return 'export const useAuth=()=>({user:window.__qaUser});export const AuthProvider=({children})=>children;';
+          return `export const useAuth=()=>({user:window.__qaUser});
+            export const AuthProvider=({children})=>children;
+            export const getCampusFromUser=(user)=>user?.campusCode??null;`;
         if (path.endsWith('/context/WorkspaceContext.jsx'))
           return `export const useWorkspace=()=>({season:'FA2026',setSeason:()=>{},state:{seasons:[{id:'FA2026'}]},semesterStatus:'ready',notify:()=>{}});export const WorkspaceProvider=({children})=>children;`;
         if (path.endsWith('/workflows/WorkflowContext.jsx'))
