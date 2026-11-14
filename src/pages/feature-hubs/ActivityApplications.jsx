@@ -128,7 +128,7 @@ export default function ActivityApplications() {
     return () => {
       ticket.current++;
     };
-  }, [listIdentity, page]);
+  }, [listIdentity, page, directory.loading]);
   const open = async (id) => {
     const current = ++ticket.current;
     setError('');
@@ -163,7 +163,26 @@ export default function ActivityApplications() {
       await contracts.applications.review(detail, decision, reason, pending.current.key);
       if (current === ticket.current) {
         setConfirmation(reviewMessages[decision]);
-        setRevision((x) => x + 1);
+        setDetail(null);
+        setHistory([]);
+        setReason('');
+        pending.current = null;
+        if (clubId) {
+          setRevision((value) => value + 1);
+        } else {
+          setResult((previous) => {
+            if (previous?.identity !== listIdentity || !previous.list) return previous;
+            const items = previous.list.items.filter((row) => row.id !== detail.id);
+            return {
+              ...previous,
+              list: {
+                items,
+                totalItems: items.length,
+                totalPages: Math.ceil(items.length / pageSize),
+              },
+            };
+          });
+        }
       }
     } catch (issue) {
       if (current === ticket.current) {
