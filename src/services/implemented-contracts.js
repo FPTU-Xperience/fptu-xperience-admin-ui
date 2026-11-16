@@ -43,6 +43,7 @@ export function createImplementedContracts(api) {
     },
     applications: {
       list: async (params) => page(await api.get('/api/activity-applications', params)),
+      reviewQueue: async (params) => page(await api.get('/api/activity-applications/review-queue', params)),
       get: (id) => api.get(`/api/activity-applications/${encodeURIComponent(id)}`),
       history: (id) => api.get(`/api/activity-applications/${encodeURIComponent(id)}/history`),
       review: (application, decision, reason, key) =>

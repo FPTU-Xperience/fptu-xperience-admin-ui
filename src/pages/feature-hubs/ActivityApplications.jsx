@@ -15,10 +15,12 @@ const contracts = createImplementedContracts(api);
 export default function ActivityApplications() {
   const { user } = useAuth();
   const [clubs, setClubs] = useState([]);
+  const [clubsError, setClubsError] = useState('');
   const { clubId, setClubId, page, setPage } = useListQuery(
     { clubId: '', page: 1 },
     'applications_',
   );
+  const [status, setStatus] = useState('SUBMITTED');
   const [list, setList] = useState(null),
     [detail, setDetail] = useState(null),
     [history, setHistory] = useState([]);
@@ -33,13 +35,14 @@ export default function ActivityApplications() {
   useEffect(() => {
     let active = true;
     setClubs([]);
+    setClubsError('');
     api.clubs
       .list()
       .then((value) => {
         if (active) setClubs(Array.isArray(value) ? value : value.items || []);
       })
       .catch((issue) => {
-        if (active) setError(issue.message);
+        if (active) setClubsError(issue.message);
       });
     return () => {
       active = false;
@@ -53,19 +56,20 @@ export default function ActivityApplications() {
     setError('');
     setReason('');
     pending.current = null;
-    if (clubId)
-      contracts.applications
-        .list({ clubId, page, pageSize: 20 })
-        .then((value) => {
-          if (current === ticket.current) setList(value);
-        })
-        .catch((issue) => {
-          if (current === ticket.current) setError(issue.message);
-        });
+    const request = clubId
+      ? contracts.applications.list({ clubId, ...(status && { status }), page, pageSize: 20 })
+      : contracts.applications.reviewQueue({ page, pageSize: 20 });
+    request
+      .then((value) => {
+        if (current === ticket.current) setList(value);
+      })
+      .catch((issue) => {
+        if (current === ticket.current) setError(issue.message);
+      });
     return () => {
       ticket.current++;
     };
-  }, [clubId, page, revision, user?.id]);
+  }, [clubId, status, page, revision, user?.id]);
   const open = async (id) => {
     const current = ++ticket.current;
     setError('');
@@ -109,7 +113,7 @@ export default function ActivityApplications() {
     }
   };
   return (
-    <Panel title="Hồ sơ hoạt động CLB">
+    <Panel title="Kế hoạch hoạt động CLB">
       <div className="activity-lifecycle">
         <CampusActivities clubs={clubs} />
         <Field label="Câu lạc bộ">
@@ -118,10 +122,11 @@ export default function ActivityApplications() {
             disabled={busy}
             onChange={(e) => {
               setClubId(e.target.value);
+              setStatus('SUBMITTED');
               setPage(1);
             }}
           >
-            <option value="">Chọn CLB để tải hồ sơ</option>
+            <option value="">Tất cả CLB trong phạm vi quản lý</option>
             {clubs.map((club) => (
               <option key={club.id} value={club.id}>
                 {club.name}
@@ -129,22 +134,35 @@ export default function ActivityApplications() {
             ))}
           </select>
         </Field>
+        {clubId && (
+          <Field label="Trạng thái kế hoạch">
+            <select value={status} disabled={busy} onChange={(event) => {
+              setStatus(event.target.value);
+              setPage(1);
+            }}>
+              <option value="SUBMITTED">Chờ CTSV duyệt</option>
+              <option value="APPROVED">Đã duyệt</option>
+              <option value="">Tất cả trạng thái</option>
+            </select>
+          </Field>
+        )}
+        {clubsError && <p role="alert">Không tải được bộ lọc CLB. {clubsError}</p>}
         {clubId && <ActivityClosingPolicy key={clubId} clubId={clubId} />}
-        <p>Duyệt kế hoạch chỉ tạo hoạt động chưa công bố. Tính điểm và quyết toán đang tạm hoãn.</p>
+        <p>Duyệt kế hoạch sẽ tạo hoạt động ở trạng thái chưa công bố.</p>
         {error && <p role="alert">{error}</p>}
-        {clubId && !list && !error && <p role="status">Đang tải hồ sơ…</p>}
+        {!list && !error && <p role="status">Đang tải hồ sơ…</p>}
         {list && (
           <>
             <ul>
               {list.items.map((row) => (
                 <li key={row.id}>
                   <Button disabled={busy} onClick={() => open(row.id)}>
-                    {row.title || `Hồ sơ ${row.id}`} · {row.status}
+                    {row.title || `Hồ sơ ${row.id}`} · {clubs.find((club) => String(club.id) === String(row.clubId))?.name || `CLB #${row.clubId}`} · {row.status === 'SUBMITTED' ? 'Chờ CTSV duyệt' : row.status}
                   </Button>
                 </li>
               ))}
             </ul>
-            {!list.items.length && <p>Không có hồ sơ trong CLB này.</p>}
+            {!list.items.length && <p>{!clubId || status === 'SUBMITTED' ? 'Không có kế hoạch chờ duyệt.' : 'Không có kế hoạch phù hợp.'}</p>}
             <PageNavigation
               page={page}
               totalPages={Math.max(1, list.totalPages)}
@@ -160,6 +178,15 @@ export default function ActivityApplications() {
             </h3>
             <p>{detail.description}</p>
             <p>Mục tiêu: {detail.objective}</p>
+            {detail.staffing?.length > 0 && (
+              <ul aria-label="Phân công nội bộ">
+                {detail.staffing.map((row) => (
+                  <li key={row.userId}>
+                    {row.assignmentKind === 'HOST' ? 'Host' : 'Staff'} · {row.displayName || `#${row.userId}`} · {detail.actions.find((action) => action.clientId === row.actionClientId)?.name}
+                  </li>
+                ))}
+              </ul>
+            )}
             <p>
               {detail.period} · {detail.location} · {detail.startTimeUtc} — {detail.endTimeUtc}
             </p>
@@ -214,7 +241,7 @@ export default function ActivityApplications() {
             {detail.activityId && <ActivityXpSetup key={`xp-${detail.activityId}`} activityId={detail.activityId} semester={detail.period} />}
           </section>
         )}
-        <Button disabled={busy || !clubId} onClick={() => setRevision((x) => x + 1)}>
+        <Button disabled={busy} onClick={() => setRevision((x) => x + 1)}>
           Tải lại hồ sơ
         </Button>
       </div>
