@@ -34,6 +34,7 @@ export const featureTabs = {
   activities: [
     { id: 'club', label: 'Hoạt động CLB' },
     { id: 'bookings', label: 'Đặt địa điểm & thiết bị' },
+    { id: 'campus-maps', label: 'Sơ đồ campus' },
     { id: 'school', label: 'Hoạt động cấp trường' },
     { id: 'quests', label: 'Nhiệm vụ & chiến dịch' },
   ],
@@ -52,6 +53,7 @@ export const featureTabs = {
     { id: 'platform', label: 'Nền tảng' },
     { id: 'identity', label: 'Định danh' },
     { id: 'timetable', label: 'Thời khóa biểu' },
+    { id: 'campus-maps', label: 'Sơ đồ campus' },
   ],
 };
 export const affairsNav = [
