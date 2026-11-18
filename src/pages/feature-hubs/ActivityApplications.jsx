@@ -188,8 +188,10 @@ export default function ActivityApplications() {
               </ul>
             )}
             <p>
-              {detail.period} · {detail.location} · {detail.startTimeUtc} — {detail.endTimeUtc}
+              {detail.period} · {detail.startTimeUtc} — {detail.endTimeUtc}
             </p>
+            <p><strong>{detail.venueIds?.length ? 'Phòng đề xuất' : 'Địa điểm'}</strong> · {detail.location}</p>
+            {detail.activityTypeLabel && <p><strong>Loại hoạt động · Trụ cột XP</strong> · {detail.activityTypeLabel}</p>}
             <ul>
               {detail.actions.map((action) => (
                 <li key={action.clientId}>

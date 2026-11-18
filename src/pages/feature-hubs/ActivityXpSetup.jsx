@@ -12,6 +12,7 @@ export default function ActivityXpSetup({ activityId, semester, activity, onSave
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const pending = useRef(null);
+  const activityType = row?.tagSelection?.activityType;
   useEffect(() => {
     if (activity) { setRow(activity); return; }
     let active = true;
@@ -37,7 +38,7 @@ export default function ActivityXpSetup({ activityId, semester, activity, onSave
     const fields = new FormData(event.currentTarget);
     const body = {
       expectedVersion: row.version, policyVersion: fields.get('policy'), tier: fields.get('tier'),
-      pillarWeights: [{ pillar: fields.get('pillar'), weight: 1 }],
+      ...(activityType ? {} : { pillarWeights: [{ pillar: fields.get('pillar'), weight: 1 }] }),
     };
     const fingerprint = JSON.stringify(body);
     if (pending.current?.fingerprint !== fingerprint) pending.current = { fingerprint, key: crypto.randomUUID() };
@@ -77,10 +78,12 @@ export default function ActivityXpSetup({ activityId, semester, activity, onSave
         <Field label="Mức độ nỗ lực"><select name="tier" defaultValue={row.effortTier || 'T1'}>
           {['T1', 'T2', 'T3', 'T4', 'T5'].map((tier) => <option key={tier}>{tier}</option>)}
         </select></Field>
-        <Field label="Trụ cột XP"><select name="pillar" required defaultValue="">
+        <Field label="Trụ cột XP">{activityType ? (
+          <input value={pillars[activityType] || activityType} readOnly />
+        ) : <select name="pillar" required defaultValue="">
           <option value="">Chọn trụ cột</option>
           {Object.entries(pillars).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select></Field>
+        </select>}</Field>
         <Button type="submit" disabled={busy}>Lưu nguồn XP</Button>
       </form>}
     </section>

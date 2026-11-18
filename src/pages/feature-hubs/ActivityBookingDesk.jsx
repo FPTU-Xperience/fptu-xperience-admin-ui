@@ -5,6 +5,7 @@ import { useCampusScope } from '../../hooks/useCampusScope.js';
 import { selectedCampus } from '../../services/campus-scope.js';
 import api from '../../services/api.js';
 import { Button, Field, Modal, Panel } from '../../components/ui/index.js';
+import CampusBookingMaps, { FloorPlan, FloorPlanDialog } from './CampusBookingMaps.jsx';
 import './ActivityBookingDesk.css';
 
 const base = '/api/activity-bookings';
@@ -24,6 +25,8 @@ const issues = {
   SESSION_CHANGED: 'Phiên đã thay đổi hoặc bắt đầu. Tải lại hàng đợi.',
   INVALID_VENUE: 'Kiểm tra mã, tên, loại, sức chứa và nhập đủ cả hai tọa độ khi đặt ghim.',
   INVALID_LAYOUT: 'Kiểm tra URL ảnh HTTPS hoặc nhập đủ hai tọa độ của ghim tòa nhà.',
+  INVALID_ROOM_MAPPING: 'Kiểm tra mã phòng, tên, loại và tọa độ trong tệp danh sách.',
+  MEDIA_ATTACHMENT_REJECTED: 'Không thể xác minh ảnh đã tải lên. Kiểm tra ảnh rồi thử lại.',
 };
 const describe = (issue) => issues[issue.code] || issue.message || 'Không thể xử lý dữ liệu đặt chỗ.';
 const dateTime = (value) => new Intl.DateTimeFormat('vi-VN', {
@@ -38,6 +41,8 @@ const offsetDay = (value, days) => {
 const monday = (value) => offsetDay(value, -((new Date(`${value}T00:00:00Z`).getUTCDay() + 6) % 7));
 const thisWeek = () => monday(new Intl.DateTimeFormat('sv-SE', { timeZone: timezone }).format(new Date()));
 const venueLabel = (venues, id) => venues.find((venue) => venue.id === id)?.name || `Địa điểm #${id}`;
+const venueLabels = (venues, ids) => ids.map((id) => venueLabel(venues, id)).join(', ');
+const confirmedRooms = (row) => row.confirmedVenueIds ?? (row.confirmedVenueId ? [row.confirmedVenueId] : []);
 const equipmentLabel = (equipment, id) => equipment.find((item) => item.id === id)?.name || `Thiết bị #${id}`;
 
 function Badge({ status, children }) {
@@ -52,8 +57,10 @@ function ReviewDialog({ row, catalog, onClose, onSaved }) {
   const [cancel, setCancel] = useState(false);
   const lock = useRef(false);
   const canReview = row.canManage && !['STALE_VERSION', 'SESSION_CHANGED'].includes(error.code);
-  const wantsVenue = Boolean(row.requestedVenueId || row.requestedVenueType);
-  const preferredVenue = row.confirmedVenueId || row.requestedVenueId;
+  const requested = row.requestedVenueIds ?? (row.requestedVenueId ? [row.requestedVenueId] : []);
+  const confirmed = confirmedRooms(row);
+  const wantsVenue = requested.length > 0 || Boolean(row.requestedVenueType);
+  const preferredVenues = confirmed.length ? confirmed : requested;
   const route = `${base}/${row.id}`;
 
   useEffect(() => {
@@ -78,7 +85,7 @@ function ReviewDialog({ row, catalog, onClose, onSaved }) {
     try {
       const saved = await api.request(`${route}/decision`, {
         method: 'PUT',
-        body: { version: row.version, venueId: Number(fields.get('venue')) || null, equipment, cancel },
+        body: { version: row.version, venueIds: fields.getAll('venue').map(Number), equipment, cancel },
       });
       onSaved(saved.status === 'CANCELLED' ? 'Đã hủy yêu cầu và giải phóng tài nguyên.' : 'Đã lưu kết quả xử lý.');
     } catch (issue) {
@@ -88,8 +95,8 @@ function ReviewDialog({ row, catalog, onClose, onSaved }) {
       setBusy(false);
     }
   };
-  const isAvailable = (venue) => (venue.isBookable || venue.id === row.confirmedVenueId) && !stock?.reservedVenueIds.includes(venue.id);
-  const venues = catalog.venues.filter((venue) => venue.isBookable || venue.id === preferredVenue);
+  const isAvailable = (venue) => (venue.isBookable || confirmed.includes(venue.id)) && !stock?.reservedVenueIds.includes(venue.id);
+  const venues = catalog.venues.filter((venue) => venue.isBookable || preferredVenues.includes(venue.id));
 
   return (
     <Modal wide title={`Yêu cầu #${row.id} · ${row.activityTitle}`}
@@ -115,21 +122,19 @@ function ReviewDialog({ row, catalog, onClose, onSaved }) {
         {!cancel && (
           <fieldset key={revision} disabled={!canReview || !stock || busy}>
             <legend>Phân bổ địa điểm</legend>
-            <p><strong>Ưu tiên của CLB:</strong> {row.requestedVenueId ? venueLabel(catalog.venues, row.requestedVenueId) : row.requestedVenueType || 'Không yêu cầu địa điểm'}</p>
-            {row.venueStatus === 'CONFIRMED' && <p><strong>Đã bố trí:</strong> {venueLabel(catalog.venues, row.confirmedVenueId)}</p>}
+            <p><strong>Ưu tiên của CLB:</strong> {venueLabels(catalog.venues, requested) || row.requestedVenueType || 'Không yêu cầu địa điểm'}</p>
+            {confirmed.length > 0 && <p><strong>Đã bố trí:</strong> {venueLabels(catalog.venues, confirmed)}</p>}
             {wantsVenue && stock && canReview && (
-              <Field label="Địa điểm xác nhận" hint="Có thể bố trí địa điểm khác hoặc xử lý riêng phần thiết bị.">
-                <select name="venue" required={Boolean(row.confirmedVenueId)}
-                  defaultValue={venues.some((venue) => venue.id === preferredVenue && isAvailable(venue)) ? preferredVenue : ''}>
-                  <option value="">Không bố trí địa điểm</option>
+              <div className="booking-admin-venue-options" role="group" aria-label="Phòng xác nhận">
                   {venues.map((venue) => (
-                    <option key={venue.id} value={venue.id} disabled={!isAvailable(venue)}>
+                    <label key={venue.id} className="booking-admin-checkbox">
+                      <input type="checkbox" name="venue" value={venue.id} disabled={!isAvailable(venue)}
+                        defaultChecked={preferredVenues.includes(venue.id) && isAvailable(venue)} />
                       {[venue.name, venue.code, venue.venueType, venue.building, venue.capacity > 0 && `${venue.capacity} chỗ`,
                         !venue.isBookable ? 'Ngừng nhận đặt' : !isAvailable(venue) && 'Đã có lịch'].filter(Boolean).join(' · ')}
-                    </option>
+                    </label>
                   ))}
-                </select>
-              </Field>
+              </div>
             )}
           </fieldset>
         )}
@@ -181,26 +186,35 @@ function ReviewDialog({ row, catalog, onClose, onSaved }) {
 }
 
 function CatalogDialog({ path, editor, onClose, onSaved }) {
-  const { kind, item } = editor;
+  const { kind, item, layout } = editor;
   const isVenue = kind === 'venues';
   const isCutoff = kind === 'cutoff';
   const isLayout = kind === 'layout';
+  const sharedFloor = item && layout && item.floor !== layout.floor ? layout.floor : null;
   const [layoutType, setLayoutType] = useState(item?.floor ? 'floor' : item?.building ? 'building' : 'campus');
+  const [point, setPoint] = useState({ x: item?.planX ?? '', y: item?.planY ?? '' });
+  const [area, setArea] = useState((sharedFloor ? item.planAreasByFloor?.[sharedFloor] : item?.planArea) || '');
+  const [draft, setDraft] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const submit = async (event) => {
     event.preventDefault();
-    if (lock.current) return;
+    if (lock.current || draft) return;
     const fields = new FormData(event.currentTarget);
     const int = (key) => fields.get(key) === '' ? null : Number(fields.get(key));
     const common = { code: fields.get('code')?.trim(), name: fields.get('name')?.trim(), isBookable: fields.has('bookable') };
+    const sharedAreas = sharedFloor ? { ...item.planAreasByFloor, [sharedFloor]: area } : undefined;
+    if (sharedFloor && !area) delete sharedAreas[sharedFloor];
     const body = isCutoff ? { day: int('day'), time: `${fields.get('time')}:00` }
       : isLayout ? { building: fields.get('building')?.trim(), floor: fields.get('floor')?.trim(),
         imageUrl: fields.get('imageUrl')?.trim(), planX: fields.has('planX') ? int('planX') : null,
         planY: fields.has('planY') ? int('planY') : null }
       : isVenue ? { ...common, type: fields.get('type').trim(), building: fields.get('building').trim() || null,
-        floor: fields.get('floor').trim() || null, capacity: int('capacity'), planX: int('planX'), planY: int('planY') }
+        floor: sharedFloor ? item.floor : fields.get('floor').trim() || null, capacity: int('capacity'),
+        planX: sharedFloor ? item.planX : int('planX'), planY: sharedFloor ? item.planY : int('planY'),
+        createOnly: Boolean(layout && !item), planArea: sharedFloor ? item.planArea : layout?.imageUrl ? area : undefined,
+        planAreasByFloor: sharedAreas }
       : { ...common, quantity: int('quantity') };
     lock.current = true;
     setBusy(true);
@@ -215,9 +229,21 @@ function CatalogDialog({ path, editor, onClose, onSaved }) {
       setBusy(false);
     }
   };
+  const drawCorner = (corner) => {
+    setDraft((points) => points.length < 12 && !points.some(({ x, y }) => x === corner.x && y === corner.y)
+      ? [...points, corner] : points);
+  };
+  const finishArea = () => {
+    setArea(draft.map(({ x, y }) => `${x},${y}`).join(' '));
+    setPoint({
+      x: Math.round(draft.reduce((sum, vertex) => sum + vertex.x, 0) / draft.length),
+      y: Math.round(draft.reduce((sum, vertex) => sum + vertex.y, 0) / draft.length),
+    });
+    setDraft(null);
+  };
   const resource = isVenue ? 'địa điểm' : 'thiết bị';
   return (
-    <Modal title={isCutoff ? 'Hạn nhận yêu cầu theo tuần' : isLayout ? 'Cấu hình bản đồ và sơ đồ' : item ? `Sửa ${resource}` : `Thêm ${resource}`}
+    <Modal wide={Boolean(layout?.imageUrl)} title={isCutoff ? 'Hạn nhận yêu cầu theo tuần' : isLayout ? 'Cấu hình bản đồ và sơ đồ' : item ? `Sửa ${resource}` : `Thêm ${resource}`}
       onClose={(event) => { if (busy) event?.preventDefault(); else onClose(); }}>
       <form className="booking-admin-dialog" onSubmit={submit}>
         <fieldset disabled={busy} className="booking-admin-fields">
@@ -233,13 +259,11 @@ function CatalogDialog({ path, editor, onClose, onSaved }) {
             <>
               <Field label="Loại sơ đồ">
                 <select value={layoutType} disabled={Boolean(item)} onChange={(event) => setLayoutType(event.target.value)}>
-                  <option value="campus">Bản đồ cơ sở</option><option value="building">Ghim tòa nhà trên bản đồ</option><option value="floor">Ảnh sơ đồ tầng</option>
+                  <option value="campus">Bản đồ campus</option><option value="building">Ghim tòa nhà trên bản đồ</option>
                 </select>
               </Field>
               {layoutType !== 'campus' && <Field label="Tòa nhà" hint="Dùng cùng tên tòa như trong danh mục địa điểm.">
                 <input name="building" required maxLength={80} defaultValue={item?.building} readOnly={Boolean(item)} /></Field>}
-              {layoutType === 'floor' && <Field label="Tầng">
-                <input name="floor" required maxLength={40} defaultValue={item?.floor} readOnly={Boolean(item)} /></Field>}
               {layoutType === 'building' ? (
                 <div className="booking-admin-fields-grid">
                   <Field label="Vị trí ngang (%)"><input name="planX" type="number" min={0} max={100} defaultValue={item?.planX ?? ''} /></Field>
@@ -257,26 +281,52 @@ function CatalogDialog({ path, editor, onClose, onSaved }) {
                   <>
                     <Field label="Loại địa điểm"><input name="type" required maxLength={40} defaultValue={item?.venueType} placeholder="Phòng học, hội trường…" /></Field>
                     <Field label="Sức chứa"><input name="capacity" type="number" min={0} max={2147483647} required defaultValue={item?.capacity ?? 0} /></Field>
-                    <Field label="Tòa nhà"><input name="building" maxLength={80} defaultValue={item?.building} /></Field>
-                    <Field label="Tầng"><input name="floor" maxLength={40} defaultValue={item?.floor} /></Field>
-                    <Field label="Vị trí ngang (%)"><input name="planX" type="number" min={0} max={100} defaultValue={item?.planX ?? ''} /></Field>
-                    <Field label="Vị trí dọc (%)"><input name="planY" type="number" min={0} max={100} defaultValue={item?.planY ?? ''} /></Field>
+                    <Field label="Tòa nhà"><input name="building" maxLength={80} defaultValue={layout?.building ?? item?.building} readOnly={Boolean(layout)} /></Field>
+                    <Field label="Tầng"><input name="floor" maxLength={40} defaultValue={layout?.floor ?? item?.floor} readOnly={Boolean(layout)} /></Field>
+                    <Field label="Vị trí ngang (%)"><input name="planX" type="number" min={0} max={100} value={point.x}
+                      onChange={(event) => setPoint({ ...point, x: event.target.value })} /></Field>
+                    <Field label="Vị trí dọc (%)"><input name="planY" type="number" min={0} max={100} value={point.y}
+                      onChange={(event) => setPoint({ ...point, y: event.target.value })} /></Field>
                   </>
                 ) : <Field label="Tổng số lượng trong kho"><input name="quantity" type="number" min={0} max={2147483647} required defaultValue={item?.quantity ?? 0} /></Field>}
               </div>
-              {isVenue && <small>Để hiện ghim trên sơ đồ tầng, nhập tòa, tầng và cả hai tọa độ. Gốc tọa độ ở góc trên bên trái.</small>}
+              {isVenue && (layout?.imageUrl ? (
+                <>
+                  <div className="booking-admin-row">
+                    {draft ? (
+                      <>
+                        <Button type="button" onClick={() => setDraft(draft.slice(0, -1))} disabled={!draft.length}>Bỏ điểm cuối</Button>
+                        <Button type="button" onClick={() => setDraft(null)}>Hủy vẽ</Button>
+                        <Button type="button" onClick={finishArea} disabled={draft.length < 3}>Dùng vùng này</Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button type="button" onClick={() => setDraft([])}>{area ? 'Vẽ lại vùng phòng' : 'Vẽ vùng phòng'}</Button>
+                        {area && <Button type="button" onClick={() => setArea('')}>Bỏ vùng phòng</Button>}
+                      </>
+                    )}
+                  </div>
+                  <small role="status">{draft
+                    ? `Bấm lần lượt vào các góc trên ảnh (3–12 điểm). Đã đặt ${draft.length} điểm.`
+                    : area ? 'Phòng có vùng bấm trên sơ đồ.' : 'Vẽ vùng theo viền phòng hoặc bấm vào ảnh để đặt một ghim.'}</small>
+                  <FloorPlan imageUrl={layout.imageUrl} draft={draft}
+                    onPosition={draft ? drawCorner : area ? undefined : ({ x, y }) => setPoint({ x: Math.round(x), y: Math.round(y) })}
+                    rooms={draft ? [] : [{ code: 'room', planArea: area, planX: point.x === '' ? null : point.x,
+                      planY: point.y === '' ? null : point.y }]} />
+                </>
+              ) : <small>Để hiện ghim trên sơ đồ tầng, nhập tòa, tầng và cả hai tọa độ. Gốc tọa độ ở góc trên bên trái.</small>)}
               <label className="booking-admin-checkbox"><input type="checkbox" name="bookable" defaultChecked={item?.isBookable ?? true} /> Nhận yêu cầu từ CLB</label>
             </>
           )}
         </fieldset>
         {error && <p role="alert" className="booking-admin-notice">{error}</p>}
-        <div className="booking-admin-actions"><Button type="submit" variant="primary" busy={busy}>Lưu thay đổi</Button></div>
+        <div className="booking-admin-actions"><Button type="submit" variant="primary" busy={busy} disabled={Boolean(draft)}>Lưu thay đổi</Button></div>
       </form>
     </Modal>
   );
 }
 
-function CampusDesk({ campus }) {
+function CampusDesk({ campus, userId, mapsOnly }) {
   const [view, setView] = useState('queue');
   const [week, setWeek] = useState(thisWeek);
   const [filter, setFilter] = useState('');
@@ -296,19 +346,19 @@ function CampusDesk({ campus }) {
   };
   useEffect(() => {
     let active = true;
-    setCatalog(null);
     api.request(`${path}/catalog`).then((data) => { if (active) setCatalog({ data }); })
       .catch((issue) => { if (active) setCatalog({ error: describe(issue) }); });
     return () => { active = false; };
   }, [path, revision]);
   useEffect(() => {
+    if (mapsOnly) return undefined;
     let active = true;
     setQueue(null);
     api.request(`${path}/queue`, { params: { weekOf: week } })
       .then((data) => { if (active) setQueue({ week, data }); })
       .catch((issue) => { if (active) setQueue({ week, error: describe(issue) }); });
     return () => { active = false; };
-  }, [path, week, revision]);
+  }, [mapsOnly, path, week, revision]);
   const current = queue?.week === week ? queue : null;
   const rows = current?.data || [];
   const data = catalog?.data;
@@ -317,22 +367,22 @@ function CampusDesk({ campus }) {
   return (
     <div className="booking-admin">
       <div className="booking-admin-toolbar">
-        <div className="booking-admin-row" role="group" aria-label="Khu vực đặt chỗ">
+        {!mapsOnly && <div className="booking-admin-row" role="group" aria-label="Khu vực đặt chỗ">
           <Button icon={ClipboardList} aria-pressed={view === 'queue'} variant={view === 'queue' ? 'primary' : 'secondary'} onClick={() => setView('queue')}>Hàng đợi theo tuần</Button>
           <Button icon={Package} aria-pressed={view === 'catalog'} variant={view === 'catalog' ? 'primary' : 'secondary'} onClick={() => setView('catalog')}>Danh mục tài nguyên</Button>
-        </div>
+        </div>}
         <Button icon={RefreshCw} onClick={reload}>Tải lại</Button>
       </div>
       {notice && <p className="booking-admin-notice booking-admin-success" role="status">{notice}</p>}
       {catalog?.error && <p className="booking-admin-notice" role="alert">{catalog.error}</p>}
       {!catalog && <p role="status">Đang tải danh mục cơ sở…</p>}
-      {data && <div className="booking-admin-policy">
+      {data && !mapsOnly && <div className="booking-admin-policy">
         <Timer size={23} aria-hidden="true" />
         <div><strong>Hạn nhận cho tuần diễn ra phiên</strong>
           <p>{cutoff ? `${weekdays[cutoff.cutoffDay - 1]}, ${cutoff.cutoffTime.slice(0, 5)} của tuần liền trước (giờ Việt Nam)` : 'Cơ sở chưa cấu hình hạn nhận.'}</p></div>
         <Button onClick={() => setEditor({ kind: 'cutoff', item: cutoff })}>Cấu hình hạn nhận</Button>
       </div>}
-      {view === 'queue' ? (
+      {mapsOnly ? data && <CampusBookingMaps campus={campus} data={data} setEditor={setEditor} /> : view === 'queue' ? (
         <section className="booking-admin-queue" aria-label="Hàng đợi theo tuần">
           <div className="booking-admin-toolbar booking-admin-week">
             <div className="booking-admin-row">
@@ -370,7 +420,7 @@ function CampusDesk({ campus }) {
                       <h3>{row.activityTitle}</h3>
                       <p>{row.clubName} · Yêu cầu #{row.id} · Phiên #{row.sessionId}</p>
                       <p>{dateTime(row.startsAtUtc)} – {dateTime(row.endsAtUtc)}</p>
-                      <p>{venueStatuses[row.venueStatus]}{row.confirmedVenueId && data && ` · ${venueLabel(data.venues, row.confirmedVenueId)}`} · {row.equipment.length} loại thiết bị</p>
+                      <p>{venueStatuses[row.venueStatus]}{confirmedRooms(row).length > 0 && data && ` · ${venueLabels(data.venues, confirmedRooms(row))}`} · {row.equipment.length} loại thiết bị</p>
                       <Button variant={row.canManage ? 'primary' : 'secondary'} disabled={!data} onClick={() => setOpen(row)}>{row.canManage ? 'Xử lý yêu cầu' : 'Xem kết quả'}</Button>
                     </article>
                   ))}
@@ -395,36 +445,28 @@ function CampusDesk({ campus }) {
               )) : <p className="booking-admin-empty">Danh mục {title.toLowerCase()} đang trống.</p>}
             </section>
           ))}
-          <section>
-            <header className="booking-admin-toolbar"><h3><Building2 size={20} /> Bản đồ và sơ đồ</h3>
-              <Button icon={Plus} onClick={() => setEditor({ kind: 'layout' })}>Thêm cấu hình</Button></header>
-            {(data.layouts || []).filter((item) => item.imageUrl || item.planX != null).map((item) => (
-              <article key={JSON.stringify([item.building, item.floor])} className="booking-admin-toolbar">
-                <div><strong>{!item.building ? 'Bản đồ cơ sở' : item.floor ? `${item.building} · Tầng ${item.floor}` : `Ghim ${item.building}`}</strong>
-                  <p>{item.imageUrl ? 'Đã cấu hình ảnh' : `${item.planX}% ngang · ${item.planY}% dọc`}</p></div>
-                <Button onClick={() => setEditor({ kind: 'layout', item })}>Chỉnh sửa</Button>
-              </article>
-            ))}
-            <p className="booking-admin-empty">CLB có thể chọn trong danh sách khi sơ đồ hoặc vị trí ghim chưa được cấu hình.</p>
-          </section>
         </div>
       )}
       {open && data && <ReviewDialog key={open.version} row={open} catalog={data} onClose={() => {
         setOpen(null);
         reload();
       }} onSaved={saved} />}
-      {editor && <CatalogDialog path={path} editor={editor} onClose={() => setEditor(null)} onSaved={saved} />}
+      {editor?.kind === 'floor-plan'
+        ? <FloorPlanDialog path={path} editor={editor} userId={userId} describe={describe} onClose={() => setEditor(null)} onSaved={saved} />
+        : editor && <CatalogDialog path={path} editor={editor} onClose={() => setEditor(null)} onSaved={saved} />}
     </div>
   );
 }
 
-export default function ActivityBookingDesk() {
+export default function ActivityBookingDesk({ mapsOnly = false }) {
   const { user } = useAuth();
   const scope = useCampusScope(user);
   const [choice, setChoice] = useState('');
   const campus = selectedCampus(scope.data, choice);
   return (
-    <Panel title="Đặt địa điểm và thiết bị" description="Xử lý yêu cầu của CLB theo tuần diễn ra phiên, quản lý phòng và thiết bị theo cơ sở.">
+    <Panel title={mapsOnly ? 'Sơ đồ và phòng' : 'Đặt địa điểm và thiết bị'}
+      description={mapsOnly ? 'Tải ảnh theo tầng và gắn vị trí phòng để CLB chọn khi tạo booking.'
+        : 'Xử lý yêu cầu của CLB theo tuần diễn ra phiên, quản lý phòng và thiết bị theo cơ sở.'}>
       <div className="booking-admin booking-admin-body">
         {scope.error ? (
           <div className="booking-admin-row">
@@ -433,13 +475,13 @@ export default function ActivityBookingDesk() {
           </div>
         ) : !scope.data ? <p className="booking-admin-notice" role="status">Đang kiểm tra quyền quản lý cơ sở…</p> : (
           <>
-            <Field label="Cơ sở" className="booking-admin-filter">
+            <Field label={mapsOnly ? 'Campus' : 'Cơ sở'} className="booking-admin-filter">
               <select value={campus} disabled={!scope.data.canSelectCampus} onChange={(event) => setChoice(event.target.value)}>
-                <option value="">Chọn cơ sở để xem yêu cầu</option>
+                <option value="">{mapsOnly ? 'Chọn campus' : 'Chọn cơ sở để xem yêu cầu'}</option>
                 {scope.data.campuses.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
               </select>
             </Field>
-            {campus && <CampusDesk key={`${user.id}:${campus}`} campus={campus} />}
+            {campus && <CampusDesk key={`${user.id}:${campus}:${mapsOnly}`} campus={campus} userId={user.id} mapsOnly={mapsOnly} />}
           </>
         )}
       </div>

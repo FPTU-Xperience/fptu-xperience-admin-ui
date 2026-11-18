@@ -153,6 +153,7 @@ export function ActivitiesHub() {
         </MockBoundary>
       )}
       {active === 'bookings' && <ActivityBookingDesk />}
+      {active === 'campus-maps' && <ActivityBookingDesk mapsOnly />}
       {active === 'quests' && <Quests />}
     </FeatureWorkspace>
   );
@@ -286,11 +287,11 @@ export function ConfigurationHub() {
       tabs={tabs}
       active={active}
     >
-      <SystemSettings
+      {active === 'campus-maps' ? <ActivityBookingDesk mapsOnly /> : <SystemSettings
         key={active}
         type={active === 'platform' ? 'settings' : 'integrations'}
         integrationSection={active}
-      />
+      />}
     </FeatureWorkspace>
   );
 }
