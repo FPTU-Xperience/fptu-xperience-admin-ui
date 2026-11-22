@@ -88,7 +88,7 @@ export function DeclarationsQueue() {
       const res = await api.studentAffairs.declarations.list(params);
       if (ticket !== requestVersion.current) return;
       setDeclarations((Array.isArray(res) ? res : res?.items || []).map(mapDeclaration));
-      setTotalPages(res?.totalPages || 1);
+      setTotalPages(res?.pagination?.totalPages || res?.totalPages || 1);
     } catch (err) {
       if (ticket !== requestVersion.current) return;
       console.error('Failed to fetch declarations:', err);
