@@ -572,6 +572,7 @@ export const api = {
     // Declarations queue
     declarations: {
       list: (params) => api.get('/api/v1/student-affairs/declarations', params),
+      get: (id) => api.get(`/api/v1/declarations/${encodeURIComponent(id)}`),
       review: async (id, payload) => {
         const digest = await crypto.subtle.digest(
           'SHA-256',

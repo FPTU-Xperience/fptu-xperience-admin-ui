@@ -22,3 +22,23 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+
+      - name: Install browser validation dependencies
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+      - name: Verify referral review, current version and retry guards
+        env:
+          UI_SMOKE_ONLY_PRODUCT: '1'
+        run: |
+          export CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          node scripts/ui-smoke.mjs
+
+      - name: Save declaration referral screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-declaration-referral
+          path: |
+            .qa/baseline/declaration-referral-*.png
+          if-no-files-found: ignore

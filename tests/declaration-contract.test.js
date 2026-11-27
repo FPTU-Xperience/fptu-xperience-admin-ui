@@ -2,6 +2,33 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mapDeclaration, declarationReview } from '../src/utils/declaration-contract.js';
 
+test('club referrals show their actual stage and cannot be finalized before forwarding', () => {
+  const source = {
+    referringClubId: 7,
+    status: 'SUBMITTED',
+    clubReviewStatus: 'PENDING',
+    ctsvSubmissionStatus: 'NOT_SUBMITTED',
+  };
+  assert.equal(mapDeclaration(source).canFinalReview, false);
+  const forwarded = mapDeclaration({
+    ...source,
+    clubReviewStatus: 'APPROVED',
+    ctsvSubmissionStatus: 'SUBMITTED',
+    capabilities: { canFinalReview: true },
+    clubReviewReason: 'Verified at club',
+    clubReviewedBy: 10,
+    ctsvSubmittedBy: 11,
+  });
+  assert.equal(forwarded.canFinalReview, true);
+  assert.match(forwarded.referenceLabel, /#7/);
+  assert.equal(forwarded.clubReviewReason, 'Verified at club');
+  assert.match(forwarded.referenceStateLabel, /chuyển CTSV/);
+  assert.equal(
+    mapDeclaration({ ...source, capabilities: { canFinalReview: false } }).canFinalReview,
+    false,
+  );
+});
+
 test('versioned canonical declaration is displayed without fabricating a score or public evidence URL', () => {
   const mapped = mapDeclaration({
     id: 'c1',
