@@ -5,6 +5,8 @@ import CertificateDefinitions from './CertificateDefinitions.jsx';
 import CampusActivityOperations from './CampusActivityOperations.jsx';
 import ActivityFinalRoles from './ActivityFinalRoles.jsx';
 import ActivityClosingReportReview from './ActivityClosingReportReview.jsx';
+import ActivityPostponement from './ActivityPostponement.jsx';
+import RawFundingPanel from './RawFundingPanel.jsx';
 import ActivityXpSetup from './ActivityXpSetup.jsx';
 import ClosingDutyXpReview from './ClosingDutyXpReview.jsx';
 import CampusActivityTags, { campusActivityTagSelection } from './CampusActivityTags.jsx';
@@ -24,7 +26,7 @@ export default function CampusActivities({ clubs }) {
   const lock = useRef(false);
   const pending = useRef(null);
   const row = rows.find((item) => item.id === selected);
-  const reportPath = row && !row.clubId && row.status === 'Completed' ? `${base}/${row.id}/report` : null;
+  const reportPath = row && !row.clubId && !row.fundingReservationId && row.status === 'Completed' ? `${base}/${row.id}/report` : null;
 
   useEffect(() => {
     let active = true;
@@ -64,7 +66,7 @@ export default function CampusActivities({ clubs }) {
     setSelected(saved.id);
   };
   const draft = row && !row.clubId && row.publicationStatus === 'DRAFT' && row.handover?.status !== 'PENDING';
-  const canEditDraft = !row || (draft && !row.publishAtUtc);
+  const canEditDraft = !row || (draft && !row.publishAtUtc && !row.fundingReservationId);
   const readTagSelection = (fields) => {
     try { return campusActivityTagSelection(fields); }
     catch (issue) { setError(issue.message); return null; }
@@ -73,6 +75,7 @@ export default function CampusActivities({ clubs }) {
   return (
     <section className="activity-lifecycle-section">
       <h3>Hoạt động do CTSV tạo</h3>
+      <details><summary>Quỹ điểm thô hoạt động cấp cơ sở</summary><RawFundingPanel clubId={0} /></details>
       {error && <p role="alert">{error}</p>}
       <Field label="Hoạt động">
         <select value={selected ?? ''} disabled={busy} onChange={(event) => setSelected(Number(event.target.value) || null)}>
@@ -91,6 +94,7 @@ export default function CampusActivities({ clubs }) {
             title: f.get('title'), description: f.get('description'), location: f.get('location'),
             semesterId: f.get('semester'), startTimeUtc: utc(f.get('start')), endTimeUtc: utc(f.get('end')),
             capacity: f.get('capacity') ? Number(f.get('capacity')) : null, expectedVersion: row?.version,
+            rawBudget: Number(f.get('rawBudget')),
             tagSelection,
           }, updateRow);
         }}>
@@ -101,6 +105,7 @@ export default function CampusActivities({ clubs }) {
           <Field label="Bắt đầu (giờ Việt Nam)"><input name="start" type="datetime-local" required defaultValue={local(row?.startTimeUtc)} /></Field>
           <Field label="Kết thúc (giờ Việt Nam)"><input name="end" type="datetime-local" required defaultValue={local(row?.endTimeUtc)} /></Field>
           <Field label="Số chỗ"><input name="capacity" type="number" min={1} max={100000} defaultValue={row?.capacity ?? ''} /></Field>
+          <Field label="Dự toán điểm thô"><input name="rawBudget" type="number" min="0.0001" step="0.0001" max="1000000000" required defaultValue={row?.rawBudget ?? ''} /></Field>
           <CampusActivityTags selection={row?.tagSelection} />
           <Button type="submit" variant="primary" disabled={busy}>{row ? 'Lưu bản nháp' : 'Tạo bản nháp'}</Button>
         </form>
@@ -121,8 +126,12 @@ export default function CampusActivities({ clubs }) {
       {row && <CertificateDefinitions key={row.id} api={api} activityId={row.id} organization encode={(value) => value} />}
       {row && <ActivityXpSetup key={`xp-${row.id}`} activity={row} activityId={row.id} semester={row.semesterId} onSaved={updateRow} />}
       {row && !row.clubId && <CampusActivityOperations key={`operations-${row.id}`} api={api} activityId={row.id} encode={(value) => value} />}
-      {row?.clubId > 0 && <ActivityClosingReportReview key={`club-report-${row.id}`} activityId={row.id} />}
+      {row && (row.clubId > 0 || row.fundingReservationId) && <ActivityClosingReportReview key={`club-report-${row.id}`} activityId={row.id} funded={Boolean(row.fundingReservationId)} />}
+      {row && <ActivityPostponement key={`postpone-${row.id}-${row.version}`} api={api} activityId={row.id} onChanged={(saved) => updateRow({ ...row, ...saved })} />}
       {reportPath && <ActivityFinalRoles key={`roles-${row.id}-${report?.version || 'pending'}`} api={api} activityId={row.id} />}
+      {row?.fundingReservationId && !row.clubId && <ActivityFinalRoles key={`funded-roles-${row.id}`} api={api} activityId={row.id} />}
+      {draft && row.rawBudget > 0 && !row.fundingReservationId && <Button type="button" disabled={busy || !row.policyVersion} onClick={() =>
+        save(`${base}/${row.id}/funding-approval`, 'POST', { expectedVersion: row.version }, updateRow)}>Duyệt mở và giữ quỹ điểm thô</Button>}
       {draft && (
         <>
           {!row.handover && !row.publishAtUtc && <form onSubmit={(event) => {

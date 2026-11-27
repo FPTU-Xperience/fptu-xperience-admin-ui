@@ -50,6 +50,7 @@ export default function ExperiencePolicyPanel({ benchmarkId, onChanged, historyO
               environment: 'PROJECT',
               scope,
               cancellationRule: 'REVERSE_SOURCE_INVALIDATION',
+              indexFormulaVersion: 'ERI_MEAN_PIELOU_LINEAR_W_V2',
               ...(effectiveAt
                 ? { effectiveAt: new Date(`${effectiveAt}:00+07:00`).toISOString() }
                 : {}),
@@ -91,6 +92,7 @@ export default function ExperiencePolicyPanel({ benchmarkId, onChanged, historyO
                   {version.effectiveAt}
                 </p>
                 <p>{version.approvalBasis}</p>
+                <p>{version.indexFormulaVersion === 'ERI_MEAN_PIELOU_LINEAR_W_V2' ? 'Hệ số +1: W tuyến tính có trần' : 'Hệ số +1: công thức M của snapshot cũ'}</p>
                 <small>Phiên bản {version.policyVersion}</small>
               </article>
             ))}
@@ -110,6 +112,7 @@ export default function ExperiencePolicyPanel({ benchmarkId, onChanged, historyO
                     <option value="CUMULATIVE">Tích lũy</option>
                   </select>
                 </Field>
+                <p>Phiên bản mới dùng W = 1 + 0,30 × min(max(0, S7) / T7, 1). T7 là ngưỡng +1; chỉ sáu trục được đưa vào D và J. Các snapshot cũ giữ công thức đã duyệt.</p>
                 <Field label="Có hiệu lực từ (giờ Việt Nam, để trống dùng thời điểm phê duyệt)">
                   <input
                     type="datetime-local"

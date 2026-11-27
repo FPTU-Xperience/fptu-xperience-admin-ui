@@ -8,6 +8,7 @@ test('club referrals show their actual stage and cannot be finalized before forw
     status: 'SUBMITTED',
     clubReviewStatus: 'PENDING',
     ctsvSubmissionStatus: 'NOT_SUBMITTED',
+    version: 'current-server-version',
   };
   assert.equal(mapDeclaration(source).canFinalReview, false);
   const forwarded = mapDeclaration({
@@ -27,6 +28,13 @@ test('club referrals show their actual stage and cannot be finalized before forw
     mapDeclaration({ ...source, capabilities: { canFinalReview: false } }).canFinalReview,
     false,
   );
+});
+
+test('historical declarations cannot receive decisions or display a preview as ledger XP', () => {
+  const pending = mapDeclaration({ status: 'Submitted', sourceNamespace: 'LEGACY_DECLARATION', isAuthoritative: false, canUpgradeLegacy: true });
+  assert.equal(pending.canFinalReview, false);
+  assert.throws(() => declarationReview(pending, 'APPROVED', 'Historical record'));
+  assert.equal(mapDeclaration({ status: 'Approved', isAuthoritative: false, rawPoints: 42 }).awardedScore, null);
 });
 
 test('versioned canonical declaration is displayed without fabricating a score or public evidence URL', () => {

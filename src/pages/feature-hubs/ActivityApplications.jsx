@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { Button, Field, Panel } from '../../components/ui/index.js';
 import { PageNavigation } from '../../components/operations/operation-state/OperationState.jsx';
 import ActivityRescheduleReview from './ActivityRescheduleReview.jsx';
+import ActivityPostponement from './ActivityPostponement.jsx';
 import ActivityClosingReportReview, { ActivityClosingPolicy } from './ActivityClosingReportReview.jsx';
 import CampusActivities from './CampusActivities.jsx';
 import ActivityXpSetup from './ActivityXpSetup.jsx';
@@ -239,6 +240,7 @@ export default function ActivityApplications() {
               ))}
             </ul>
             {detail.activityId && <ActivityRescheduleReview key={detail.activityId} activityId={detail.activityId} />}
+            {detail.activityId && <ActivityPostponement key={`postpone-${detail.activityId}`} api={api} activityId={detail.activityId} />}
             {detail.activityId && <ActivityClosingReportReview key={`report-${detail.activityId}`} activityId={detail.activityId} />}
             {detail.activityId && <ActivityXpSetup key={`xp-${detail.activityId}`} activityId={detail.activityId} semester={detail.period} />}
           </section>

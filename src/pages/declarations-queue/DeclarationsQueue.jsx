@@ -494,6 +494,9 @@ export function DeclarationsQueue() {
               )}
 
               {/* Review form — only for SUBMITTED */}
+              {review.sourceNamespace === 'LEGACY_DECLARATION' && <p className="declarations-queue-description-5">
+                {review.canUpgradeLegacy ? 'Hồ sơ cũ đang chờ sinh viên bổ sung học kỳ và minh chứng riêng tư trên ClubHub. Chưa thể duyệt hoặc ghi điểm.' : 'Hồ sơ lịch sử chỉ đọc. Không tính lại kết quả cũ vào sổ điểm hiện tại.'}
+              </p>}
               {review.evidenceRefs?.map((id, index) => (
                 <Button
                   type="button"

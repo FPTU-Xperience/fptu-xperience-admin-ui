@@ -23,11 +23,11 @@ export default function ActivityXpSetup({ activityId, semester, activity, onSave
   useEffect(() => {
     if (!semester) return;
     let active = true;
-    const base = '/api/v1/student-affairs/benchmarks';
-    api.request(base).then((rows) => Promise.all(rows
-      .filter((item) => String(item.semesterCode).toUpperCase() === String(semester).toUpperCase())
-      .map((item) => api.request(`${base}/${item.id}/policy`))))
-      .then((items) => { if (active) setPolicies(items.flatMap((item) => item.versions || []).filter((item) => item.scope === 'PERIOD')); })
+    api.request(`/api/v1/semesters/${encodeURIComponent(semester)}/approved-experience-policies`)
+      .then((value) => {
+        if (!Array.isArray(value?.items)) throw new Error('Danh sách chính sách không hợp lệ.');
+        if (active) setPolicies(value.items);
+      })
       .catch((issue) => { if (active) setError(issue.message); });
     return () => { active = false; };
   }, [semester]);
@@ -61,7 +61,7 @@ export default function ActivityXpSetup({ activityId, semester, activity, onSave
     }
   };
 
-  if (row && (row.isPublished === true || row.publishAtUtc || (row.publicationStatus && row.publicationStatus !== 'DRAFT'))) return null;
+  if (row && (row.fundingReservationId || row.isPublished === true || row.publishAtUtc || (row.publicationStatus && row.publicationStatus !== 'DRAFT'))) return null;
   return (
     <section className="activity-lifecycle-section">
       <h4>Nguồn tính điểm XP</h4>
@@ -69,11 +69,9 @@ export default function ActivityXpSetup({ activityId, semester, activity, onSave
       {notice && <p role="status">{notice}</p>}
       {row && <form key={row.version} onSubmit={save}>
         <Field label="Chính sách XP đã duyệt">
-          <input name="policy" list={`xp-policies-${activityId}`} defaultValue={row.policyVersion || ''} required
-            maxLength={36} placeholder="Chọn hoặc nhập mã chính sách" />
-          <datalist id={`xp-policies-${activityId}`}>{policies.map((policy) => (
-            <option key={policy.policyVersion} value={policy.policyVersion}>{policy.semesterId} · {policy.environment}</option>
-          ))}</datalist>
+          <select name="policy" defaultValue={row.policyVersion || ''} required disabled={busy}>
+            <option value="">Chọn chính sách có hiệu lực</option>{policies.map(policy => <option key={policy.policyVersion} value={policy.policyVersion}>{policy.semesterId} · Phê duyệt {new Date(policy.approvedAt).toLocaleString('vi-VN')}</option>)}
+          </select>
         </Field>
         <Field label="Mức độ nỗ lực"><select name="tier" defaultValue={row.effortTier || 'T1'}>
           {['T1', 'T2', 'T3', 'T4', 'T5'].map((tier) => <option key={tier}>{tier}</option>)}

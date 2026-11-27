@@ -1,4 +1,5 @@
 import ClubViceReview from './ClubViceReview.jsx';
+import RawFundingPanel from '../feature-hubs/RawFundingPanel.jsx';
 import { isCTSV } from '../../utils/access.js';
 import { useListQuery, usePageBound } from '../../hooks/useListQuery.js';
 import './ClubDetail.css';
@@ -32,6 +33,7 @@ export const clubDetailTabs = [
   { id: 'activities', label: 'Hoạt động' },
   { id: 'requests', label: 'Hồ sơ & yêu cầu' },
   { id: 'leadership', label: 'Lãnh đạo' },
+  { id: 'raw-funding', label: 'Quỹ điểm thô' },
 ];
 
 export default function ClubDetail() {
@@ -136,6 +138,7 @@ function ClubRecord({ clubId }) {
                 </>
               )}
               {active === 'members' && <ClubMembers clubId={clubId} />}
+              {active === 'raw-funding' && <RawFundingPanel key={clubId} clubId={clubId} />}
               {active === 'reports' && (
                 <ClubReports reportScope="club" clubId={clubId} clubName={club.name} />
               )}
@@ -187,6 +190,7 @@ const descriptions = {
   activities: 'Xét duyệt báo cáo hoạt động của CLB.',
   requests: 'Xét duyệt đề nghị giải thể và chuyển chủ nhiệm.',
   leadership: 'Theo dõi lãnh đạo và xét duyệt hồ sơ chuyển chủ nhiệm.',
+  'raw-funding': 'Cấp quỹ, theo dõi phân bổ và quyết toán điểm thô theo học kỳ.',
 };
 function ClubMembers({ clubId }) {
   const { user } = useAuth();
