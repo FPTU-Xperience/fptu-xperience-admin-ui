@@ -5,7 +5,7 @@ export function mapDeclaration(row) {
   return {
     ...row,
     canFinalReview:
-      status === 'SUBMITTED' && (row.capabilities?.canFinalReview ?? !row.referringClubId),
+      status === 'SUBMITTED' && row.isAuthoritative !== false && Boolean(row.version) && (row.capabilities?.canFinalReview ?? !row.referringClubId),
     referenceStateLabel: row.referringClubId
       ? row.clubReviewStatus === 'APPROVED' && row.ctsvSubmissionStatus === 'SUBMITTED'
         ? 'CLB đã thông qua và chuyển CTSV'
@@ -14,7 +14,7 @@ export function mapDeclaration(row) {
     status: { REVISIONREQUESTED: 'NEED_CLARIFICATION' }[status] || status,
     activityName: row.title || row.activityName,
     studentName: row.studentName || (row.userId ? `Sinh viên #${row.userId}` : ''),
-    awardedScore: row.status?.toUpperCase() === 'APPROVED' ? row.rawPoints : null,
+    awardedScore: row.status?.toUpperCase() === 'APPROVED' && row.isAuthoritative !== false && row.version ? row.rawPoints : null,
     referenceLabel: row.referringClubId
       ? `Tham chiếu CLB #${row.referringClubId}`
       : row.isOutsideClub === true || ['EXTERNAL', 'REAL_WORLD'].includes(row.sourceType)
@@ -34,11 +34,8 @@ export function declarationReview(row, decision, reason, attributes) {
     REJECTED: 'REJECT',
     NEED_CLARIFICATION: 'REQUEST_REVISION',
   };
-  if (!row.version)
-    return {
-      decision: decision === 'NEED_CLARIFICATION' ? 'REVISIONREQUESTED' : decision,
-      reviewNote: reason,
-    };
+  if (!row.version || row.isAuthoritative === false)
+    throw new Error('Hồ sơ cũ cần được sinh viên bổ sung học kỳ và minh chứng riêng tư trước khi xét duyệt.');
   if (!decisions[decision]) throw new Error('Quyết định không hợp lệ.');
   if (decision === 'APPROVED' && !attributes)
     throw new Error('Xác minh thuộc tính đóng góp trước khi duyệt.');
