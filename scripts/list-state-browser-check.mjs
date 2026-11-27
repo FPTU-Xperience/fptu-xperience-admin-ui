@@ -48,8 +48,6 @@ const server = await createServer({
           return 'export const useAuth=()=>({user:window.__qaUser});export const AuthProvider=({children})=>children;';
         if (path.endsWith('/context/WorkspaceContext.jsx'))
           return `export const useWorkspace=()=>({season:'FA2026',setSeason:()=>{},state:{seasons:[{id:'FA2026'}]},semesterStatus:'ready',notify:()=>{}});export const WorkspaceProvider=({children})=>children;`;
-        if (path.endsWith('/workflows/WorkflowContext.jsx'))
-          return `export const useWorkflow=()=>({scope:{},state:{},semester:'FA2026',usesWorkspaceSemester:true,canWrite:false});export const WorkflowProvider=({children})=>children;`;
       },
       configureServer(vite) {
         vite.middlewares.use(async (req, res, next) => {

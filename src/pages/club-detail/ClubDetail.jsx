@@ -8,14 +8,9 @@ import { ArrowLeft, Pencil, RefreshCw } from 'lucide-react';
 import api from '../../services/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useOperationQuery } from '../../hooks/useOperationQuery.js';
-import { useWorkflow } from '../../workflows/WorkflowContext.jsx';
 import FeatureWorkspace, {
   useFeatureView,
 } from '../../components/workflow/feature-workspace/FeatureWorkspace.jsx';
-import MockBoundary from '../../components/workflow/mock-boundary/MockBoundary.jsx';
-import ActivityWorkflow from '../../components/workflow/activity-workflow/ActivityWorkflow.jsx';
-import LeadershipWorkflow from '../../components/workflow/leadership-workflow/LeadershipWorkflow.jsx';
-import BonusWorkflow from '../../components/workflow/bonus-workflow/BonusWorkflow.jsx';
 import {
   WorkflowActions,
   WorkflowBody,
@@ -29,7 +24,6 @@ import { Badge, Button, Field, Panel } from '../../components/ui/index.js';
 import { ClubForm, mapClubsFromApi } from '../clubs/Clubs.jsx';
 import { ClubReports } from '../club-reports/ClubReports.jsx';
 import { ClubRequests } from '../club-requests/ClubRequests.jsx';
-import { SourceSwitch } from '../feature-hubs/FeatureHubs.jsx';
 
 export const clubDetailTabs = [
   { id: 'overview', label: 'Tổng quan' },
@@ -37,8 +31,7 @@ export const clubDetailTabs = [
   { id: 'reports', label: 'Báo cáo học kỳ' },
   { id: 'activities', label: 'Hoạt động' },
   { id: 'requests', label: 'Hồ sơ & yêu cầu' },
-  { id: 'leadership', label: 'Lãnh đạo & kế nhiệm' },
-  { id: 'bonus', label: 'Ngân sách điểm' },
+  { id: 'leadership', label: 'Lãnh đạo' },
 ];
 
 export default function ClubDetail() {
@@ -148,17 +141,7 @@ function ClubRecord({ clubId }) {
               )}
               {active === 'requests' && <ClubRequests clubId={clubId} />}
               {active === 'activities' && (
-                <SourceSwitch>
-                  {(mock) =>
-                    mock ? (
-                      <ClubScenario club={club}>
-                        <ActivityWorkflow clubId={`mock-club:${clubId}`} />
-                      </ClubScenario>
-                    ) : (
-                      <ClubReports reportScope="activity" clubId={clubId} clubName={club.name} />
-                    )
-                  }
-                </SourceSwitch>
+                <ClubReports reportScope="activity" clubId={clubId} clubName={club.name} />
               )}
               {active === 'leadership' && (
                 <>
@@ -171,18 +154,7 @@ function ClubRecord({ clubId }) {
                       </Link>
                     </WorkflowBody>
                   </Panel>
-                  <ClubScenario club={club}>
-                    <LeadershipWorkflow clubId={`mock-club:${clubId}`} />
-                  </ClubScenario>
                 </>
-              )}
-              {active === 'bonus' && (
-                <ClubScenario club={club}>
-                  <BonusWorkflow
-                    clubId={`mock-club:${clubId}`}
-                    activityPath={`${root}?view=activities&source=mock`}
-                  />
-                </ClubScenario>
               )}
               {editing && (
                 <Panel title="Cập nhật hồ sơ">
@@ -212,35 +184,10 @@ function ClubRecord({ clubId }) {
 const descriptions = {
   members: 'Tra cứu thành viên, vai trò và trạng thái.',
   reports: 'Xét duyệt báo cáo đầu kỳ và cuối kỳ của CLB.',
-  activities: 'Duyệt hồ sơ hoạt động; mô phỏng action và quyết toán.',
+  activities: 'Xét duyệt báo cáo hoạt động của CLB.',
   requests: 'Xét duyệt đề nghị giải thể và chuyển chủ nhiệm.',
-  leadership: 'Theo dõi chủ nhiệm và mô phỏng đề cử kế nhiệm.',
-  bonus: 'Mô phỏng cấp, phân bổ và hoàn ngân sách điểm thô.',
+  leadership: 'Theo dõi lãnh đạo và xét duyệt hồ sơ chuyển chủ nhiệm.',
 };
-function ClubScenario({ club, children }) {
-  const { scope, command, canWrite } = useWorkflow();
-  const exists = scope.clubs.some((row) => row.id === `mock-club:${club.id}`);
-  return (
-    <MockBoundary>
-      <Panel title={`Mô phỏng riêng · ${club.name}`}>
-        <WorkflowBody>
-          <p>Thành viên và ngân sách ở đây là dữ liệu mô phỏng.</p>
-          {!exists && (
-            <Button
-              disabled={!canWrite}
-              onClick={() =>
-                command('REGISTER_CLUB_SCENARIO', { sourceClubId: club.id, name: club.name })
-              }
-            >
-              Khởi tạo mô phỏng CLB này
-            </Button>
-          )}
-        </WorkflowBody>
-      </Panel>
-      {exists && children}
-    </MockBoundary>
-  );
-}
 function ClubMembers({ clubId }) {
   const { user } = useAuth();
   const { search, setSearch, page, setPage } = useListQuery({ search: '', page: 1 }, 'members_');

@@ -13,7 +13,6 @@ export default function ExperiencePolicyPanel({ benchmarkId, onChanged, historyO
     [busy, setBusy] = useState(false);
   const [basis, setBasis] = useState(''),
     [agreed, setAgreed] = useState(false),
-    [environment, setEnvironment] = useState('PROJECT'),
     [scope, setScope] = useState('PERIOD'),
     [effectiveAt, setEffectiveAt] = useState('');
   const lock = useRef(false);
@@ -48,7 +47,7 @@ export default function ExperiencePolicyPanel({ benchmarkId, onChanged, historyO
               expectedVersion: policy.version,
               approvalBasis: basis,
               parametersP01ThroughP06Agreed: agreed,
-              environment,
+              environment: 'PROJECT',
               scope,
               cancellationRule: 'REVERSE_SOURCE_INVALIDATION',
               ...(effectiveAt
@@ -73,9 +72,7 @@ export default function ExperiencePolicyPanel({ benchmarkId, onChanged, historyO
   if (!benchmarkId) return null;
   return (
     <Panel
-      title={
-        historyOnly ? 'Lịch sử chính sách' : 'Phiên bản chính sách trải nghiệm'
-      }
+      title={historyOnly ? 'Lịch sử chính sách' : 'Phiên bản chính sách trải nghiệm'}
       description="Lưu snapshot đã phê duyệt riêng với thao tác khóa benchmark. Phê duyệt chỉ được gửi khi người vận hành xác nhận các tham số đã thống nhất."
     >
       <div className="experience-policy-panel-content">
@@ -106,15 +103,6 @@ export default function ExperiencePolicyPanel({ benchmarkId, onChanged, historyO
                     value={basis}
                     onChange={(event) => setBasis(event.target.value)}
                   />
-                </Field>
-                <Field label="Môi trường">
-                  <select
-                    value={environment}
-                    onChange={(event) => setEnvironment(event.target.value)}
-                  >
-                    <option value="PROJECT">Project</option>
-                    <option value="DEMO">Demo</option>
-                  </select>
                 </Field>
                 <Field label="Phạm vi">
                   <select value={scope} onChange={(event) => setScope(event.target.value)}>

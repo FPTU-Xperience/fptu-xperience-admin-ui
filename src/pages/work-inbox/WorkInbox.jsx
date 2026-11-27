@@ -5,15 +5,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useWorkspace } from '../../context/WorkspaceContext.jsx';
-import { useWorkflow } from '../../workflows/WorkflowContext.jsx';
-import { loadWorkInbox, mockInbox } from '../../workflows/work-inbox.js';
+import { loadWorkInbox } from '../../workflows/work-inbox.js';
 import { reportWorkflows } from '../../services/report-workflows.js';
 import api from '../../services/api.js';
 import { useOperationQuery } from '../../hooks/useOperationQuery.js';
 import FeatureWorkspace, {
   useFeatureView,
 } from '../../components/workflow/feature-workspace/FeatureWorkspace.jsx';
-import { Badge, Button, Field, Panel, Pagination } from '../../components/ui/index.js';
+import { Button, Field, Panel, Pagination } from '../../components/ui/index.js';
 import {
   WorkflowActions,
   WorkflowBody,
@@ -24,10 +23,13 @@ const tabs = featureTabs.work;
 export default function WorkInbox({ overview }) {
   const active = useFeatureView(tabs),
     { user } = useAuth(),
-    { season, semesterStatus } = useWorkspace(),
-    { scope } = useWorkflow();
-  const { query, setQuery, source, setSource, kind, setKind, urgent, setUrgent, page, setPage } =
-    useListQuery({ query: '', source: 'all', kind: 'all', urgent: false, page: 1 });
+    { season, semesterStatus } = useWorkspace();
+  const { query, setQuery, kind, setKind, urgent, setUrgent, page, setPage } = useListQuery({
+    query: '',
+    kind: 'all',
+    urgent: false,
+    page: 1,
+  });
   const location = useLocation();
   const ready = active !== 'overview' && !['idle', 'loading'].includes(semesterStatus);
   const live = useOperationQuery(
@@ -38,11 +40,9 @@ export default function WorkInbox({ overview }) {
   const apiRows = (live.data || []).flatMap((s) =>
     s.rows.map((row) => ({ ...row, kind: s.label, periodScoped: s.period })),
   );
-  const simulated = mockInbox(scope).filter((r) => r.bucket === active);
-  const kinds = [...new Set([...apiRows, ...simulated].map((r) => r.kind))];
-  const items = [...apiRows, ...simulated].filter(
+  const kinds = [...new Set(apiRows.map((r) => r.kind))];
+  const items = apiRows.filter(
     (r) =>
-      (source === 'all' || r.source === source) &&
       (kind === 'all' || r.kind === kind) &&
       `${r.title} ${r.owner}`.toLowerCase().includes(query.toLowerCase()) &&
       (!urgent || (r.deadline && Date.parse(r.deadline) < Date.now())),
@@ -76,13 +76,6 @@ export default function WorkInbox({ overview }) {
                     placeholder="Tên hoạt động, CLB, sinh viên…"
                   />
                 </Field>
-                <Field label="Nguồn dữ liệu">
-                  <select value={source} onChange={(e) => setSource(e.target.value)}>
-                    <option value="all">Tất cả</option>
-                    <option value="API">Hồ sơ thật</option>
-                    <option value="MOCK">Mô phỏng</option>
-                  </select>
-                </Field>
                 <Field label="Loại công việc">
                   <select value={kind} onChange={(e) => setKind(e.target.value)}>
                     <option value="all">Tất cả loại</option>
@@ -115,7 +108,7 @@ export default function WorkInbox({ overview }) {
             </WorkflowBody>
             <WorkflowTable
               label="Hàng chờ công việc"
-              columns={['Hồ sơ', 'Nguồn & loại', 'Phụ trách / hạn', 'Trạng thái', 'Thao tác']}
+              columns={['Hồ sơ', 'Loại', 'Phụ trách / hạn', 'Trạng thái', 'Thao tác']}
             >
               {items.slice((safePage - 1) * 20, safePage * 20).map((row) => (
                 <tr key={row.id}>
@@ -123,9 +116,6 @@ export default function WorkInbox({ overview }) {
                     <strong>{row.title}</strong>
                   </td>
                   <td>
-                    <Badge tone={row.source === 'MOCK' ? 'orange' : 'blue'}>
-                      {row.source === 'MOCK' ? 'Mô phỏng' : 'Hồ sơ thật'}
-                    </Badge>
                     <small>{row.kind}</small>
                   </td>
                   <td>

@@ -220,11 +220,7 @@ export async function checkAccountTable({ open, evaluate, delay, call, directory
     `data['users.create']={id:999,username:'ctsv-new',fullName:'CTSV mới',email:'ctsv-new@example.test',roles:['STUDENT_AFFAIR'],isActive:true,isLocked:false};window.__failAccountCreate=true;[...document.querySelectorAll('main button')].find(e=>e.textContent.includes('Tạo tài khoản CTSV')).click()`,
   );
   await delay(100);
-  assert.equal(await evaluate(`document.querySelectorAll('dialog select').length`), 1);
-  await evaluate(
-    `(()=>{const select=document.querySelector('dialog select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(select,'api');select.dispatchEvent(new Event('change',{bubbles:true}));})()`,
-  );
-  await delay(100);
+  assert.equal(await evaluate(`document.querySelectorAll('dialog select').length`), 0);
   for (const [index, value] of [
     [0, 'CTSV mới'],
     [1, 'ctsv-new'],
@@ -256,37 +252,6 @@ export async function checkAccountTable({ open, evaluate, delay, call, directory
       `window.__calls.filter(c=>/^users[.](update|delete|lock|unlock)$/.test(c.key)).length`,
     ),
     0,
-  );
-  const beforeMock = await evaluate(`window.__calls.filter(c=>c.key==='users.create').length`);
-  await evaluate(
-    `[...document.querySelectorAll('main button')].find(e=>e.textContent.includes('Tạo tài khoản CTSV')).click()`,
-  );
-  await delay(100);
-  assert.equal(await evaluate(`document.querySelector('dialog select').value`), 'mock');
-  for (const [index, value] of [
-    [0, 'CTSV thử mock'],
-    [1, 'mock-ctsv'],
-    [2, 'mock-ctsv@example.test'],
-  ]) {
-    await evaluate(
-      `(()=>{const e=document.querySelectorAll('dialog input')[${index}];Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('input',{bubbles:true}));})()`,
-    );
-    await delay(50);
-  }
-  await evaluate(`document.querySelector('dialog form').requestSubmit()`);
-  await delay(150);
-  assert.equal(
-    await evaluate(`window.__calls.filter(c=>c.key==='users.create').length`),
-    beforeMock,
-  );
-  assert.ok(await evaluate(`document.querySelector('main').textContent.includes('Mock JS')`));
-  await evaluate(
-    `[...document.querySelectorAll('main button')].find(e=>e.textContent.trim()==='Tải lại').click()`,
-  );
-  await delay(150);
-  assert.equal(
-    await evaluate(`document.querySelector('main').textContent.includes('CTSV thử mock')`),
-    false,
   );
   console.log(
     'PASS account status chips, all sortable columns in both directions, pagination, read-only access, missing dates and responsive layout',

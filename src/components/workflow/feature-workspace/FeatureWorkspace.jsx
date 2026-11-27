@@ -38,6 +38,8 @@ export default function FeatureWorkspace({
               pathname: location.pathname,
               search: (() => {
                 const next = new URLSearchParams(location.search);
+                next.delete('source');
+                next.delete('record');
                 next.set('view', tab.id);
                 return next.toString();
               })(),

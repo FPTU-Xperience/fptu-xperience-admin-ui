@@ -34,7 +34,9 @@ export function resolveAnomaly(draft, caseId, decision, reason, adjustment, seas
       Number(adjustment) < 0 ||
       Number(adjustment) >= award.amount)
   )
-    throw new Error(`Xperience Point sau điều chỉnh phải là số nguyên từ 0 đến ${award.amount - 1}.`);
+    throw new Error(
+      `Xperience Point sau điều chỉnh phải là số nguyên từ 0 đến ${award.amount - 1}.`,
+    );
   // The original ledger entry is immutable. Only a linked reversing entry is appended.
   if (decision !== 'keep')
     draft.ledger.push({

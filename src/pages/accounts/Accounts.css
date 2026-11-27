@@ -1,12 +1,6 @@
 @reference '../../index.css';
 
 @layer utilities {
-  .accounts-create-source {
-    @apply mx-6 mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-xs leading-6 text-amber-950;
-  }
-  .accounts-create-source p {
-    @apply mt-2;
-  }
   .accounts-content {
     @apply grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6;
   }

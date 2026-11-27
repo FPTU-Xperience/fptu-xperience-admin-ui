@@ -3,12 +3,6 @@
   .feature-hubs-section {
     @apply min-w-0 space-y-4;
   }
-  .feature-hubs-source {
-    @apply flex flex-wrap gap-2;
-  }
-  .feature-hubs-source button {
-    @apply max-w-full whitespace-normal;
-  }
   .feature-hubs-note {
     @apply text-xs leading-relaxed text-muted;
   }

@@ -25,7 +25,13 @@ const fixture=(parts=[])=>new Proxy(function(){},{get:(_,key)=>key==='then'?unde
 window.__api=fixture();window.__qaUser=user;
 </script><script type="module" src="/src/main.jsx"></script></body></html>`;
 const server = await createServer({
-  server: { host: '127.0.0.1', port: 5189, strictPort: true, open: false },
+  server: {
+    host: 'localhost',
+    port: 5173,
+    strictPort: true,
+    open: false,
+    fs: { allow: [process.cwd(), await fs.realpath('node_modules')] },
+  },
   plugins: [
     {
       name: 'admin-baseline-fixture',
@@ -37,7 +43,13 @@ const server = await createServer({
             export const session = {
               read: () => window.__api.getAccessToken() ? { id: 'fixture-session', accessToken: 'fixture', user: window.__qaUser } : null,
               subscribe: () => () => {},
+              isExpired: () => false,
+              acknowledgeExpiry: () => {},
+              logout: async () => ({ confirmed: true }),
             };`;
+        if (id.replaceAll('\\', '/').endsWith('/src/services/browser-session.js'))
+          return `export const createBrowserSession = () => ({ bootstrap: async () => Boolean(window.__qaUser) });
+            export const verifyBrowserLogin = async (_session, value) => value;`;
       },
       configureServer(vite) {
         vite.middlewares.use('/__qa', async (req, res) => {
@@ -128,7 +140,7 @@ try {
       await evaluate(`location.hash=${JSON.stringify(route)}`);
     } else {
       await call('Page.navigate', {
-        url: `http://127.0.0.1:5189/__qa?actor=${actor}&fail=${failure}&run=${fixtureToken}#${route}`,
+        url: `http://localhost:5173/__qa?actor=${actor}&fail=${failure}&run=${fixtureToken}#${route}`,
       });
       fixtureScenario = scenario;
       currentFixtureToken = fixtureToken;
@@ -154,7 +166,13 @@ try {
         ),
     );
   };
-  if (!process.env.UI_SMOKE_ONLY_GUIDE) {
+  if (process.env.UI_SMOKE_ONLY_PRODUCT) {
+    await (
+      await import('./account-table-ui-checks.mjs')
+    ).checkAccountTable({ open, evaluate, delay, call, directory });
+    await (await import('./no-simulation-ui-checks.mjs')).checkNoSimulation({ open, evaluate });
+    assert.deepEqual(runtimeErrors, []);
+  } else if (!process.env.UI_SMOKE_ONLY_GUIDE) {
     const widths = [320, 375, 414, 768, 1280];
     const legacyStaffRoutes = [
       'overview',
@@ -278,9 +296,7 @@ try {
     await open('/admin/accounts', 'staff');
     assert.equal(await evaluate(`location.hash`), '#/ctsv/work');
     await open('/admin/accounts', 'student');
-    assert.ok(
-      await evaluate(`document.body.textContent.includes('Tài khoản chưa có quyền truy cập')`),
-    );
+    assert.ok(await evaluate(`document.body.textContent.includes('Không có quyền truy cập')`));
     assert.equal(await evaluate(`!!document.querySelector('#app-sidebar')`), false);
     await open('/login', 'guest', 320);
     assert.ok(await evaluate(`document.body.textContent.includes('Đăng nhập')`));
@@ -426,14 +442,13 @@ try {
     await (
       await import('./account-table-ui-checks.mjs')
     ).checkAccountTable({ open, evaluate, delay, call, directory });
-    await (
-      await import('./workflow-ui-checks.mjs')
-    ).checkWorkflows({ open, evaluate, delay, call, directory });
+    await (await import('./no-simulation-ui-checks.mjs')).checkNoSimulation({ open, evaluate });
     assert.deepEqual(runtimeErrors, []);
   }
-  await (
-    await import('./guided-help-ui-checks.mjs')
-  ).checkGuidedHelp({ open, evaluate, delay, call });
+  if (!process.env.UI_SMOKE_ONLY_PRODUCT)
+    await (
+      await import('./guided-help-ui-checks.mjs')
+    ).checkGuidedHelp({ open, evaluate, delay, call });
   await call('Browser.close');
   ws.close();
 } finally {

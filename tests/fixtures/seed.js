@@ -1,4 +1,4 @@
-import { MAJORS } from './format.js';
+import { MAJORS } from '../../src/utils/format.js';
 
 export function createSeed() {
   const types = ['Học thuật', 'Nghệ thuật', 'Thể thao', 'Cộng đồng'];
