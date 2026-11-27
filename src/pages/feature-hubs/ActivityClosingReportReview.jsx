@@ -71,7 +71,7 @@ export function ActivityClosingPolicy({ clubId }) {
   );
 }
 
-export default function ActivityClosingReportReview({ activityId }) {
+export default function ActivityClosingReportReview({ activityId, funded = false }) {
   const path = `/api/activities/${activityId}/closing-report`;
   const { data, busy, error, save } = useClosingRequest(path);
   const report = data?.report;
@@ -86,24 +86,41 @@ export default function ActivityClosingReportReview({ activityId }) {
           <p>{data.totals.registrations} đăng ký · {data.totals.verifiedParticipants} người đã xác minh điểm danh · {data.totals.verifiedCompletions} lượt hoàn thành nhiệm vụ</p>
           {!report && <p>CLB chưa nộp báo cáo.</p>}
           <ConfirmedRoles key={report?.version || 'pending'} activityId={activityId} />
-          {report?.status === 'APPROVED' && <ClosingDutyXpReview activityId={activityId} />}
+          {report?.status === 'APPROVED' && (funded ? <p>Báo cáo đã duyệt. Mở Quỹ điểm thô để quyết toán toàn bộ kết quả.</p> : <ClosingDutyXpReview activityId={activityId} />)}
+          {data.canSubmit && <form key={`submit-${report?.version || 'new'}`} onSubmit={event => {
+            event.preventDefault(); const fields = new FormData(event.currentTarget);
+            save(path, 'POST', { summary: String(fields.get('summary')).trim(), improvements: String(fields.get('improvements') || '').trim(), expectedVersion: report?.version ?? null },
+              (previous, saved) => ({ ...previous, report: saved, canSubmit: false, canApprove: false, canReturn: false }));
+          }}>
+            <Field label="Tổng kết"><textarea name="summary" required maxLength={4000} defaultValue={report?.summary || ''} disabled={busy} /></Field>
+            <Field label="Đề xuất cải thiện"><textarea name="improvements" maxLength={4000} defaultValue={report?.improvements || ''} disabled={busy} /></Field>
+            <Button type="submit" disabled={busy}>{report ? 'Gửi lại báo cáo' : 'Nộp báo cáo'}</Button>
+          </form>}
           {report && (
             <>
-              <p><strong>{report.status === 'APPROVED' ? 'Đã duyệt' : data.isOverdue ? 'Nộp quá hạn, không thể duyệt' : 'Chờ duyệt'}</strong> · Nộp {date(report.submittedAtUtc)}</p>
+              <p><strong>{report.status === 'APPROVED' ? 'Đã duyệt' : report.status === 'RETURNED' ? 'Đã yêu cầu chỉnh sửa' : data.isOverdue ? 'Nộp quá hạn, không thể duyệt' : 'Chờ duyệt'}</strong> · Nộp {date(report.submittedAtUtc)}</p>
               <p>{report.summary}</p>
               {report.improvements && <p>{report.improvements}</p>}
               {report.reviewNote && <p>Ghi chú: {report.reviewNote}</p>}
             </>
           )}
-          {data.canApprove && (
+          {(data.canApprove || data.canReturn) && (
             <form key={report.version} onSubmit={(event) => {
               event.preventDefault();
               const note = String(new FormData(event.currentTarget).get('note') || '').trim();
-              save(`${path}/approve`, 'POST', { expectedVersion: report.version, note },
-                (previous, saved) => ({ ...previous, report: saved, canApprove: false }));
+              const decision = event.nativeEvent.submitter?.value;
+              if (decision === 'return' && note.length < 5) {
+                event.currentTarget.elements.note.setCustomValidity('Nhập lý do chỉnh sửa từ 5 ký tự.');
+                event.currentTarget.elements.note.reportValidity();
+                return;
+              }
+              if (decision !== 'return' && !data.canApprove) return;
+              save(`${path}/${decision === 'return' ? 'return' : 'approve'}`, 'POST', { expectedVersion: report.version, note },
+                (previous, saved) => ({ ...previous, report: saved, canApprove: false, canReturn: false }));
             }}>
-              <Field label="Ghi chú duyệt báo cáo"><textarea name="note" maxLength={2000} disabled={busy} /></Field>
-              <Button type="submit" disabled={busy}>Duyệt báo cáo kết thúc</Button>
+              <Field label="Ghi chú duyệt hoặc lý do chỉnh sửa"><textarea name="note" maxLength={2000} disabled={busy} onInput={(event) => event.currentTarget.setCustomValidity('')} /></Field>
+              {data.canApprove && <Button type="submit" value="approve" disabled={busy}>Duyệt báo cáo kết thúc</Button>}
+              {data.canReturn && <Button type="submit" value="return" variant="secondary" disabled={busy}>Yêu cầu chỉnh sửa</Button>}
             </form>
           )}
         </>

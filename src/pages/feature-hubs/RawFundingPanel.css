@@ -1,0 +1,15 @@
+.raw-funding-panel { display: grid; gap: 1rem; min-width: 0; font: inherit; line-height: 1.6; color: var(--text-primary, #334155); }
+.raw-funding-panel label, .raw-funding-panel form { display: grid; gap: .5rem; }
+.raw-funding-panel input, .raw-funding-panel select, .raw-funding-panel textarea { max-width: 100%; min-width: 0; padding: .6rem; font: inherit; border: 1px solid #cbd5e1; border-radius: .5rem; background: #fff; }
+.raw-funding-balances { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .75rem; }
+.raw-funding-balances div { padding: 1rem; border: 1px solid #dce2ea; border-radius: .5rem; }
+.raw-funding-balances dd { margin: .5rem 0 0; font-weight: 700; }
+.raw-funding-scroll { overflow-x: auto; }
+.raw-funding-scroll table { width: 100%; border-collapse: collapse; }
+.raw-funding-scroll th, .raw-funding-scroll td { text-align: left; padding: .65rem; border-bottom: 1px solid #dce2ea; vertical-align: top; }
+.raw-funding-candidates { display: grid; gap: .75rem; }
+.raw-funding-panel fieldset { min-width: 0; display: grid; gap: .5rem; }
+.raw-funding-actions, .raw-funding-panel nav { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.raw-funding-panel button { padding: .6rem .9rem; cursor: pointer; border: 1px solid #cbd5e1; border-radius: .5rem; font: inherit; background: #fff; }
+.raw-funding-panel button:focus-visible, .raw-funding-panel input:focus-visible, .raw-funding-panel select:focus-visible, .raw-funding-panel textarea:focus-visible { outline: 2px solid #f97316; outline-offset: 2px; }
+.raw-funding-panel button:disabled { cursor: default; opacity: .55; }
