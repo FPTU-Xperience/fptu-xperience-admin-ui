@@ -68,6 +68,11 @@ export function DeclarationsQueue() {
   const [reviewDecision, setReviewDecision] = useState('APPROVED');
   const [submitting, setSubmitting] = useState(false);
   const [reviewAttributes, setReviewAttributes] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false),
+    [reviewError, setReviewError] = useState('');
+  const detailVersion = useRef(0);
+  const reviewLock = useRef(false);
+  const [reference, setReference] = useState('ALL');
   const [totalPages, setTotalPages] = useState(1);
   usePageBound(page, totalPages, !loading && !error, setPage);
   const requestVersion = useRef(0);
@@ -78,6 +83,7 @@ export function DeclarationsQueue() {
     setError(null);
     try {
       const params = { page, pageSize: 20 };
+      if (reference !== 'ALL') params.viaClub = reference === 'CLUB';
       if (tab !== 'ALL')
         params.status = {
           SUBMITTED: 'Submitted',
@@ -104,7 +110,7 @@ export function DeclarationsQueue() {
     return () => {
       requestVersion.current++;
     };
-  }, [tab, page]);
+  }, [tab, page, reference]);
 
   // Stats
   const pendingCount = declarations.filter((d) => d.status === 'SUBMITTED').length;
@@ -125,35 +131,61 @@ export function DeclarationsQueue() {
 
   async function submitDecision(e) {
     e.preventDefault();
+    if (reviewLock.current || submitting || reviewLoading || reviewError || !review?.canFinalReview)
+      return;
     if (reviewNote.trim().length < 10) {
       run(() => {
         throw new Error('Nhận xét phải từ 10 ký tự trở lên.');
       });
       return;
     }
+    reviewLock.current = true;
     setSubmitting(true);
-    const ok = await run(
-      async () => {
-        await api.studentAffairs.declarations.review(
-          review.id,
-          declarationReview(review, reviewDecision, reviewNote.trim(), reviewAttributes),
-        );
-        setReview(null);
-        setReviewNote('');
-        setReviewDecision('APPROVED');
-        await fetchData();
-      },
-      `Đã ${reviewDecision === 'APPROVED' ? 'phê duyệt' : reviewDecision === 'REJECTED' ? 'từ chối' : 'yêu cầu làm rõ'} trải nghiệm.`,
-    );
-    setSubmitting(false);
-    if (ok) setReview(null);
+    try {
+      const ok = await run(
+        async () => {
+          await api.studentAffairs.declarations.review(
+            review.id,
+            declarationReview(review, reviewDecision, reviewNote.trim(), reviewAttributes),
+          );
+          setReview(null);
+          setReviewNote('');
+          setReviewDecision('APPROVED');
+          await fetchData();
+        },
+        `Đã ${reviewDecision === 'APPROVED' ? 'phê duyệt' : reviewDecision === 'REJECTED' ? 'từ chối' : 'yêu cầu làm rõ'} trải nghiệm.`,
+      );
+      if (ok) setReview(null);
+    } finally {
+      reviewLock.current = false;
+      setSubmitting(false);
+    }
   }
 
-  function openReview(d) {
+  async function openReview(d) {
+    const ticket = ++detailVersion.current;
     setReview(d);
-    setReviewAttributes(d.proposedAttributes ? structuredClone(d.proposedAttributes) : null);
+    setReviewLoading(true);
+    setReviewError('');
+    setReviewAttributes(null);
     setReviewNote('');
     setReviewDecision('APPROVED');
+    try {
+      const data = await api.studentAffairs.declarations.get(d.id);
+      const current = mapDeclaration(data.contribution || data);
+      if (String(current.id) !== String(d.id))
+        throw new Error('Không xác nhận được hồ sơ đang mở.');
+      if (ticket !== detailVersion.current) return;
+      setReview(current);
+      setReviewAttributes(
+        current.proposedAttributes ? structuredClone(current.proposedAttributes) : null,
+      );
+    } catch (error) {
+      if (ticket === detailVersion.current)
+        setReviewError(error.message || 'Không tải được hồ sơ hiện tại.');
+    } finally {
+      if (ticket === detailVersion.current) setReviewLoading(false);
+    }
   }
 
   function capabilityLabel(code) {
@@ -203,6 +235,18 @@ export function DeclarationsQueue() {
       <Panel className="declarations-queue-panel">
         <div className="declarations-queue-content-2">
           <div className="declarations-queue-content-3">
+            <select
+              aria-label="Hình thức gửi hồ sơ"
+              value={reference}
+              onChange={(e) => {
+                setReference(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="ALL">Tất cả hình thức gửi</option>
+              <option value="DIRECT">Sinh viên gửi trực tiếp</option>
+              <option value="CLUB">CLB đã chuyển lên</option>
+            </select>
             <Tabs
               active={tab}
               onChange={(t) => {
@@ -272,6 +316,9 @@ export function DeclarationsQueue() {
                         <span className="declarations-queue-text-2">
                           {d.activityName || d.activity || '—'}
                         </span>
+                        <small className="declarations-queue-caption">
+                          {d.referenceLabel} · {d.referenceStateLabel}
+                        </small>
                       </td>
                       <td className="declarations-queue-cell">
                         <span
@@ -360,9 +407,21 @@ export function DeclarationsQueue() {
           title={review.studentName || 'Trải nghiệm tự khai'}
           description={`${review.studentCode || ''} · ${review.activityName || review.activity || ''}`}
           wide
-          onClose={() => setReview(null)}
+          onClose={() => {
+            detailVersion.current++;
+            setReview(null);
+          }}
         >
           <form onSubmit={submitDecision}>
+            {reviewLoading && <p role="status">Đang tải trạng thái và quyền xét duyệt hiện tại…</p>}
+            {reviewError && (
+              <p role="alert">
+                {reviewError}{' '}
+                <button type="button" onClick={() => openReview(review)}>
+                  Thử lại
+                </button>
+              </p>
+            )}
             <div className="declarations-queue-content-9">
               {/* Score details */}
               <div className="declarations-queue-content-10">
@@ -395,6 +454,21 @@ export function DeclarationsQueue() {
               <p className="declarations-queue-description-5">
                 {review.referenceLabel}. Cần kiểm tra minh chứng trước khi quyết định.
               </p>
+              {review.referringClubId && (
+                <aside className="declarations-queue-description-5">
+                  <strong>{review.referenceStateLabel}</strong>
+                  <p>
+                    Nhận xét của CLB: {review.clubReviewReason || 'Chưa có nhận xét được trả về.'}
+                  </p>
+                  <p>
+                    Người xét tại CLB: #{review.clubReviewedBy || '—'} · Người chuyển hồ sơ: #
+                    {review.ctsvSubmittedBy || '—'}
+                  </p>
+                  <p>
+                    Tham chiếu CLB chưa cộng điểm. CTSV kiểm tra độc lập trước quyết định cuối cùng.
+                  </p>
+                </aside>
+              )}
               <h3 className="declarations-queue-subheading">Minh chứng đính kèm</h3>
               {(review.evidenceUrls || []).length > 0 ? (
                 <div className="declarations-queue-content-13">
@@ -611,7 +685,13 @@ export function DeclarationsQueue() {
                     variant="primary"
                     icon={ShieldCheck}
                     busy={submitting}
-                    disabled={submitting || reviewNote.trim().length < 10}
+                    disabled={
+                      submitting ||
+                      reviewLoading ||
+                      Boolean(reviewError) ||
+                      !review.canFinalReview ||
+                      reviewNote.trim().length < 10
+                    }
                   >
                     {reviewDecision === 'APPROVED'
                       ? 'Phê duyệt'

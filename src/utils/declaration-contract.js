@@ -4,6 +4,13 @@ export function mapDeclaration(row) {
     .toUpperCase();
   return {
     ...row,
+    canFinalReview:
+      status === 'SUBMITTED' && (row.capabilities?.canFinalReview ?? !row.referringClubId),
+    referenceStateLabel: row.referringClubId
+      ? row.clubReviewStatus === 'APPROVED' && row.ctsvSubmissionStatus === 'SUBMITTED'
+        ? 'CLB đã thông qua và chuyển CTSV'
+        : 'Chưa hoàn tất tham chiếu CLB'
+      : 'Gửi trực tiếp',
     status: { REVISIONREQUESTED: 'NEED_CLARIFICATION' }[status] || status,
     activityName: row.title || row.activityName,
     studentName: row.studentName || (row.userId ? `Sinh viên #${row.userId}` : ''),
