@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSeed } from '../src/utils/seed.js';
+import { createSeed } from './fixtures/seed.js';
 import { guardAccountChanges, validateAccount, validateImportRows } from '../src/utils/accounts.js';
 
 const valid = {

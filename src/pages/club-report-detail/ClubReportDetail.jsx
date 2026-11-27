@@ -185,13 +185,11 @@ function ClubReportView({ reportId }) {
                 {tab === 'xp' && (
                   <section>
                     <h2>Báo cáo điểm Xperience Point theo sinh viên / action</h2>
+                    <p>Báo cáo này chưa có bảng Xperience Point để xem hoặc chỉnh sửa.</p>
                     <p>
-                      Báo cáo này chưa có bảng Xperience Point để xem hoặc chỉnh sửa.
+                      Phê duyệt báo cáo hiện tại chưa xác nhận việc ghi sổ Xperience Point theo
+                      action.
                     </p>
-                    <p>Phê duyệt báo cáo hiện tại chưa xác nhận việc ghi sổ Xperience Point theo action.</p>
-                    <Link className="operation-link" to={`/ctsv/activities?view=club&source=mock`}>
-                      Thử quy trình Xperience Point · Mô phỏng
-                    </Link>
                   </section>
                 )}
                 {tab === 'content' && (
@@ -368,7 +366,9 @@ function ClubReportView({ reportId }) {
                           setDecision('approve');
                         }}
                       >
-                        {reportType(report) === 'FUTURE_EVENT' ? 'Duyệt kế hoạch mở hoạt động' : 'Duyệt báo cáo'}
+                        {reportType(report) === 'FUTURE_EVENT'
+                          ? 'Duyệt kế hoạch mở hoạt động'
+                          : 'Duyệt báo cáo'}
                       </Button>
                       <Button
                         disabled={busy}

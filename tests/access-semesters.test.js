@@ -4,10 +4,9 @@ import {
   normalizeActor,
   systemRolesFor,
 } from '../src/utils/roles.js';
-import { canReviewMock } from '../src/workflows/workflow-model.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canAccessPath, defaultPathFor, workspaceRoleFor } from '../src/utils/access.js';
+import { canAccessPath, defaultPathFor, workspaceRoleFor, isCTSV } from '../src/utils/access.js';
 import { mapSemesterOptions, selectAvailableSemester } from '../src/utils/semesters.js';
 
 test('CTSV cannot access admin URLs; admin aliases are isolated from CTSV URLs', () => {
@@ -58,15 +57,15 @@ test('only three canonical system roles exist; legacy club roles normalize to st
   ]);
   for (const role of ['STUDENT', 'CLUB_MANAGER', 'CLUB_MEMBER', 'TREASURER']) {
     assert.equal(canAccessPath({ roles: [role] }, '/ctsv/clubs'), false);
-    assert.equal(canReviewMock({ roles: [role] }), false);
+    assert.equal(isCTSV({ roles: [role] }), false);
   }
   assert.equal(normalizeSystemRole('__proto__'), null);
   assert.equal(normalizeSystemRole('constructor'), null);
   assert.deepEqual(normalizeActor({ id: 1, roles: ['ADMIN'] }).roles, ['SYSTEM_ADMIN']);
 });
-test('mixed administrative claims do not let a system admin enter CTSV or review mock business decisions', () => {
+test('mixed administrative claims do not let a system admin enter CTSV or review CTSV business decisions', () => {
   const actor = { roles: ['SYSTEM_ADMIN', 'STUDENT_AFFAIR'] };
   assert.equal(canAccessPath(actor, '/admin/accounts'), true);
   assert.equal(canAccessPath(actor, '/ctsv/work'), false);
-  assert.equal(canReviewMock(actor), false);
+  assert.equal(isCTSV(actor), false);
 });

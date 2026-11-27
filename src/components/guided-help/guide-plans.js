@@ -42,15 +42,11 @@ export function adminGuidePlan(pathname, role) {
   );
   if (pathname.startsWith('/ctsv/work'))
     steps.push(
-      step(
-        '.work-inbox-filters',
-        'Lọc công việc',
-        'Tìm hồ sơ, chọn nguồn và loại công việc cần xử lý.',
-      ),
+      step('.work-inbox-filters', 'Lọc công việc', 'Tìm hồ sơ và chọn loại công việc cần xử lý.'),
       step(
         '.work-inbox table',
         'Mở hồ sơ',
-        'Mở từng hồ sơ để kiểm tra chi tiết. Dữ liệu mô phỏng được đánh dấu riêng.',
+        'Mở từng hồ sơ để kiểm tra chi tiết và xử lý theo quyền của bạn.',
       ),
     );
   else if (pathname.startsWith('/ctsv/semesters'))
@@ -82,7 +78,7 @@ export function adminGuidePlan(pathname, role) {
       step(
         '#main-content .panel-root',
         'Quản lý tài khoản',
-        'Tìm tài khoản và kiểm tra vai trò, trạng thái trước khi cập nhật. Tài khoản mô phỏng không có quyền đăng nhập thật.',
+        'Tìm tài khoản và kiểm tra vai trò, trạng thái trước khi cập nhật.',
       ),
     );
   else

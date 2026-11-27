@@ -283,7 +283,6 @@ export default function Accounts() {
                         <div>
                           <strong className="accounts-value">
                             {account.fullName}
-                            {account.source === 'MOCK' && <Badge tone="orange">Mock JS</Badge>}
                             {account.id === String(user?.id) && (
                               <span className="accounts-text-3">Bạn</span>
                             )}
@@ -349,7 +348,6 @@ function mapUserToAccount(user) {
     status:
       user.isLocked || user.locked ? 'locked' : user.isActive === false ? 'inactive' : 'active',
     joinedAt: user.createdAt ?? user.createdAtUtc ?? null,
-    source: user.source || 'API',
   };
 }
 function CreateCTSVAccount({ accounts, onClose, onSave }) {
@@ -357,7 +355,6 @@ function CreateCTSVAccount({ accounts, onClose, onSave }) {
   const [values, setValues] = useState({ username: '', fullName: '', email: '' });
   const [errors, setErrors] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [source, setSource] = useState('mock');
   const lock = useRef(false);
   const update = (key) => (event) =>
     setValues((previous) => ({ ...previous, [key]: event.target.value }));
@@ -383,17 +380,7 @@ function CreateCTSVAccount({ accounts, onClose, onSave }) {
         email: input.email,
         roles: ['STUDENT_AFFAIR'],
       };
-      const saved =
-        source === 'mock'
-          ? {
-              ...payload,
-              id: `mock-account:${crypto.randomUUID()}`,
-              isActive: true,
-              isLocked: false,
-              createdAt: new Date().toISOString(),
-              source: 'MOCK',
-            }
-          : await api.users.create(payload);
+      const saved = await api.users.create(payload);
       if (
         !saved?.id ||
         !Array.isArray(saved.roles) ||
@@ -421,26 +408,6 @@ function CreateCTSVAccount({ accounts, onClose, onSave }) {
       }}
     >
       <form onSubmit={submit}>
-        <div className="accounts-create-source">
-          <Field label="Nguồn tạo tài khoản">
-            <select
-              value={source}
-              disabled={saving}
-              onChange={(event) => {
-                setSource(event.target.value);
-                setErrors([]);
-              }}
-            >
-              <option value="mock">Mô phỏng</option>
-              <option value="api">Tài khoản thật</option>
-            </select>
-          </Field>
-          <p role="status">
-            {source === 'mock'
-              ? 'Tài khoản mô phỏng không có quyền đăng nhập và sẽ mất khi tải lại.'
-              : 'Tạo tài khoản CTSV với thông tin bên dưới.'}
-          </p>
-        </div>
         <div className="accounts-content-15">
           <Field label="Họ và tên *">
             <input

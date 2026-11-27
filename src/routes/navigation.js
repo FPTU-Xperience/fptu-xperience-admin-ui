@@ -22,20 +22,16 @@ export const featureTabs = {
     { id: 'periods', label: 'Học kỳ' },
     { id: 'students', label: 'Danh sách sinh viên' },
     { id: 'deadlines', label: 'Deadline' },
-    { id: 'rollover', label: 'Chuyển kỳ' },
   ],
   clubs: [
     { id: 'registry', label: 'Danh sách CLB' },
     { id: 'reports', label: 'Báo cáo đầu / cuối kỳ' },
     { id: 'requests', label: 'Hồ sơ & yêu cầu' },
-    { id: 'leadership', label: 'Lãnh đạo' },
-    { id: 'bonus', label: 'Ngân sách điểm' },
   ],
   activities: [
     { id: 'club', label: 'Hoạt động CLB' },
     { id: 'bookings', label: 'Đặt địa điểm & thiết bị' },
     { id: 'campus-maps', label: 'Sơ đồ campus' },
-    { id: 'school', label: 'Hoạt động cấp trường' },
     { id: 'quests', label: 'Nhiệm vụ & chiến dịch' },
   ],
   monitoring: [
@@ -107,13 +103,13 @@ export const legacyRoutes = {
   '/ctsv/overview': '/ctsv/work?view=overview',
   '/ctsv/reports': '/ctsv/activities?view=club&source=api',
   '/ctsv/activity-approvals': '/ctsv/activities?view=club&source=api&type=FUTURE_EVENT',
-  '/ctsv/activity-dossiers': '/ctsv/activities?view=club&source=mock',
+  '/ctsv/activity-dossiers': '/ctsv/activities?view=club',
   '/ctsv/club-requests': '/ctsv/clubs?view=requests',
-  '/ctsv/global-activities': '/ctsv/activities?view=school',
+  '/ctsv/global-activities': '/ctsv/activities?view=club',
   '/ctsv/student-roster': '/ctsv/semesters?view=students',
-  '/ctsv/rollover': '/ctsv/semesters?view=rollover',
-  '/ctsv/leadership': '/ctsv/clubs?view=leadership',
-  '/ctsv/club-bonuses': '/ctsv/clubs?view=bonus',
+  '/ctsv/rollover': '/ctsv/semesters?view=periods',
+  '/ctsv/leadership': '/ctsv/clubs?view=requests&type=transfer',
+  '/ctsv/club-bonuses': '/ctsv/clubs?view=registry',
   '/ctsv/engagement': '/ctsv/monitoring?view=engagement',
   '/ctsv/quests': '/ctsv/activities?view=quests',
   '/ctsv/rubrics': '/ctsv/policies?view=benchmark',
@@ -131,6 +127,8 @@ export function legacyDestination(pathname, search = '') {
   const [path, defaults] = target.split('?'),
     params = new URLSearchParams(search),
     settings = new URLSearchParams(defaults);
+  params.delete('source');
+  params.delete('record');
   for (const [key, value] of settings)
     if (key === 'view' || !params.has(key)) params.set(key, value);
   return path + (params.size ? '?' + params : '');

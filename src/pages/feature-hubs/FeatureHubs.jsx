@@ -1,17 +1,10 @@
 import './FeatureHubs.css';
 import { useState } from 'react';
 import { Info } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
 import { featureTabs } from '../../routes/navigation.js';
 import FeatureWorkspace, {
   useFeatureView,
 } from '../../components/workflow/feature-workspace/FeatureWorkspace.jsx';
-import MockBoundary from '../../components/workflow/mock-boundary/MockBoundary.jsx';
-import ActivityWorkflow from '../../components/workflow/activity-workflow/ActivityWorkflow.jsx';
-import RolloverWorkflow from '../../components/workflow/rollover-workflow/RolloverWorkflow.jsx';
-import LeadershipWorkflow from '../../components/workflow/leadership-workflow/LeadershipWorkflow.jsx';
-import BonusWorkflow from '../../components/workflow/bonus-workflow/BonusWorkflow.jsx';
-import ReconciliationWorkflow from '../../components/workflow/reconciliation-workflow/ReconciliationWorkflow.jsx';
 import ExperiencePolicyPanel from '../../components/experience-policy-panel/ExperiencePolicyPanel.jsx';
 import { Button, Panel, IconButton, Modal } from '../../components/ui/index.js';
 import { WorkflowBody } from '../../components/workflow/workflow-primitives/WorkflowPrimitives.jsx';
@@ -37,45 +30,13 @@ import ActivityApplications from './ActivityApplications.jsx';
 import ActivityBookingDesk from './ActivityBookingDesk.jsx';
 import AcademicCalendar from '../seasons/AcademicCalendar.jsx';
 
-export function SourceSwitch({ realLabel = 'Hồ sơ', mockLabel = 'Thử quy trình', children }) {
-  const [search, setSearch] = useSearchParams(),
-    mock = search.get('source') === 'mock';
-  const choose = (source) =>
-    setSearch((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('source', source);
-      next.delete('record');
-      return next;
-    });
-  return (
-    <div className="feature-hubs-section">
-      <div className="feature-hubs-source" role="group" aria-label="Nguồn hồ sơ">
-        <Button
-          aria-pressed={!mock}
-          variant={!mock ? 'primary' : 'secondary'}
-          onClick={() => choose('api')}
-        >
-          {realLabel}
-        </Button>
-        <Button
-          aria-pressed={mock}
-          variant={mock ? 'primary' : 'secondary'}
-          onClick={() => choose('mock')}
-        >
-          {mockLabel} · Mô phỏng
-        </Button>
-      </div>
-      {children(mock)}
-    </div>
-  );
-}
 export function SemesterHub() {
   const tabs = featureTabs.semesters,
     active = useFeatureView(tabs);
   return (
     <FeatureWorkspace
       title="Học kỳ & sinh viên"
-      description="Chuẩn bị dữ liệu học kỳ, quản lý hạn xử lý và chuyển kỳ theo trình tự có đối soát."
+      description="Quản lý học kỳ, danh sách sinh viên và hạn xử lý."
       tabs={tabs}
       active={active}
     >
@@ -87,11 +48,6 @@ export function SemesterHub() {
       )}
       {active === 'deadlines' && <Seasons section="deadlines" />}
       {active === 'students' && <StudentRoster />}
-      {active === 'rollover' && (
-        <MockBoundary>
-          <RolloverWorkflow />
-        </MockBoundary>
-      )}
     </FeatureWorkspace>
   );
 }
@@ -101,23 +57,13 @@ export function ClubsHub() {
   return (
     <FeatureWorkspace
       title="Câu lạc bộ"
-      description="Hồ sơ, báo cáo học kỳ, lãnh đạo và ngân sách điểm được tổ chức quanh từng CLB."
+      description="Quản lý hồ sơ, báo cáo học kỳ và yêu cầu của từng CLB."
       tabs={tabs}
       active={active}
     >
       {active === 'registry' && <Clubs />}
       {active === 'reports' && <ClubReports reportScope="club" />}
       {active === 'requests' && <ClubRequests />}
-      {active === 'leadership' && (
-        <MockBoundary>
-          <LeadershipWorkflow />
-        </MockBoundary>
-      )}
-      {active === 'bonus' && (
-        <MockBoundary>
-          <BonusWorkflow />
-        </MockBoundary>
-      )}
     </FeatureWorkspace>
   );
 }
@@ -127,30 +73,15 @@ export function ActivitiesHub() {
   return (
     <FeatureWorkspace
       title="Hoạt động"
-      description="Kế hoạch → duyệt → thực hiện → quyết toán. Hoạt động cấp trường và nhiệm vụ có luồng tổ chức riêng."
+      description="Xét duyệt kế hoạch và báo cáo hoạt động; quản lý địa điểm, thiết bị và nhiệm vụ."
       tabs={tabs}
       active={active}
     >
       {active === 'club' && (
-        <SourceSwitch realLabel="Báo cáo hoạt động" mockLabel="Action & quyết toán">
-          {(mock) =>
-            mock ? (
-              <MockBoundary>
-                <ActivityWorkflow />
-              </MockBoundary>
-            ) : (
-              <>
-                <ActivityApplications />
-                <ClubReports reportScope="activity" />
-              </>
-            )
-          }
-        </SourceSwitch>
-      )}
-      {active === 'school' && (
-        <MockBoundary>
-          <ActivityWorkflow school />
-        </MockBoundary>
+        <>
+          <ActivityApplications />
+          <ClubReports reportScope="activity" />
+        </>
       )}
       {active === 'bookings' && <ActivityBookingDesk />}
       {active === 'campus-maps' && <ActivityBookingDesk mapsOnly />}
@@ -169,32 +100,8 @@ export function MonitoringHub() {
       active={active}
     >
       {active === 'engagement' && <Engagement />}
-      {active === 'anomalies' && (
-        <SourceSwitch realLabel="Danh sách bất thường" mockLabel="Xử lý & điều chỉnh nguồn">
-          {(mock) =>
-            mock ? (
-              <MockBoundary>
-                <ReconciliationWorkflow moderation />
-              </MockBoundary>
-            ) : (
-              <Anomalies />
-            )
-          }
-        </SourceSwitch>
-      )}
-      {active === 'reconciliation' && (
-        <SourceSwitch realLabel="Tra cứu đóng góp" mockLabel="Đối soát tổng thể">
-          {(mock) =>
-            mock ? (
-              <MockBoundary>
-                <ReconciliationWorkflow />
-              </MockBoundary>
-            ) : (
-              <ExperienceReconciliation />
-            )
-          }
-        </SourceSwitch>
-      )}
+      {active === 'anomalies' && <Anomalies />}
+      {active === 'reconciliation' && <ExperienceReconciliation />}
     </FeatureWorkspace>
   );
 }
@@ -219,17 +126,13 @@ function PolicyRecords({ historyOnly }) {
     return (
       <Panel title="Chưa có benchmark để tra cứu chính sách">
         <WorkflowBody>
-          <p>
-            Tạo hoặc chọn benchmark để xem chính sách.
-          </p>
+          <p>Tạo hoặc chọn benchmark để xem chính sách.</p>
         </WorkflowBody>
       </Panel>
     );
   return (
     <div className="feature-hubs-section">
-      <p className="feature-hubs-note">
-        Học kỳ: {result.data.semesterCode || 'Chưa xác định'}
-      </p>
+      <p className="feature-hubs-note">Học kỳ: {result.data.semesterCode || 'Chưa xác định'}</p>
       <ExperiencePolicyPanel
         benchmarkId={result.data.id}
         onChanged={result.retry}
@@ -287,11 +190,15 @@ export function ConfigurationHub() {
       tabs={tabs}
       active={active}
     >
-      {active === 'campus-maps' ? <ActivityBookingDesk mapsOnly /> : <SystemSettings
-        key={active}
-        type={active === 'platform' ? 'settings' : 'integrations'}
-        integrationSection={active}
-      />}
+      {active === 'campus-maps' ? (
+        <ActivityBookingDesk mapsOnly />
+      ) : (
+        <SystemSettings
+          key={active}
+          type={active === 'platform' ? 'settings' : 'integrations'}
+          integrationSection={active}
+        />
+      )}
     </FeatureWorkspace>
   );
 }

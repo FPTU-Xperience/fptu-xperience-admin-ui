@@ -8,10 +8,7 @@ import { errorMessage } from './error-message.js';
 import { createSessionClient } from './session-client.js';
 
 const DEFAULT_BASE_URL = 'http://localhost:7000';
-const BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  DEFAULT_BASE_URL
-).replace(/\/+$/, '');
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, '');
 export const session = createSessionClient({ baseUrl: BASE_URL });
 
 // =============================================================================
@@ -20,30 +17,30 @@ export const session = createSessionClient({ baseUrl: BASE_URL });
 
 function getAccessToken() {
   try {
-    return session.read()?.accessToken || null
+    return session.read()?.accessToken || null;
   } catch {
-    return null
+    return null;
   }
 }
 
 function getRefreshToken() {
   try {
-    return session.read()?.refreshToken || null
+    return session.read()?.refreshToken || null;
   } catch {
-    return null
+    return null;
   }
 }
 
 function buildUrl(path, params = {}) {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  const url = new URL(`${BASE_URL}${normalizedPath}`)
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const url = new URL(`${BASE_URL}${normalizedPath}`);
 
   Object.entries(params).forEach(([key, value]) => {
-    if (value === undefined || value === null || value === '') return
-    url.searchParams.set(key, String(value))
-  })
+    if (value === undefined || value === null || value === '') return;
+    url.searchParams.set(key, String(value));
+  });
 
-  return url.toString()
+  return url.toString();
 }
 
 // =============================================================================
@@ -54,96 +51,96 @@ function buildUrl(path, params = {}) {
  * Download a file as blob and trigger browser download
  */
 async function downloadBlob(endpoint, defaultFileName) {
-  const url = buildUrl(endpoint)
-  const token = getAccessToken()
+  const url = buildUrl(endpoint);
+  const token = getAccessToken();
 
-  const headers = {}
+  const headers = {};
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const response = await session.authFetch(url, {
     method: 'GET',
     headers,
-  })
+  });
 
   if (!response.ok) {
-    let errorMessage = `Download failed with status ${response.status}`
+    let errorMessage = `Download failed with status ${response.status}`;
     try {
-      const data = await response.json()
-      errorMessage = typeof data.message === 'string' ? data.message : errorMessage
+      const data = await response.json();
+      errorMessage = typeof data.message === 'string' ? data.message : errorMessage;
     } catch {
-      const text = await response.text()
-      if (text) errorMessage = text
+      const text = await response.text();
+      if (text) errorMessage = text;
     }
-    const err = new Error(errorMessage)
-    err.status = response.status
-    throw err
+    const err = new Error(errorMessage);
+    err.status = response.status;
+    throw err;
   }
 
-  const blob = await response.blob()
+  const blob = await response.blob();
 
   // Parse filename from content-disposition header
-  let fileName = defaultFileName
-  const disposition = response.headers.get('content-disposition')
+  let fileName = defaultFileName;
+  const disposition = response.headers.get('content-disposition');
   if (disposition) {
     // Try UTF-8 filename first
-    const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+    const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
     if (utf8Match && utf8Match[1]) {
-      fileName = decodeURIComponent(utf8Match[1])
+      fileName = decodeURIComponent(utf8Match[1]);
     } else {
       // Fall back to regular filename
-      const asciiMatch = disposition.match(/filename="?([^";]+)"?/i)
+      const asciiMatch = disposition.match(/filename="?([^";]+)"?/i);
       if (asciiMatch && asciiMatch[1]) {
-        fileName = asciiMatch[1]
+        fileName = asciiMatch[1];
       }
     }
   }
 
   // Create download link
-  const objectUrl = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = objectUrl
-  a.download = fileName
-  document.body.appendChild(a)
-  a.click()
-  window.URL.revokeObjectURL(objectUrl)
-  document.body.removeChild(a)
+  const objectUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = objectUrl;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(objectUrl);
+  document.body.removeChild(a);
 }
 
 /**
  * Download file as bytes (for PDF preview)
  */
 async function downloadBytes(endpoint) {
-  const url = buildUrl(endpoint)
-  const token = getAccessToken()
+  const url = buildUrl(endpoint);
+  const token = getAccessToken();
 
-  const headers = {}
+  const headers = {};
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const response = await session.authFetch(url, {
     method: 'GET',
     headers,
-  })
+  });
 
   if (!response.ok) {
-    let errorMessage = `Download failed with status ${response.status}`
+    let errorMessage = `Download failed with status ${response.status}`;
     try {
-      const data = await response.json()
-      errorMessage = typeof data.message === 'string' ? data.message : errorMessage
+      const data = await response.json();
+      errorMessage = typeof data.message === 'string' ? data.message : errorMessage;
     } catch {
-      const text = await response.text()
-      if (text) errorMessage = text
+      const text = await response.text();
+      if (text) errorMessage = text;
     }
-    const err = new Error(errorMessage)
-    err.status = response.status
-    throw err
+    const err = new Error(errorMessage);
+    err.status = response.status;
+    throw err;
   }
 
-  const buffer = await response.arrayBuffer()
-  return new Uint8Array(buffer)
+  const buffer = await response.arrayBuffer();
+  return new Uint8Array(buffer);
 }
 
 // =============================================================================
@@ -151,64 +148,66 @@ async function downloadBytes(endpoint) {
 // =============================================================================
 
 async function request(path, options = {}) {
-  const {
-    method = 'GET',
-    body,
-    headers = {},
-    params,
-    isFormData = false,
-  } = options
+  const { method = 'GET', body, headers = {}, params, isFormData = false } = options;
 
-  const finalHeaders = new Headers(headers)
-  const token = getAccessToken()
+  const finalHeaders = new Headers(headers);
+  const token = getAccessToken();
 
   if (token) {
-    finalHeaders.set('Authorization', `Bearer ${token}`)
+    finalHeaders.set('Authorization', `Bearer ${token}`);
   }
 
   if (!isFormData && !(body instanceof FormData) && !finalHeaders.has('Content-Type')) {
-    finalHeaders.set('Content-Type', 'application/json')
+    finalHeaders.set('Content-Type', 'application/json');
   }
 
-  const anonymous = ['/api/auth/google', '/api/auth/email-login', '/api/auth/refresh', '/api/auth/sso/redeem'].includes(path)
-  const url = buildUrl(path, params)
-  const response = await session.authFetch(url, {
-    method,
-    headers: finalHeaders,
-    body:
-      body === undefined || body === null
-        ? undefined
-        : body instanceof FormData
-          ? body
-          : JSON.stringify(body),
-  }, { anonymous })
-
+  const anonymous = [
+    '/api/auth/google',
+    '/api/auth/email-login',
+    '/api/auth/refresh',
+    '/api/auth/sso/redeem',
+  ].includes(path);
+  const url = buildUrl(path, params);
+  const response = await session.authFetch(
+    url,
+    {
+      method,
+      headers: finalHeaders,
+      body:
+        body === undefined || body === null
+          ? undefined
+          : body instanceof FormData
+            ? body
+            : JSON.stringify(body),
+    },
+    { anonymous },
+  );
 
   // Handle empty responses
-  const text = await response.text()
-  let data = null
+  const text = await response.text();
+  let data = null;
   try {
-    data = text ? JSON.parse(text) : null
+    data = text ? JSON.parse(text) : null;
   } catch {
-    data = text
+    data = text;
   }
 
   if (!response.ok) {
-    let message = ''
+    let message = '';
     if (data && typeof data === 'object') {
-      message = errorMessage(data, `API ${response.status}`)
+      message = errorMessage(data, `API ${response.status}`);
     } else {
-      message = text || `API ${response.status}`
+      message = text || `API ${response.status}`;
     }
 
     // Create error with status for handling in components
-    const err = new Error(message)
-    err.status = response.status
-    err.code = data?.code
-    throw err
+    const err = new Error(message);
+    err.status = response.status;
+    err.code = data?.code;
+    throw err;
   }
 
-  return data
+  return data;
 }
 
 // =============================================================================
@@ -216,8 +215,13 @@ async function request(path, options = {}) {
 // =============================================================================
 
 export async function workflowRequest(path, method, body) {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify({ path, method, body })));
-  const key = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(JSON.stringify({ path, method, body })),
+  );
+  const key = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join(
+    '',
+  );
   return request(path, { method, body, headers: { 'Idempotency-Key': `workflow:${key}` } });
 }
 
@@ -230,9 +234,9 @@ export const api = {
   setToken(token) {
     try {
       if (token) {
-        localStorage.setItem('accessToken', token)
+        localStorage.setItem('accessToken', token);
       } else {
-        localStorage.removeItem('accessToken')
+        localStorage.removeItem('accessToken');
       }
     } catch {
       // Ignore localStorage issues
@@ -242,9 +246,9 @@ export const api = {
   setRefreshToken(token) {
     try {
       if (token) {
-        localStorage.setItem('refreshToken', token)
+        localStorage.setItem('refreshToken', token);
       } else {
-        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('refreshToken');
       }
     } catch {
       // Ignore localStorage issues
@@ -252,7 +256,7 @@ export const api = {
   },
 
   clearTokens() {
-    session.clear()
+    session.clear();
   },
 
   getAccessToken,
@@ -345,9 +349,11 @@ export const api = {
 
     members: {
       list: (clubId, params) => api.get(`/api/clubs/${clubId}/members`, params),
-      get: (clubId, memberId, params) => api.get(`/api/clubs/${clubId}/members/${memberId}`, params),
+      get: (clubId, memberId, params) =>
+        api.get(`/api/clubs/${clubId}/members/${memberId}`, params),
       add: (clubId, payload) => api.post(`/api/clubs/${clubId}/members`, payload),
-      update: (clubId, memberId, payload) => api.put(`/api/clubs/${clubId}/members/${memberId}`, payload),
+      update: (clubId, memberId, payload) =>
+        api.put(`/api/clubs/${clubId}/members/${memberId}`, payload),
       remove: (clubId, memberId) => api.delete(`/api/clubs/${clubId}/members/${memberId}`),
       getMemberships: (clubId) => api.get(`/api/clubs/${clubId}/memberships`),
       approveMembership: (membershipId, note) =>
@@ -364,9 +370,24 @@ export const api = {
       myApplications: () => api.get('/api/clubs/applications/me'),
       getById: (id) => api.get(`/api/clubs/applications/${id}`),
       update: (id, payload) => api.put(`/api/clubs/applications/${id}`, payload),
-      approve: (id, body, key) => api.request(`/api/clubs/applications/${id}/approve`, { method: 'POST', body, headers: { 'Idempotency-Key': key } }),
-      requestRevision: (id, body, key) => api.request(`/api/clubs/applications/${id}/request-revision`, { method: 'POST', body, headers: { 'Idempotency-Key': key } }),
-      reject: (id, body, key) => api.request(`/api/clubs/applications/${id}/reject`, { method: 'POST', body, headers: { 'Idempotency-Key': key } }),
+      approve: (id, body, key) =>
+        api.request(`/api/clubs/applications/${id}/approve`, {
+          method: 'POST',
+          body,
+          headers: { 'Idempotency-Key': key },
+        }),
+      requestRevision: (id, body, key) =>
+        api.request(`/api/clubs/applications/${id}/request-revision`, {
+          method: 'POST',
+          body,
+          headers: { 'Idempotency-Key': key },
+        }),
+      reject: (id, body, key) =>
+        api.request(`/api/clubs/applications/${id}/reject`, {
+          method: 'POST',
+          body,
+          headers: { 'Idempotency-Key': key },
+        }),
     },
 
     disbandRequests: {
@@ -439,7 +460,10 @@ export const api = {
     attachments: {
       upload: (id, formData) => api.upload(`/api/reports/${id}/attachments/upload`, formData),
       download: (reportId, attachmentId) =>
-        downloadBlob(`/api/reports/${reportId}/attachments/${attachmentId}/download`, `attachment-${attachmentId}`),
+        downloadBlob(
+          `/api/reports/${reportId}/attachments/${attachmentId}/download`,
+          `attachment-${attachmentId}`,
+        ),
       remove: (reportId, attachmentId) =>
         api.delete(`/api/reports/${reportId}/attachments/${attachmentId}`),
     },
@@ -484,11 +508,15 @@ export const api = {
       getById: (id) => api.get(`/api/finance/proposals/${id}`),
       create: (payload) => api.post('/api/finance/proposals', payload),
       submit: (id) => api.post(`/api/finance/proposals/${id}/submit`),
-      managerReview: (id, payload) => api.post(`/api/finance/proposals/${id}/manager-review`, payload),
-      managerApprove: (id, note) => api.post(`/api/finance/proposals/${id}/manager-approve`, { note }),
-      managerReject: (id, note) => api.post(`/api/finance/proposals/${id}/manager-reject`, { note }),
+      managerReview: (id, payload) =>
+        api.post(`/api/finance/proposals/${id}/manager-review`, payload),
+      managerApprove: (id, note) =>
+        api.post(`/api/finance/proposals/${id}/manager-approve`, { note }),
+      managerReject: (id, note) =>
+        api.post(`/api/finance/proposals/${id}/manager-reject`, { note }),
       review: (id, payload) => api.post(`/api/finance/proposals/${id}/review`, payload),
-      approve: (id, amount, note) => api.post(`/api/finance/proposals/${id}/approve`, { amount, note }),
+      approve: (id, amount, note) =>
+        api.post(`/api/finance/proposals/${id}/approve`, { amount, note }),
       reject: (id, note) => api.post(`/api/finance/proposals/${id}/reject`, { note }),
     },
 
@@ -538,21 +566,6 @@ export const api = {
   },
 
   // ---------------------------------------------------------------------------
-  // Anomalies (Xperience Point audit)
-  // ---------------------------------------------------------------------------
-  anomalies: {
-    // Backend doesn't have this endpoint yet; return seed data
-    list: async (params) => {
-      const { createAnomaliesSeed } = await import('../utils/seed.js');
-      const items = createAnomaliesSeed();
-      return params ? { items, total: items.length } : items;
-    },
-    resolve: async (id, decision) => {
-      return { id, ...decision, status: 'resolved' };
-    },
-  },
-
-  // ---------------------------------------------------------------------------
   // Student Affairs (CTSV)
   // ---------------------------------------------------------------------------
   studentAffairs: {
@@ -560,10 +573,16 @@ export const api = {
     declarations: {
       list: (params) => api.get('/api/v1/student-affairs/declarations', params),
       review: async (id, payload) => {
-        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(payload)));
-        const fingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+        const digest = await crypto.subtle.digest(
+          'SHA-256',
+          new TextEncoder().encode(JSON.stringify(payload)),
+        );
+        const fingerprint = Array.from(new Uint8Array(digest), (byte) =>
+          byte.toString(16).padStart(2, '0'),
+        ).join('');
         return request(`/api/v1/student-affairs/declarations/${id}/review`, {
-          method: 'POST', body: payload,
+          method: 'POST',
+          body: payload,
           headers: { 'Idempotency-Key': `declaration:${id}:${fingerprint}` },
         });
       },
@@ -578,10 +597,12 @@ export const api = {
     },
     // Student radar
     students: {
-      profile: (id, params) => api.get(`/api/v1/student-affairs/students/${encodeURIComponent(id)}/profile`, params),
+      profile: (id, params) =>
+        api.get(`/api/v1/student-affairs/students/${encodeURIComponent(id)}/profile`, params),
       radar: (id, params) =>
         api.get(`/api/v1/student-affairs/students/${id}/radar`, {
-          ...params, semester: params?.semester || params?.semesterCode,
+          ...params,
+          semester: params?.semester || params?.semesterCode,
         }),
     },
     // Radar overview (6+1 pillars overview)
@@ -605,7 +626,8 @@ export const api = {
       list: (params) => api.get('/api/v1/student-affairs/anomalies', params),
       stats: () => api.get('/api/v1/student-affairs/anomalies/stats'),
       getById: (id) => api.get(`/api/v1/student-affairs/anomalies/${id}`),
-      resolve: (id, payload) => api.post(`/api/v1/student-affairs/anomalies/${id}/resolve`, payload),
+      resolve: (id, payload) =>
+        api.post(`/api/v1/student-affairs/anomalies/${id}/resolve`, payload),
     },
     ledger: {
       list: (params) => api.get('/api/v1/student-affairs/ledger', params),
@@ -628,6 +650,6 @@ export const api = {
       getById: (id) => api.get(`/api/v1/admin/audit-events/${id}`),
     },
   },
-}
+};
 
-export default api
+export default api;

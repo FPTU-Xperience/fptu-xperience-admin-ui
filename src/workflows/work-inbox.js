@@ -1,5 +1,4 @@
 import { reportTitle, reportType } from '../utils/report-workflow.js';
-import { ACTIVITY_STATES } from './workflow-model.js';
 
 const rowsOf = (value) => {
   if (Array.isArray(value)) return value;
@@ -127,84 +126,4 @@ export async function loadWorkInbox(client, reports, { bucket, semester }) {
           rows: [],
         },
   );
-}
-
-export function mockInbox(scope) {
-  const rows = scope.activities
-    .filter((a) => !['DRAFT', 'EXECUTING'].includes(a.state))
-    .map((a) => ({
-      id: a.id,
-      title: a.title,
-      status: ACTIVITY_STATES[a.state],
-      path: scope.clubs.find((c) => c.id === a.clubId)?.sourceClubId
-        ? `/ctsv/clubs/${encodeURIComponent(scope.clubs.find((c) => c.id === a.clubId).sourceClubId)}?view=activities&source=mock&record=${encodeURIComponent(a.id)}`
-        : `/ctsv/activities?view=${a.school ? 'school' : 'club'}&source=mock&record=${encodeURIComponent(a.id)}`,
-      owner: ['PLAN_REVIEW', 'SETTLEMENT_REVIEW'].includes(a.state) ? 'CTSV' : 'CLB',
-      deadline: a.deadline,
-      source: 'MOCK',
-      bucket: ['COMPLETED', 'REJECTED', 'NOT_HELD'].includes(a.state)
-        ? 'completed'
-        : a.state === 'PLAN_REVIEW' || a.state === 'SETTLEMENT_REVIEW'
-          ? 'actionable'
-          : 'waiting',
-      kind: 'Hoạt động',
-    }));
-  for (const n of scope.nominations)
-    rows.push({
-      id: n.id,
-      title: `Kế nhiệm ${scope.clubs.find((c) => c.id === n.clubId)?.name}`,
-      status: n.status,
-      path: scope.clubs.find((c) => c.id === n.clubId)?.sourceClubId
-        ? `/ctsv/clubs/${encodeURIComponent(scope.clubs.find((c) => c.id === n.clubId).sourceClubId)}?view=leadership`
-        : '/ctsv/clubs?view=leadership',
-      owner: n.studentCode,
-      source: 'MOCK',
-      bucket: n.status === 'PENDING' ? 'waiting' : 'completed',
-      kind: 'Lãnh đạo CLB',
-    });
-  if (scope.rollover)
-    rows.push({
-      id: scope.rollover.id,
-      title: `Chuyển kỳ ${scope.semester} → ${scope.rollover.target}`,
-      status: scope.rollover.status,
-      path: '/ctsv/semesters?view=rollover',
-      owner: 'CTSV',
-      source: 'MOCK',
-      bucket:
-        scope.rollover.status === 'COMPLETED'
-          ? 'completed'
-          : scope.rollover.status === 'RUNNING'
-            ? 'waiting'
-            : 'actionable',
-      kind: 'Chuyển học kỳ',
-    });
-  if (scope.rosterPreview)
-    rows.push({
-      id: 'mock-roster-preview',
-      title: 'Xác nhận bản nhập danh sách sinh viên',
-      status: scope.rosterPreview.rows.some((r) => r.errors.length)
-        ? 'Cần sửa lỗi file'
-        : 'Chờ CTSV xác nhận',
-      path: '/ctsv/semesters?view=students',
-      owner: 'CTSV',
-      source: 'MOCK',
-      bucket: 'actionable',
-      kind: 'Roster học kỳ',
-    });
-  for (const club of scope.clubs.filter(
-    (c) =>
-      c.status === 'PAUSED' &&
-      !scope.nominations.some((n) => n.clubId === c.id && n.status === 'PENDING'),
-  ))
-    rows.push({
-      id: `mock-leadership-${club.id}`,
-      title: `Xử lý lãnh đạo · ${club.name}`,
-      status: 'CLB tạm dừng, cần kế nhiệm',
-      path: '/ctsv/clubs?view=leadership',
-      owner: 'CTSV',
-      source: 'MOCK',
-      bucket: 'actionable',
-      kind: 'Lãnh đạo CLB',
-    });
-  return rows;
 }

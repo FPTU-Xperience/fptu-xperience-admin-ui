@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSeed, studentXP } from '../src/utils/seed.js';
-import { resolveAnomaly, validateRubric } from '../src/utils/governance.js';
+import { createSeed, studentXP } from './fixtures/seed.js';
+import { resolveAnomaly, validateRubric } from './fixtures/governance.js';
 
 test('rubric weights must total 100 and scoring values must be valid', () => {
   const rubric = createSeed().rubrics[0];

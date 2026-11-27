@@ -20,7 +20,6 @@ import {
   OperationsHub,
   AuditHub,
 } from '../pages/feature-hubs/FeatureHubs.jsx';
-import { WorkflowProvider } from '../workflows/WorkflowContext.jsx';
 const pages = {
   '/ctsv/work': <WorkInbox overview={<Dashboard />} />,
   '/ctsv/semesters': <SemesterHub />,
@@ -49,48 +48,42 @@ export default function AppRoutes() {
   if (!user) return <Login />;
   const fallback = defaultPathFor(user);
   return (
-    <WorkflowProvider>
-      <AppLayout>
-        <Routes>
+    <AppLayout>
+      <Routes>
+        <Route
+          path="/ctsv/reports/:reportId"
+          element={
+            canAccessPath(user, '/ctsv/reports') ? (
+              <ClubReportDetail />
+            ) : (
+              <Navigate to={fallback} replace />
+            )
+          }
+        />
+        <Route
+          path="/ctsv/clubs/:clubId"
+          element={
+            canAccessPath(user, '/ctsv/clubs') ? <ClubDetail /> : <Navigate to={fallback} replace />
+          }
+        />
+        {[...affairsNav, ...adminNav].map(({ path }) => (
           <Route
-            path="/ctsv/reports/:reportId"
+            key={path}
+            path={path}
+            element={canAccessPath(user, path) ? pages[path] : <Navigate to={fallback} replace />}
+          />
+        ))}
+        {Object.keys(legacyRoutes).map((path) => (
+          <Route
+            key={path}
+            path={path}
             element={
-              canAccessPath(user, '/ctsv/reports') ? (
-                <ClubReportDetail />
-              ) : (
-                <Navigate to={fallback} replace />
-              )
+              canAccessPath(user, path) ? <LegacyRedirect /> : <Navigate to={fallback} replace />
             }
           />
-          <Route
-            path="/ctsv/clubs/:clubId"
-            element={
-              canAccessPath(user, '/ctsv/clubs') ? (
-                <ClubDetail />
-              ) : (
-                <Navigate to={fallback} replace />
-              )
-            }
-          />
-          {[...affairsNav, ...adminNav].map(({ path }) => (
-            <Route
-              key={path}
-              path={path}
-              element={canAccessPath(user, path) ? pages[path] : <Navigate to={fallback} replace />}
-            />
-          ))}
-          {Object.keys(legacyRoutes).map((path) => (
-            <Route
-              key={path}
-              path={path}
-              element={
-                canAccessPath(user, path) ? <LegacyRedirect /> : <Navigate to={fallback} replace />
-              }
-            />
-          ))}
-          <Route path="*" element={<Navigate to={fallback} replace />} />
-        </Routes>
-      </AppLayout>
-    </WorkflowProvider>
+        ))}
+        <Route path="*" element={<Navigate to={fallback} replace />} />
+      </Routes>
+    </AppLayout>
   );
 }
